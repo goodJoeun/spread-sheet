@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   colToLabel,
+  forEachCell,
+  intersectRanges,
   labelToCol,
   normalizeRange,
   parseA1,
@@ -70,5 +72,20 @@ describe("ranges", () => {
     expect(rangeContains(range, { row: 2, col: 2 })).toBe(true);
     expect(rangeContains(range, { row: 0, col: 1 })).toBe(false);
     expect(rangeContains(range, { row: 1, col: 3 })).toBe(false);
+  });
+});
+
+describe("forEachCell / intersectRanges", () => {
+  it("visits cells row by row", () => {
+    const visited: string[] = [];
+    forEachCell(parseRangeA1("A1:B2")!, (coord) => visited.push(toA1(coord)));
+    expect(visited).toEqual(["A1", "B1", "A2", "B2"]);
+  });
+
+  it("intersects overlapping ranges and returns null otherwise", () => {
+    expect(intersectRanges(parseRangeA1("A1:C3")!, parseRangeA1("B2:D4")!)).toEqual(
+      parseRangeA1("B2:C3"),
+    );
+    expect(intersectRanges(parseRangeA1("A1:B2")!, parseRangeA1("C3:D4")!)).toBeNull();
   });
 });

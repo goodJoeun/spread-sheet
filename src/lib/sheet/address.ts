@@ -78,3 +78,23 @@ export function rangeToA1({ start, end }: CellRange): string {
 export function rangeContains({ start, end }: CellRange, { row, col }: CellCoord): boolean {
   return row >= start.row && row <= end.row && col >= start.col && col <= end.col;
 }
+
+/** 범위 안의 셀을 행 우선(좌→우, 위→아래)으로 순회한다. */
+export function forEachCell({ start, end }: CellRange, fn: (coord: CellCoord) => void): void {
+  for (let row = start.row; row <= end.row; row++) {
+    for (let col = start.col; col <= end.col; col++) {
+      fn({ row, col });
+    }
+  }
+}
+
+/** 두 범위의 겹치는 부분. 겹치지 않으면 null. */
+export function intersectRanges(a: CellRange, b: CellRange): CellRange | null {
+  const start = {
+    row: Math.max(a.start.row, b.start.row),
+    col: Math.max(a.start.col, b.start.col),
+  };
+  const end = { row: Math.min(a.end.row, b.end.row), col: Math.min(a.end.col, b.end.col) };
+  if (start.row > end.row || start.col > end.col) return null;
+  return { start, end };
+}
