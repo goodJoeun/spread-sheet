@@ -1,5 +1,6 @@
 "use client";
 
+import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { FormulaBar } from "./FormulaBar";
 import { Grid } from "./grid/Grid";
@@ -13,9 +14,9 @@ interface SheetAppProps {
 }
 
 export function SheetApp({ sheetId }: SheetAppProps) {
-  const session = useSheetSession(sheetId);
+  const loaded = useSheetSession(sheetId);
 
-  if (!session) {
+  if (!loaded) {
     return (
       <Shell>
         <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">
@@ -26,8 +27,9 @@ export function SheetApp({ sheetId }: SheetAppProps) {
   }
 
   return (
-    <SheetProvider session={session}>
+    <SheetProvider session={loaded.session}>
       <Shell participants={<ParticipantList />}>
+        {loaded.storage === "unavailable" && <StorageNotice />}
         <Toolbar />
         <FormulaBar />
         <Grid />
@@ -47,6 +49,18 @@ function Shell({ participants, children }: { participants?: ReactNode; children:
         <div className="ml-auto">{participants}</div>
       </header>
       {children}
+    </div>
+  );
+}
+
+function StorageNotice() {
+  return (
+    <div
+      role="alert"
+      className="flex shrink-0 items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-1.5 text-[13px] text-amber-900"
+    >
+      <TriangleAlert size={15} className="shrink-0 text-amber-600" aria-hidden />이 브라우저에서
+      저장소를 열 수 없어 편집 내용이 저장되지 않아요. 열려 있는 다른 탭과의 동기화는 계속 동작해요.
     </div>
   );
 }
