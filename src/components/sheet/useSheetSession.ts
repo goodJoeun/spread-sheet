@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type * as Y from "yjs";
 import { createSheetSession, type SheetSession } from "@/lib/collab/session";
 
@@ -24,21 +24,41 @@ export function useSheetSession(sheetId: string): SheetSession | null {
   return loaded?.sheetId === sheetId ? loaded : null;
 }
 
-/** 문서가 바뀔 때마다 증가하는 번호. 셀 렌더링을 다시 하게 만드는 데 쓴다. */
+interface VersionStore {
+  subscribe(onChange: () => void): () => void;
+  getSnapshot(): number;
+}
+
+const versionStores = new WeakMap<Y.Doc, VersionStore>();
+
+/** 문서 하나에 리스너 하나만 걸고, 구독자 모두에게 같은 버전 번호를 준다. */
+function docVersionStore(doc: Y.Doc): VersionStore {
+  const cached = versionStores.get(doc);
+  if (cached) return cached;
+
+  let version = 0;
+  const listeners = new Set<() => void>();
+  const onUpdate = () => {
+    version++;
+    listeners.forEach((listener) => listener());
+  };
+  const store: VersionStore = {
+    subscribe(onChange) {
+      if (listeners.size === 0) doc.on("update", onUpdate);
+      listeners.add(onChange);
+      return () => {
+        listeners.delete(onChange);
+        if (listeners.size === 0) doc.off("update", onUpdate);
+      };
+    },
+    getSnapshot: () => version,
+  };
+  versionStores.set(doc, store);
+  return store;
+}
+
+/** 문서가 바뀔 때마다 증가하는 번호. 셀·툴바를 다시 그리게 하는 데 쓴다. */
 export function useDocVersion(doc: Y.Doc): number {
-  const store = useMemo(() => {
-    let version = 0;
-    return {
-      subscribe(onChange: () => void) {
-        const handler = () => {
-          version++;
-          onChange();
-        };
-        doc.on("update", handler);
-        return () => doc.off("update", handler);
-      },
-      getSnapshot: () => version,
-    };
-  }, [doc]);
+  const store = docVersionStore(doc);
   return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 }

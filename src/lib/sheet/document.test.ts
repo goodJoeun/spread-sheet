@@ -3,11 +3,15 @@ import * as Y from "yjs";
 import { parseA1, parseRangeA1, type CellCoord } from "./address";
 import {
   EditOrigin,
+  clearFormats,
   clearValues,
+  commonStyle,
   getFormat,
   getValue,
   hasFormatEverywhere,
+  isValidStyle,
   setFormat,
+  setStyle,
   setValue,
   toggleFormat,
   valuesOf,
@@ -122,5 +126,47 @@ describe("concurrent edits", () => {
     exchange(a, b);
     expect(getValue(a, at("A1"))).toBe(getValue(b, at("A1")));
     expect(["from A", "from B"]).toContain(getValue(a, at("A1")));
+  });
+});
+
+describe("styles", () => {
+  it("sets, reads and resets color, fill and alignment", () => {
+    const doc = new Y.Doc();
+    setStyle(doc, range("A1:B1"), "color", "#cc0000", User);
+    setStyle(doc, range("A1"), "fill", "#fff2cc", User);
+    setStyle(doc, range("B1"), "align", "center", User);
+    expect(getFormat(doc, at("A1"))).toEqual({ color: "#cc0000", fill: "#fff2cc" });
+    expect(getFormat(doc, at("B1"))).toEqual({ color: "#cc0000", align: "center" });
+
+    setStyle(doc, range("A1:B1"), "color", null, User);
+    expect(getFormat(doc, at("A1"))).toEqual({ fill: "#fff2cc" });
+  });
+
+  it("ignores invalid values", () => {
+    const doc = new Y.Doc();
+    setStyle(doc, range("A1"), "color", "red", User);
+    setStyle(doc, range("A1"), "align", "justify", User);
+    setStyle(doc, range("A1"), "fill", "#12345", User);
+    expect(getFormat(doc, at("A1"))).toEqual({});
+    expect(isValidStyle("color", "#A1b2C3")).toBe(true);
+  });
+
+  it("reports a common value only when the whole range shares it", () => {
+    const doc = new Y.Doc();
+    setStyle(doc, range("A1:A2"), "align", "right", User);
+    expect(commonStyle(doc, range("A1:A2"), "align")).toBe("right");
+    expect(commonStyle(doc, range("A1:A3"), "align")).toBeNull();
+    expect(commonStyle(doc, range("B1:B3"), "align")).toBeNull();
+  });
+
+  it("clears every format but keeps values", () => {
+    const doc = new Y.Doc();
+    setValue(doc, at("A1"), "keep", User);
+    setFormat(doc, range("A1:B2"), "bold", true, User);
+    setStyle(doc, range("A1:B2"), "fill", "#d9ead3", User);
+    clearFormats(doc, range("A1:B2"), User);
+    expect(getFormat(doc, at("A1"))).toEqual({});
+    expect(getFormat(doc, at("B2"))).toEqual({});
+    expect(getValue(doc, at("A1"))).toBe("keep");
   });
 });

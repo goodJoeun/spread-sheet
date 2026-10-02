@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useImperativeHandle,
   useRef,
   useState,
   type KeyboardEvent,
@@ -17,9 +18,11 @@ import {
   COL_COUNT,
   EditOrigin,
   ROW_COUNT,
+  clearFormats,
   clearValues,
   getFormat,
   getValue,
+  setStyle,
   setValue,
   toggleFormat,
 } from "@/lib/sheet/document";
@@ -63,12 +66,21 @@ type HitKind = "cell" | "row" | "col" | "corner";
 const CONTENT_WIDTH = ROW_HEADER_WIDTH + COL_COUNT * COL_WIDTH;
 const CONTENT_HEIGHT = COL_HEADER_HEIGHT + ROW_COUNT * ROW_HEIGHT;
 
+/** 툴바 등 그리드 밖에서 쓰는 조작 */
+export interface GridHandle {
+  /** 편집 중이면 입력을 확정한다. */
+  commitEdit(): void;
+  /** 키보드 입력을 다시 그리드로 돌린다. */
+  focus(): void;
+}
+
 interface GridProps {
   session: SheetSession;
   selectionStore: Store<Selection>;
+  ref?: RefObject<GridHandle | null>;
 }
 
-export function Grid({ session, selectionStore }: GridProps) {
+export function Grid({ session, selectionStore, ref }: GridProps) {
   const { doc, undoManager } = session;
   const version = useDocVersion(doc);
   const selection = useStore(selectionStore);
@@ -82,6 +94,11 @@ export function Grid({ session, selectionStore }: GridProps) {
   const dragRef = useRef<Exclude<HitKind, "corner"> | null>(null);
   /** Tab으로 오른쪽으로 입력해 나가다 Enter를 누르면 시작한 열의 다음 행으로 돌아간다(엑셀·구글시트 동작). */
   const tabReturnColRef = useRef<number | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    commitEdit: () => commitEdit(),
+    focus: () => inputRef.current?.focus({ preventScroll: true }),
+  }));
 
   // 처음 열렸을 때 바로 타이핑할 수 있게 입력칸에 포커스를 준다.
   useEffect(() => {
@@ -203,6 +220,12 @@ export function Grid({ session, selectionStore }: GridProps) {
       }
       case "format":
         toggleFormat(doc, range, action.key, EditOrigin.User);
+        return;
+      case "align":
+        setStyle(doc, range, "align", action.value, EditOrigin.User);
+        return;
+      case "clearFormat":
+        clearFormats(doc, range, EditOrigin.User);
         return;
       case "undo":
         undoManager.undo();
@@ -493,6 +516,9 @@ function CellEditor({ inputRef, doc, edit, rect, ...handlers }: CellEditorProps)
         fontWeight: format.bold ? 700 : undefined,
         fontStyle: format.italic ? "italic" : undefined,
         textDecorationLine: decoration || undefined,
+        color: format.color,
+        backgroundColor: edit ? (format.fill ?? "#ffffff") : undefined,
+        textAlign: format.align,
       }}
       onKeyDown={handlers.onKeyDown}
       onInput={handlers.onInput}

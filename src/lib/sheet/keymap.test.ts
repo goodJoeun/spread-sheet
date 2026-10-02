@@ -60,6 +60,22 @@ describe("shortcuts", () => {
     expect(win(press("y", { ctrlKey: true }))).toEqual({ type: "redo" });
   });
 
+  it("aligns with Ctrl+Shift+L/E/R and clears formats with Ctrl+\\", () => {
+    expect(win(press("L", { ctrlKey: true, shiftKey: true }))).toEqual({
+      type: "align",
+      value: "left",
+    });
+    expect(mac(press("e", { metaKey: true, shiftKey: true }))).toEqual({
+      type: "align",
+      value: "center",
+    });
+    expect(win(press("R", { ctrlKey: true, shiftKey: true }), "enter")).toEqual({
+      type: "align",
+      value: "right",
+    });
+    expect(win(press("\\", { ctrlKey: true }))).toEqual({ type: "clearFormat" });
+  });
+
   it("applies formats even while editing, but leaves undo to the input", () => {
     expect(win(press("i", { ctrlKey: true }), "enter")).toEqual({ type: "format", key: "italic" });
     expect(win(press("z", { ctrlKey: true }), "edit")).toBeNull();

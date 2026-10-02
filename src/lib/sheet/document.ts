@@ -25,9 +25,29 @@ export const SHEET_RANGE: CellRange = {
   end: { row: ROW_COUNT - 1, col: COL_COUNT - 1 },
 };
 
+/** 켜고 끄는 서식 */
 export const FORMAT_KEYS = ["bold", "italic", "underline", "strike"] as const;
 export type FormatKey = (typeof FORMAT_KEYS)[number];
-export type CellFormat = Partial<Record<FormatKey, true>>;
+
+/** 값을 갖는 서식 */
+export const STYLE_KEYS = ["color", "fill", "align"] as const;
+export type StyleKey = (typeof STYLE_KEYS)[number];
+export const ALIGNMENTS = ["left", "center", "right"] as const;
+export type Alignment = (typeof ALIGNMENTS)[number];
+
+export interface CellFormat extends Partial<Record<FormatKey, true>> {
+  color?: string;
+  fill?: string;
+  align?: Alignment;
+}
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+/** 저장소에 들어가는 서식 값은 형식을 검증한다(다른 탭·AI에서 온 값도 같은 함수를 거친다). */
+export function isValidStyle(key: StyleKey, value: string): boolean {
+  if (key === "align") return (ALIGNMENTS as readonly string[]).includes(value);
+  return HEX_COLOR.test(value);
+}
 
 /**
  * 트랜잭션 origin. UndoManager는 이 origin의 변경만 추적하므로,
@@ -43,11 +63,11 @@ export function valuesOf(doc: Y.Doc): Y.Map<string> {
   return doc.getMap<string>("values");
 }
 
-export function formatsOf(doc: Y.Doc): Y.Map<true> {
-  return doc.getMap<true>("formats");
+export function formatsOf(doc: Y.Doc): Y.Map<true | string> {
+  return doc.getMap<true | string>("formats");
 }
 
-const formatKey = (cell: string, key: FormatKey) => `${cell}.${key}`;
+const formatKey = (cell: string, key: FormatKey | StyleKey) => `${cell}.${key}`;
 
 export function isInSheet(coord: CellCoord): boolean {
   return rangeContains(SHEET_RANGE, coord);
@@ -62,7 +82,14 @@ export function getFormat(doc: Y.Doc, coord: CellCoord): CellFormat {
   const cell = toA1(coord);
   const format: CellFormat = {};
   for (const key of FORMAT_KEYS) {
-    if (formats.get(formatKey(cell, key))) format[key] = true;
+    if (formats.get(formatKey(cell, key)) === true) format[key] = true;
+  }
+  for (const key of STYLE_KEYS) {
+    const value = formats.get(formatKey(cell, key));
+    if (typeof value === "string" && isValidStyle(key, value)) {
+      if (key === "align") format.align = value as Alignment;
+      else format[key] = value;
+    }
   }
   return format;
 }
@@ -153,4 +180,58 @@ export function toggleFormat(
   const enabled = !hasFormatEverywhere(doc, range, key);
   setFormat(doc, range, key, enabled, origin);
   return enabled;
+}
+
+/** 범위에 값 서식(글자색·채우기·정렬)을 적용한다. null이면 기본값으로 되돌린다. 잘못된 값은 무시한다. */
+export function setStyle(
+  doc: Y.Doc,
+  range: CellRange,
+  key: StyleKey,
+  value: string | null,
+  origin: EditOrigin,
+): void {
+  if (value !== null && !isValidStyle(key, value)) return;
+  const clipped = intersectRanges(range, SHEET_RANGE);
+  if (!clipped) return;
+  const formats = formatsOf(doc);
+  doc.transact(() => {
+    forEachCell(clipped, (coord) => {
+      const k = formatKey(toA1(coord), key);
+      const current = formats.get(k);
+      if ((current ?? null) === value) return;
+      if (value === null) formats.delete(k);
+      else formats.set(k, value);
+    });
+  }, origin);
+}
+
+/** 범위 전체가 같은 값을 가지면 그 값, 섞여 있거나 기본값이면 null. 툴바 표시에 쓴다. */
+export function commonStyle(doc: Y.Doc, range: CellRange, key: StyleKey): string | null {
+  const clipped = intersectRanges(range, SHEET_RANGE);
+  if (!clipped) return null;
+  const formats = formatsOf(doc);
+  let common: string | null | undefined;
+  forEachCell(clipped, (coord) => {
+    if (common === null) return;
+    const value = formats.get(formatKey(toA1(coord), key));
+    const normalized = typeof value === "string" ? value : null;
+    common = common === undefined || common === normalized ? normalized : null;
+  });
+  return common ?? null;
+}
+
+/** 범위의 서식을 모두 지운다. 값은 그대로 둔다. */
+export function clearFormats(doc: Y.Doc, range: CellRange, origin: EditOrigin): void {
+  const clipped = intersectRanges(range, SHEET_RANGE);
+  if (!clipped) return;
+  const formats = formatsOf(doc);
+  doc.transact(() => {
+    forEachCell(clipped, (coord) => {
+      const cell = toA1(coord);
+      for (const key of [...FORMAT_KEYS, ...STYLE_KEYS]) {
+        const k = formatKey(cell, key);
+        if (formats.has(k)) formats.delete(k);
+      }
+    });
+  }, origin);
 }

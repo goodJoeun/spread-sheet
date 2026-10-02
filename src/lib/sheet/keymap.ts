@@ -1,4 +1,4 @@
-import type { FormatKey } from "./document";
+import type { Alignment, FormatKey } from "./document";
 
 /**
  * 편집 모드(엑셀과 같은 구분)
@@ -23,7 +23,9 @@ export type GridAction =
   | { type: "selectAll" }
   | { type: "undo" }
   | { type: "redo" }
-  | { type: "format"; key: FormatKey };
+  | { type: "format"; key: FormatKey }
+  | { type: "align"; value: Alignment }
+  | { type: "clearFormat" };
 
 export interface KeyInput {
   key: string;
@@ -47,6 +49,13 @@ const FORMAT_SHORTCUTS: Record<string, FormatKey> = {
   "5": "strike", // 엑셀 Ctrl+5
 };
 
+/** 구글시트와 같은 정렬 단축키(Ctrl+Shift+L/E/R) */
+const ALIGN_SHORTCUTS: Record<string, Alignment> = {
+  l: "left",
+  e: "center",
+  r: "right",
+};
+
 /**
  * 키 입력을 그리드 동작으로 바꾼다. null이면 브라우저 기본 동작(글자 입력, 커서 이동 등)에 맡긴다.
  * macOS에서는 Ctrl 대신 Cmd를 단축키 수식키로 쓴다.
@@ -62,6 +71,8 @@ export function resolveGridKey(
 
   if (mod && !e.altKey) {
     if (!e.shiftKey && FORMAT_SHORTCUTS[key]) return { type: "format", key: FORMAT_SHORTCUTS[key] };
+    if (e.shiftKey && ALIGN_SHORTCUTS[key]) return { type: "align", value: ALIGN_SHORTCUTS[key] };
+    if (!e.shiftKey && key === "\\") return { type: "clearFormat" };
     // 편집 중의 Ctrl+Z/A는 입력칸의 기본 동작(글자 되돌리기, 전체 선택)에 맡긴다.
     if (!editing) {
       if (key === "z") return { type: e.shiftKey ? "redo" : "undo" };

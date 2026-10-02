@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { collapsedSelection } from "@/lib/sheet/selection";
 import { createStore } from "@/lib/store";
 import { FormulaBar } from "./FormulaBar";
-import { Grid } from "./Grid";
+import { Grid, type GridHandle } from "./Grid";
+import { Toolbar } from "./Toolbar";
 import { useSheetSession } from "./useSheetSession";
 
 interface SheetAppProps {
@@ -14,6 +15,7 @@ interface SheetAppProps {
 export function SheetApp({ sheetId }: SheetAppProps) {
   const session = useSheetSession(sheetId);
   const [selectionStore] = useState(() => createStore(collapsedSelection({ row: 0, col: 0 })));
+  const gridRef = useRef<GridHandle>(null);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-white">
@@ -26,8 +28,9 @@ export function SheetApp({ sheetId }: SheetAppProps) {
 
       {session ? (
         <>
+          <Toolbar session={session} selectionStore={selectionStore} gridRef={gridRef} />
           <FormulaBar session={session} selectionStore={selectionStore} />
-          <Grid session={session} selectionStore={selectionStore} />
+          <Grid ref={gridRef} session={session} selectionStore={selectionStore} />
         </>
       ) : (
         <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">
