@@ -23,6 +23,14 @@ export function cellRect({ row, col }: CellCoord): Rect {
   };
 }
 
+/**
+ * 셀 테두리(1px 격자선)까지 덮도록 위·왼쪽으로 1px 넓힌 사각형.
+ * 선택 테두리, 다른 참여자 커서, 편집칸처럼 셀 위에 겹쳐 그리는 것은 모두 이 위치를 쓴다.
+ */
+export function outsetRect({ left, top, width, height }: Rect): Rect {
+  return { left: left - 1, top: top - 1, width: width + 1, height: height + 1 };
+}
+
 export function rangeRect({ start, end }: CellRange): Rect {
   const a = cellRect(start);
   return {

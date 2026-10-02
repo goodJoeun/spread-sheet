@@ -1,8 +1,9 @@
 import { Pencil } from "lucide-react";
 import { Fragment, memo } from "react";
 import type { Participant } from "@/lib/collab/presence";
-import { cellRect, rangeRect } from "@/lib/sheet/geometry";
+import { cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { clampCoord, isMultiCell, selectionRange } from "@/lib/sheet/selection";
+import { Layer } from "./grid/layers";
 
 interface RemoteCursorsProps {
   participants: Participant[];
@@ -10,7 +11,7 @@ interface RemoteCursorsProps {
 
 /**
  * 다른 참여자의 선택 범위, active 셀, 입력 중인 셀을 그 사람의 색으로 그린다.
- * 내 선택(z-10)보다 아래에 두어 내 커서가 가려지지 않게 하고, 이름표만 위로 올린다.
+ * 내 선택보다 아래 레이어에 두어 내 커서가 가려지지 않게 하고, 이름표만 위로 올린다.
  */
 export const RemoteCursors = memo(function RemoteCursors({ participants }: RemoteCursorsProps) {
   return participants.map((participant) => {
@@ -23,42 +24,39 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
       focus: clampCoord(selection.focus),
       active: clampCoord(selection.active),
     };
-    const range = rangeRect(selectionRange(safe));
+    const range = outsetRect(rangeRect(selectionRange(safe)));
     const cursor = clampCoord(editing ?? safe.active);
-    const rect = cellRect(cursor);
+    const rect = outsetRect(cellRect(cursor));
     const labelBelow = cursor.row === 0; // 첫 행이면 머리글에 가리지 않게 아래에 붙인다.
 
     return (
       <Fragment key={clientId}>
         {isMultiCell(safe) && (
           <div
-            className="pointer-events-none absolute z-[6] border"
+            className="pointer-events-none absolute border"
             style={{
-              left: range.left - 1,
-              top: range.top - 1,
-              width: range.width + 1,
-              height: range.height + 1,
+              ...range,
+              zIndex: Layer.remoteRange,
               borderColor: user.color,
               backgroundColor: `${user.color}14`,
             }}
           />
         )}
         <div
-          className="pointer-events-none absolute z-[7] border-2"
+          className="pointer-events-none absolute border-2"
           style={{
-            left: rect.left - 1,
-            top: rect.top - 1,
-            width: rect.width + 1,
-            height: rect.height + 1,
+            ...rect,
+            zIndex: Layer.remoteCursor,
             borderColor: user.color,
             backgroundColor: editing ? `${user.color}1f` : undefined,
           }}
         />
         <div
-          className="pointer-events-none absolute z-[12] flex items-center gap-1 px-1 text-[10px] leading-4 font-medium whitespace-nowrap text-white shadow-sm"
+          className="pointer-events-none absolute flex items-center gap-1 px-1 text-[10px] leading-4 font-medium whitespace-nowrap text-white shadow-sm"
           style={{
-            left: rect.left - 1,
-            top: labelBelow ? rect.top + rect.height : rect.top - 17,
+            left: rect.left,
+            top: labelBelow ? rect.top + rect.height : rect.top - 16,
+            zIndex: Layer.remoteLabel,
             backgroundColor: user.color,
             borderRadius: labelBelow ? "0 0 3px 3px" : "3px 3px 0 0",
           }}

@@ -31,6 +31,7 @@ import {
   ROW_HEADER_WIDTH,
   ROW_HEIGHT,
   cellRect,
+  outsetRect,
   rangeRect,
 } from "@/lib/sheet/geometry";
 import { resolveGridKey, type EditMode, type GridAction } from "@/lib/sheet/keymap";
@@ -51,6 +52,7 @@ import {
   type Selection,
 } from "@/lib/sheet/selection";
 import { createStore, useStore, type Store } from "@/lib/store";
+import { Layer } from "./grid/layers";
 import { GridCells } from "./GridCells";
 import { GridHeaders } from "./GridHeaders";
 import { RemoteCursors } from "./RemoteCursors";
@@ -436,9 +438,9 @@ export function Grid({ session, selectionStore, ref }: GridProps) {
   /* ───────────── 렌더링 ───────────── */
 
   const range = selectionRange(selection);
-  const activeRect = cellRect(edit?.coord ?? selection.active);
+  const activeRect = outsetRect(cellRect(edit?.coord ?? selection.active));
   const multi = isMultiCell(selection);
-  const rangeBox = rangeRect(range);
+  const rangeBox = outsetRect(rangeRect(range));
   // 내가 입력 중인 셀을 다른 사람도 입력 중이면 알린다. 먼저 확정한 값은 나중 값에 덮어써진다.
   const coEditors = edit
     ? participants.filter((p) => !p.isSelf && p.editing && sameCoord(p.editing, edit.coord))
@@ -467,35 +469,26 @@ export function Grid({ session, selectionStore, ref }: GridProps) {
 
         {multi && (
           <div
-            className="pointer-events-none absolute z-10 border border-accent bg-accent/10"
-            style={{
-              left: rangeBox.left - 1,
-              top: rangeBox.top - 1,
-              width: rangeBox.width + 1,
-              height: rangeBox.height + 1,
-            }}
+            className="pointer-events-none absolute border border-accent bg-accent/10"
+            style={{ ...rangeBox, zIndex: Layer.selection }}
           />
         )}
         <div
-          className="pointer-events-none absolute z-10 border-2 border-accent"
-          style={{
-            left: activeRect.left - 1,
-            top: activeRect.top - 1,
-            width: activeRect.width + 1,
-            height: activeRect.height + 1,
-          }}
+          className="pointer-events-none absolute border-2 border-accent"
+          style={{ ...activeRect, zIndex: Layer.selection }}
         />
 
         {coEditors.length > 0 && (
           <div
             role="status"
-            className="pointer-events-none absolute z-[16] rounded-t bg-amber-500 px-1.5 text-[11px] leading-[18px] font-medium whitespace-nowrap text-white shadow"
+            className="pointer-events-none absolute rounded-t bg-amber-500 px-1.5 text-[11px] leading-[18px] font-medium whitespace-nowrap text-white shadow"
             style={{
-              left: activeRect.left - 1,
+              left: activeRect.left,
+              zIndex: Layer.editorNotice,
               top:
                 edit && edit.coord.row === 0
                   ? activeRect.top + activeRect.height + 2
-                  : activeRect.top - 19,
+                  : activeRect.top - 18,
             }}
           >
             {coEditors.map((p) => p.user.name).join(", ")}님도 이 셀을 입력 중이에요
@@ -548,15 +541,16 @@ function CellEditor({ inputRef, doc, edit, rect, ...handlers }: CellEditorProps)
       spellCheck={false}
       className={
         edit
-          ? "absolute z-[15] border-2 border-accent bg-white px-[3px] text-[13px] shadow-md outline-none select-text [field-sizing:content]"
-          : "absolute z-[15] cursor-cell border-0 bg-transparent p-0 opacity-0 outline-none"
+          ? "absolute border-2 border-accent bg-white px-[3px] text-[13px] shadow-md outline-none select-text [field-sizing:content]"
+          : "absolute cursor-cell border-0 bg-transparent p-0 opacity-0 outline-none"
       }
       style={{
-        left: rect.left - 1,
-        top: rect.top - 1,
-        height: rect.height + 1,
-        minWidth: rect.width + 1,
-        width: edit ? undefined : rect.width + 1,
+        left: rect.left,
+        top: rect.top,
+        height: rect.height,
+        minWidth: rect.width,
+        width: edit ? undefined : rect.width,
+        zIndex: Layer.editor,
         maxWidth: edit ? COL_WIDTH * 6 : undefined,
         fontWeight: format.bold ? 700 : undefined,
         fontStyle: format.italic ? "italic" : undefined,
