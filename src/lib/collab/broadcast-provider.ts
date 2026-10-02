@@ -52,6 +52,14 @@ export class BroadcastChannelProvider {
     this.announce();
   }
 
+  /**
+   * 다시 동기화한다. 뒤로/앞으로 캐시(bfcache)에서 복원된 탭은 멈춰 있던 동안의 메시지를 받지 못했으므로
+   * 합류할 때와 같은 절차로 빠진 변경과 참여자 정보를 다시 받는다.
+   */
+  resync(): void {
+    this.announce();
+  }
+
   /** 합류 알림: 동기화를 시작하고, 다른 탭의 awareness를 요청하고, 내 awareness를 알린다. */
   private announce(): void {
     const step1 = encoding.createEncoder();

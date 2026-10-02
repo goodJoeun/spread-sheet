@@ -1,5 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type * as Y from "yjs";
+import { loadTabUser, saveTabUser } from "@/lib/collab/identity";
+import type { Participant, Presence } from "@/lib/collab/presence";
 import { createSheetSession, type SheetSession } from "@/lib/collab/session";
 
 /**
@@ -10,18 +12,41 @@ export function useSheetSession(sheetId: string): SheetSession | null {
   const [loaded, setLoaded] = useState<SheetSession | null>(null);
 
   useEffect(() => {
-    const session = createSheetSession(sheetId);
+    const session = createSheetSession(sheetId, {
+      user: loadTabUser(),
+      onUserChange: saveTabUser,
+    });
     let active = true;
     session.whenLoaded.then(() => {
       if (active) setLoaded(session);
     });
+
+    // 탭을 닫거나 새로고침하면 다른 탭의 참여자 목록에서 바로 빠진다.
+    // 뒤로/앞으로 캐시에서 복원되면 멈춰 있던 동안의 변경을 다시 받고 참여자로 돌아온다.
+    const onPageHide = () => session.leave();
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) session.rejoin();
+    };
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onPageShow);
+
     return () => {
       active = false;
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
       void session.destroy();
     };
   }, [sheetId]);
 
   return loaded?.sheetId === sheetId ? loaded : null;
+}
+
+export function useParticipants(presence: Presence): Participant[] {
+  return useSyncExternalStore(
+    presence.subscribe,
+    presence.getParticipants,
+    presence.getParticipants,
+  );
 }
 
 interface VersionStore {

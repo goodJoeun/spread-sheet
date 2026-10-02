@@ -15,7 +15,7 @@ import {
   Undo2,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useCallback, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { SheetSession } from "@/lib/collab/session";
 import { isApplePlatform } from "@/lib/platform";
 import {
@@ -30,6 +30,7 @@ import {
 } from "@/lib/sheet/document";
 import { selectionRange, type Selection } from "@/lib/sheet/selection";
 import { useStore, type Store } from "@/lib/store";
+import { useDismiss } from "@/components/ui/useDismiss";
 import type { GridHandle } from "./Grid";
 import { useUndoState } from "./useUndoState";
 import { useDocVersion } from "./useSheetSession";
@@ -260,25 +261,8 @@ function ColorMenu({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // 바깥을 누르거나 Esc를 누르면 닫는다. Esc는 그리드보다 먼저 받아 편집이 취소되지 않게 한다.
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      e.stopPropagation();
-      setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown, true);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown, true);
-    };
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(rootRef, open, close);
 
   const pick = (color: string | null) => {
     setOpen(false);

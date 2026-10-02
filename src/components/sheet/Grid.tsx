@@ -54,7 +54,8 @@ import {
 import { createStore, useStore, type Store } from "@/lib/store";
 import { GridCells } from "./GridCells";
 import { GridHeaders } from "./GridHeaders";
-import { useDocVersion } from "./useSheetSession";
+import { RemoteCursors } from "./RemoteCursors";
+import { useDocVersion, useParticipants } from "./useSheetSession";
 
 interface EditState {
   mode: EditMode;
@@ -72,6 +73,8 @@ export interface GridHandle {
   commitEdit(): void;
   /** 키보드 입력을 다시 그리드로 돌린다. */
   focus(): void;
+  /** 그 셀을 선택하고 화면에 보이게 한다(참여자 위치로 이동). */
+  jumpTo(coord: CellCoord): void;
 }
 
 interface GridProps {
@@ -86,6 +89,7 @@ export function Grid({ session, selectionStore, ref }: GridProps) {
   const selection = useStore(selectionStore);
   const [editStore] = useState(() => createStore<EditState | null>(null));
   const edit = useStore(editStore);
+  const participants = useParticipants(session.presence);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -98,7 +102,28 @@ export function Grid({ session, selectionStore, ref }: GridProps) {
   useImperativeHandle(ref, () => ({
     commitEdit: () => commitEdit(),
     focus: () => inputRef.current?.focus({ preventScroll: true }),
+    jumpTo: (coord) => {
+      commitEdit();
+      tabReturnColRef.current = null;
+      select(collapsedSelection(coord));
+      inputRef.current?.focus({ preventScroll: true });
+    },
   }));
+
+  // 내 선택과 입력 중인 셀을 다른 참여자에게 알린다.
+  useEffect(() => {
+    const { presence } = session;
+    const publishSelection = () => presence.setSelection(selectionStore.get());
+    const publishEditing = () => presence.setEditing(editStore.get()?.coord ?? null);
+    publishSelection();
+    publishEditing();
+    const offSelection = selectionStore.subscribe(publishSelection);
+    const offEditing = editStore.subscribe(publishEditing);
+    return () => {
+      offSelection();
+      offEditing();
+    };
+  }, [session, selectionStore, editStore]);
 
   // 처음 열렸을 때 바로 타이핑할 수 있게 입력칸에 포커스를 준다.
   useEffect(() => {
@@ -415,6 +440,10 @@ export function Grid({ session, selectionStore, ref }: GridProps) {
   const activeRect = cellRect(edit?.coord ?? selection.active);
   const multi = isMultiCell(selection);
   const rangeBox = rangeRect(range);
+  // 내가 입력 중인 셀을 다른 사람도 입력 중이면 알린다. 먼저 확정한 값은 나중 값에 덮어써진다.
+  const coEditors = edit
+    ? participants.filter((p) => !p.isSelf && p.editing && sameCoord(p.editing, edit.coord))
+    : [];
 
   return (
     <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto bg-white">
@@ -435,6 +464,7 @@ export function Grid({ session, selectionStore, ref }: GridProps) {
       >
         <GridHeaders range={range} />
         <GridCells doc={doc} version={version} />
+        <RemoteCursors participants={participants} />
 
         {multi && (
           <div
@@ -456,6 +486,22 @@ export function Grid({ session, selectionStore, ref }: GridProps) {
             height: activeRect.height + 1,
           }}
         />
+
+        {coEditors.length > 0 && (
+          <div
+            role="status"
+            className="pointer-events-none absolute z-[16] rounded-t bg-amber-500 px-1.5 text-[11px] leading-[18px] font-medium whitespace-nowrap text-white shadow"
+            style={{
+              left: activeRect.left - 1,
+              top:
+                edit && edit.coord.row === 0
+                  ? activeRect.top + activeRect.height + 2
+                  : activeRect.top - 19,
+            }}
+          >
+            {coEditors.map((p) => p.user.name).join(", ")}님도 이 셀을 입력 중이에요
+          </div>
+        )}
 
         <CellEditor
           inputRef={inputRef}

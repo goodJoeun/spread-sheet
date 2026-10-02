@@ -5,6 +5,7 @@ import { collapsedSelection } from "@/lib/sheet/selection";
 import { createStore } from "@/lib/store";
 import { FormulaBar } from "./FormulaBar";
 import { Grid, type GridHandle } from "./Grid";
+import { ParticipantList } from "./ParticipantList";
 import { Toolbar } from "./Toolbar";
 import { useSheetSession } from "./useSheetSession";
 
@@ -24,6 +25,9 @@ export function SheetApp({ sheetId }: SheetAppProps) {
           S
         </div>
         <h1 className="text-[15px] font-semibold text-neutral-800">Spread Sheet</h1>
+        <div className="ml-auto">
+          {session && <ParticipantList presence={session.presence} gridRef={gridRef} />}
+        </div>
       </header>
 
       {session ? (
