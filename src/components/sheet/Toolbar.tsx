@@ -15,22 +15,13 @@ import {
   Undo2,
   type LucideIcon,
 } from "lucide-react";
-import { useCallback, useRef, useState, type ReactNode, type RefObject } from "react";
-import type { SheetSession } from "@/lib/collab/session";
-import { isApplePlatform } from "@/lib/platform";
-import {
-  EditOrigin,
-  clearFormats,
-  commonStyle,
-  hasFormatEverywhere,
-  setStyle,
-  toggleFormat,
-} from "@/lib/sheet/document";
-import type { Alignment, FormatKey } from "@/lib/sheet/schema";
-import { selectionRange, type Selection } from "@/lib/sheet/selection";
-import { useStore, type Store } from "@/lib/store";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { useDismiss } from "@/components/ui/useDismiss";
-import type { GridHandle } from "./Grid";
+import { isApplePlatform } from "@/lib/platform";
+import { commonStyle, hasFormatEverywhere } from "@/lib/sheet/document";
+import type { Alignment, FormatKey } from "@/lib/sheet/schema";
+import { selectionRange } from "@/lib/sheet/selection";
+import { useSelection, useSheet } from "./SheetContext";
 import { useUndoState } from "./useUndoState";
 import { useDocVersion } from "./useSheetSession";
 
@@ -81,26 +72,19 @@ const ALIGN_BUTTONS: { value: Alignment; label: string; icon: LucideIcon; shortc
   { value: "right", label: "오른쪽 정렬", icon: AlignRight, shortcut: "Shift+R" },
 ];
 
-interface ToolbarProps {
-  session: SheetSession;
-  selectionStore: Store<Selection>;
-  gridRef: RefObject<GridHandle | null>;
-}
-
-export function Toolbar({ session, selectionStore, gridRef }: ToolbarProps) {
+export function Toolbar() {
+  const { session, controller } = useSheet();
   const { doc, undoManager } = session;
   useDocVersion(doc);
-  const selection = useStore(selectionStore);
-  const range = selectionRange(selection);
+  const range = selectionRange(useSelection());
   const { canUndo, canRedo } = useUndoState(undoManager);
   const mod = isApplePlatform() ? "⌘" : "Ctrl+";
 
   /** 명령을 실행하고 키보드 입력을 그리드로 돌려준다. */
   const run = (command: () => void) => {
     command();
-    gridRef.current?.focus();
+    controller.focus();
   };
-  const { User } = EditOrigin;
 
   return (
     <div
@@ -114,12 +98,7 @@ export function Toolbar({ session, selectionStore, gridRef }: ToolbarProps) {
         label="실행 취소"
         shortcut={`${mod}Z`}
         disabled={!canUndo}
-        onClick={() =>
-          run(() => {
-            gridRef.current?.commitEdit();
-            undoManager.undo();
-          })
-        }
+        onClick={() => run(() => controller.undo())}
       >
         <Undo2 size={16} />
       </ToolbarButton>
@@ -127,12 +106,7 @@ export function Toolbar({ session, selectionStore, gridRef }: ToolbarProps) {
         label="다시 실행"
         shortcut={`${mod}Y`}
         disabled={!canRedo}
-        onClick={() =>
-          run(() => {
-            gridRef.current?.commitEdit();
-            undoManager.redo();
-          })
-        }
+        onClick={() => run(() => controller.redo())}
       >
         <Redo2 size={16} />
       </ToolbarButton>
@@ -145,7 +119,7 @@ export function Toolbar({ session, selectionStore, gridRef }: ToolbarProps) {
           label={label}
           shortcut={`${mod}${shortcut}`}
           pressed={hasFormatEverywhere(doc, range, key)}
-          onClick={() => run(() => toggleFormat(doc, range, key, User))}
+          onClick={() => run(() => controller.toggleFormat(key))}
         >
           <Icon size={16} />
         </ToolbarButton>
@@ -160,7 +134,7 @@ export function Toolbar({ session, selectionStore, gridRef }: ToolbarProps) {
         value={commonStyle(doc, range, "color")}
         defaultSwatch="#000000"
         resetLabel="기본 색상"
-        onPick={(color) => run(() => setStyle(doc, range, "color", color, User))}
+        onPick={(color) => run(() => controller.setStyle("color", color))}
       />
       <ColorMenu
         label="채우기 색상"
@@ -169,7 +143,7 @@ export function Toolbar({ session, selectionStore, gridRef }: ToolbarProps) {
         value={commonStyle(doc, range, "fill")}
         defaultSwatch="#ffffff"
         resetLabel="채우기 없음"
-        onPick={(color) => run(() => setStyle(doc, range, "fill", color, User))}
+        onPick={(color) => run(() => controller.setStyle("fill", color))}
       />
 
       <Divider />
@@ -180,7 +154,7 @@ export function Toolbar({ session, selectionStore, gridRef }: ToolbarProps) {
           label={label}
           shortcut={`${mod}${shortcut}`}
           pressed={commonStyle(doc, range, "align") === value}
-          onClick={() => run(() => setStyle(doc, range, "align", value, User))}
+          onClick={() => run(() => controller.setStyle("align", value))}
         >
           <Icon size={16} />
         </ToolbarButton>
@@ -191,7 +165,7 @@ export function Toolbar({ session, selectionStore, gridRef }: ToolbarProps) {
       <ToolbarButton
         label="서식 지우기"
         shortcut={`${mod}\\`}
-        onClick={() => run(() => clearFormats(doc, range, User))}
+        onClick={() => run(() => controller.clearFormats())}
       >
         <RemoveFormatting size={16} />
       </ToolbarButton>

@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { colToLabel, type CellRange } from "@/lib/sheet/address";
 import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
-import { Layer } from "./grid/layers";
+import { Layer } from "./layers";
 
 interface GridHeadersProps {
   range: CellRange;

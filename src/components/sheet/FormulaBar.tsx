@@ -1,21 +1,16 @@
 "use client";
 
-import type { SheetSession } from "@/lib/collab/session";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { getValue } from "@/lib/sheet/document";
-import { selectionRange, type Selection } from "@/lib/sheet/selection";
-import { useStore, type Store } from "@/lib/store";
+import { selectionRange } from "@/lib/sheet/selection";
+import { useSelection, useSheet } from "./SheetContext";
 import { useDocVersion } from "./useSheetSession";
 
-interface FormulaBarProps {
-  session: SheetSession;
-  selectionStore: Store<Selection>;
-}
-
 /** 선택 범위 주소와 active 셀의 전체 내용을 보여 준다. 셀 너비보다 긴 값을 확인할 때 쓴다. */
-export function FormulaBar({ session, selectionStore }: FormulaBarProps) {
+export function FormulaBar() {
+  const { session } = useSheet();
   useDocVersion(session.doc);
-  const selection = useStore(selectionStore);
+  const selection = useSelection();
   const value = getValue(session.doc, selection.active);
 
   return (

@@ -1,23 +1,20 @@
 "use client";
 
 import { Check, Pencil, Users } from "lucide-react";
-import { useCallback, useRef, useState, type KeyboardEvent, type RefObject } from "react";
+import { useCallback, useRef, useState, type KeyboardEvent } from "react";
 import { useDismiss } from "@/components/ui/useDismiss";
 import type { Participant, Presence } from "@/lib/collab/presence";
 import { rangeToA1, toA1, type CellCoord } from "@/lib/sheet/address";
 import { clampCoord, selectionRange } from "@/lib/sheet/selection";
-import type { GridHandle } from "./Grid";
+import { useSheet } from "./SheetContext";
 import { useParticipants } from "./useSheetSession";
 
 const MAX_AVATARS = 4;
 
-interface ParticipantListProps {
-  presence: Presence;
-  gridRef: RefObject<GridHandle | null>;
-}
-
 /** 헤더의 참여자 아바타. 누르면 목록이 열리고, 다른 사람을 누르면 그 위치로 이동한다. */
-export function ParticipantList({ presence, gridRef }: ParticipantListProps) {
+export function ParticipantList() {
+  const { session, controller } = useSheet();
+  const { presence } = session;
   const participants = useParticipants(presence);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -29,7 +26,7 @@ export function ParticipantList({ presence, gridRef }: ParticipantListProps) {
 
   const jumpTo = (coord: CellCoord) => {
     setOpen(false);
-    gridRef.current?.jumpTo(clampCoord(coord));
+    controller.jumpTo(clampCoord(coord));
   };
 
   return (
@@ -71,11 +68,7 @@ export function ParticipantList({ presence, gridRef }: ParticipantListProps) {
             {participants.map((p) => (
               <li key={p.clientId}>
                 {p.isSelf ? (
-                  <SelfRow
-                    participant={p}
-                    presence={presence}
-                    onDone={() => gridRef.current?.focus()}
-                  />
+                  <SelfRow participant={p} presence={presence} onDone={() => controller.focus()} />
                 ) : (
                   <button
                     type="button"
