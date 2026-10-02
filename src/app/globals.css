@@ -8,6 +8,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: #1a73e8;
+  --color-grid-line: #e2e3e3;
+  --color-header: #f8f9fa;
+  --color-header-active: #d3e3fd;
+  --color-header-line: #c7c7c7;
   --font-sans:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic",
     "Noto Sans KR", sans-serif;

@@ -44,3 +44,6 @@ next-env.d.ts
 # docs (README.md만 저장소에 포함)
 *.md
 !README.md
+
+# Claude Code 로컬 설정
+.claude/
