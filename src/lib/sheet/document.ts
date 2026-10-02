@@ -1,53 +1,27 @@
 import * as Y from "yjs";
+import { forEachCell, intersectRanges, toA1, type CellCoord, type CellRange } from "./address";
 import {
-  forEachCell,
-  intersectRanges,
-  rangeContains,
-  toA1,
-  type CellCoord,
-  type CellRange,
-} from "./address";
+  FORMAT_KEYS,
+  SHEET_RANGE,
+  STYLE_KEYS,
+  isInSheet,
+  isValidStyle,
+  type Alignment,
+  type CellFormat,
+  type FormatKey,
+  type StyleKey,
+} from "./schema";
 
 /**
- * 시트 문서 모델.
+ * 시트 문서(Y.Doc) 읽기·쓰기.
  *
  * 셀마다 중첩 Y.Map을 두지 않고, 최상위 Map 두 개에 속성 단위의 평평한 키로 저장한다.
  *   values:  "B2"      → "100"
- *   formats: "B2.bold" → true
+ *   formats: "B2.bold" → true, "B2.color" → "#cc0000"
  * 빈 셀에 두 탭이 동시에 처음 쓰는 경우(한쪽은 값, 한쪽은 서식), 중첩 Map이면 각자 새 Map을 만들어
  * 한쪽이 통째로 사라진다. 평평한 키는 서로 다른 키이므로 두 변경이 모두 살아남는다.
+ * 시트 크기와 서식 종류는 schema.ts에 있다.
  */
-
-export const ROW_COUNT = 100;
-export const COL_COUNT = 26;
-export const SHEET_RANGE: CellRange = {
-  start: { row: 0, col: 0 },
-  end: { row: ROW_COUNT - 1, col: COL_COUNT - 1 },
-};
-
-/** 켜고 끄는 서식 */
-export const FORMAT_KEYS = ["bold", "italic", "underline", "strike"] as const;
-export type FormatKey = (typeof FORMAT_KEYS)[number];
-
-/** 값을 갖는 서식 */
-export const STYLE_KEYS = ["color", "fill", "align"] as const;
-export type StyleKey = (typeof STYLE_KEYS)[number];
-export const ALIGNMENTS = ["left", "center", "right"] as const;
-export type Alignment = (typeof ALIGNMENTS)[number];
-
-export interface CellFormat extends Partial<Record<FormatKey, true>> {
-  color?: string;
-  fill?: string;
-  align?: Alignment;
-}
-
-const HEX_COLOR = /^#[0-9a-f]{6}$/i;
-
-/** 저장소에 들어가는 서식 값은 형식을 검증한다(다른 탭·AI에서 온 값도 같은 함수를 거친다). */
-export function isValidStyle(key: StyleKey, value: string): boolean {
-  if (key === "align") return (ALIGNMENTS as readonly string[]).includes(value);
-  return HEX_COLOR.test(value);
-}
 
 /**
  * 트랜잭션 origin. UndoManager는 이 origin의 변경만 추적하므로,
@@ -68,10 +42,6 @@ export function formatsOf(doc: Y.Doc): Y.Map<true | string> {
 }
 
 const formatKey = (cell: string, key: FormatKey | StyleKey) => `${cell}.${key}`;
-
-export function isInSheet(coord: CellCoord): boolean {
-  return rangeContains(SHEET_RANGE, coord);
-}
 
 export function getValue(doc: Y.Doc, coord: CellCoord): string {
   return valuesOf(doc).get(toA1(coord)) ?? "";

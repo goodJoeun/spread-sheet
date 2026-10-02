@@ -1,4 +1,4 @@
-import type { Alignment, FormatKey } from "./document";
+import type { Alignment, FormatKey } from "./schema";
 
 /**
  * 편집 모드(엑셀과 같은 구분)

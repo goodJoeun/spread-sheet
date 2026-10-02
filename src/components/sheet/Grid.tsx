@@ -15,9 +15,7 @@ import type { SheetSession } from "@/lib/collab/session";
 import { isApplePlatform } from "@/lib/platform";
 import type { CellCoord } from "@/lib/sheet/address";
 import {
-  COL_COUNT,
   EditOrigin,
-  ROW_COUNT,
   clearFormats,
   clearValues,
   getFormat,
@@ -26,6 +24,7 @@ import {
   setValue,
   toggleFormat,
 } from "@/lib/sheet/document";
+import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
 import {
   COL_HEADER_HEIGHT,
   COL_WIDTH,

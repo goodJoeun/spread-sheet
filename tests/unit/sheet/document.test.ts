@@ -9,7 +9,6 @@ import {
   getFormat,
   getValue,
   hasFormatEverywhere,
-  isValidStyle,
   setFormat,
   setStyle,
   setValue,
@@ -17,6 +16,7 @@ import {
   valuesOf,
   writeValues,
 } from "@/lib/sheet/document";
+import { isValidStyle } from "@/lib/sheet/schema";
 
 const at = (a1: string): CellCoord => parseA1(a1)!;
 const range = (a1: string) => parseRangeA1(a1)!;

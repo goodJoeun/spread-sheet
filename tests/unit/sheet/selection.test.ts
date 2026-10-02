@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseA1, toA1, type CellCoord } from "@/lib/sheet/address";
-import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/document";
+import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
 import {
   advanceWithinRange,
   collapsedSelection,

@@ -1,5 +1,5 @@
 import { normalizeRange, type CellCoord, type CellRange } from "./address";
-import { COL_COUNT, ROW_COUNT } from "./document";
+import { COL_COUNT, ROW_COUNT } from "./schema";
 
 /**
  * 선택 상태.

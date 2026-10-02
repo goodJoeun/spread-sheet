@@ -25,9 +25,8 @@ import {
   hasFormatEverywhere,
   setStyle,
   toggleFormat,
-  type Alignment,
-  type FormatKey,
 } from "@/lib/sheet/document";
+import type { Alignment, FormatKey } from "@/lib/sheet/schema";
 import { selectionRange, type Selection } from "@/lib/sheet/selection";
 import { useStore, type Store } from "@/lib/store";
 import { useDismiss } from "@/components/ui/useDismiss";

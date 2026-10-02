@@ -1,7 +1,8 @@
 import { memo } from "react";
 import type * as Y from "yjs";
 import { toA1 } from "@/lib/sheet/address";
-import { COL_COUNT, ROW_COUNT, getFormat, valuesOf, type Alignment } from "@/lib/sheet/document";
+import { getFormat, valuesOf } from "@/lib/sheet/document";
+import { COL_COUNT, ROW_COUNT, type Alignment } from "@/lib/sheet/schema";
 
 const NUMBER_PATTERN = /^[-+]?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?%?$/;
 
