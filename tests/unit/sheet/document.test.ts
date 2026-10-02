@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
-import { parseA1, parseRangeA1, type CellCoord } from "./address";
+import { parseA1, parseRangeA1, type CellCoord } from "@/lib/sheet/address";
 import {
   EditOrigin,
   clearFormats,
@@ -16,7 +16,7 @@ import {
   toggleFormat,
   valuesOf,
   writeValues,
-} from "./document";
+} from "@/lib/sheet/document";
 
 const at = (a1: string): CellCoord => parseA1(a1)!;
 const range = (a1: string) => parseRangeA1(a1)!;

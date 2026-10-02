@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveGridKey, type EditMode, type KeyInput } from "./keymap";
+import { resolveGridKey, type EditMode, type KeyInput } from "@/lib/sheet/keymap";
 
 const press = (key: string, mods: Partial<KeyInput> = {}): KeyInput => ({
   key,

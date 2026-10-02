@@ -10,7 +10,7 @@ import {
   rangeContains,
   rangeToA1,
   toA1,
-} from "./address";
+} from "@/lib/sheet/address";
 
 describe("colToLabel / labelToCol", () => {
   it.each([

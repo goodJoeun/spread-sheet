@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseA1, type CellCoord } from "@/lib/sheet/address";
 import { EditOrigin, getValue, setValue } from "@/lib/sheet/document";
-import { createSheetSession, type SheetSession } from "./session";
+import { createSheetSession, type SheetSession } from "@/lib/collab/session";
 
 const at = (a1: string): CellCoord => parseA1(a1)!;
 const { User } = EditOrigin;

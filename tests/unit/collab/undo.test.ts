@@ -9,7 +9,7 @@ import {
   toggleFormat,
   writeValues,
 } from "@/lib/sheet/document";
-import { createUndoManager } from "./undo";
+import { createUndoManager } from "@/lib/collab/undo";
 
 const at = (a1: string): CellCoord => parseA1(a1)!;
 const { User, Ai } = EditOrigin;

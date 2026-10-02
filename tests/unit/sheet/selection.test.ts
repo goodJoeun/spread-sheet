@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseA1, toA1, type CellCoord } from "./address";
-import { COL_COUNT, ROW_COUNT } from "./document";
+import { parseA1, toA1, type CellCoord } from "@/lib/sheet/address";
+import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/document";
 import {
   advanceWithinRange,
   collapsedSelection,
@@ -9,7 +9,7 @@ import {
   moveSelection,
   selectionRange,
   type Selection,
-} from "./selection";
+} from "@/lib/sheet/selection";
 
 const at = (a1: string): CellCoord => parseA1(a1)!;
 const rangeSelection = (anchor: string, focus: string, active = anchor): Selection => ({

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 import { parseA1, type CellCoord } from "@/lib/sheet/address";
 import { EditOrigin, getValue, setValue } from "@/lib/sheet/document";
-import { BroadcastChannelProvider } from "./broadcast-provider";
-import { createUndoManager } from "./undo";
+import { BroadcastChannelProvider } from "@/lib/collab/broadcast-provider";
+import { createUndoManager } from "@/lib/collab/undo";
 
 // Node의 BroadcastChannel도 브라우저처럼 같은 이름의 다른 인스턴스에 메시지를 전달한다.
 // 탭 하나 = Y.Doc 하나 + provider 하나로 보고 테스트한다.
