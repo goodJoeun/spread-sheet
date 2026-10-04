@@ -7,6 +7,7 @@ import {
   type AiErrorInfo,
   type AiStreamEvent,
 } from "./protocol";
+import { strings } from "@/resources/strings";
 
 export class AiRequestError extends Error {
   constructor(readonly info: AiErrorInfo) {
@@ -79,6 +80,6 @@ export const fetchAiTransport: AiTransport = async (request, { signal, onEvent }
     splitter.flush().forEach(handle);
   } catch (error) {
     if (signal.aborted) throw error;
-    throw new AiRequestError(aiError("network", "응답을 받는 중에 연결이 끊겼어요."));
+    throw new AiRequestError(aiError("network", strings.ai.errors.connectionLost));
   }
 };

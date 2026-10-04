@@ -9,16 +9,11 @@ import { AiComposer } from "./AiComposer";
 import { AiRunCard } from "./AiRunCard";
 import { useAiConnection } from "@/hooks/ai/useAiConnection";
 import { Notice } from "@/components/ui/Notice";
+import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
 
-const EXAMPLES = [
-  "선택한 범위의 숫자를 두 배로 바꿔 줘",
-  "빈칸을 예시 값으로 채워 줘",
-  "영문을 대문자로 바꿔 줘",
-];
-
-/** 가짜 응답 모드에서 실패 상황을 재현하는 표시(서버의 mock-anthropic.ts 참고) */
-const MOCK_TAGS = ["[느림]", "[한도]", "[키]", "[과부하]", "[거절]", "[잘림]"];
+/** 가짜 응답 모드에서 지연·실패를 재현하는 표시(서버의 mock-anthropic.ts가 같은 목록을 쓴다) */
+const MOCK_TAGS = Object.values(strings.ai.mockTags).join(" ");
 
 export function AiPanel() {
   const { ai, aiPanel, controller } = useSheet();
@@ -43,28 +38,30 @@ export function AiPanel() {
 
   return (
     <aside
-      aria-label="AI 편집"
+      aria-label={strings.ai.panel.title}
       className="flex w-[360px] shrink-0 flex-col border-l border-line bg-surface-muted"
     >
       <header className="flex h-10 shrink-0 items-center gap-md border-b border-line bg-surface px-lg">
         <Sparkles size={ICON.md} className="text-ai" aria-hidden />
-        <h2 className="text-title font-semibold text-fg">AI 편집</h2>
+        <h2 className="text-title font-semibold text-fg">{strings.ai.panel.title}</h2>
         {connection && (
           <span
             className={connection.provider === "mock" ? "badge badge-warn" : "badge"}
             title={
               connection.provider === "mock"
-                ? "API 키가 없어 가짜 응답으로 동작해요"
-                : "서버가 Claude API에 연결되어 있어요"
+                ? strings.ai.panel.mockTitle
+                : strings.ai.panel.connectedTitle
             }
           >
-            {connection.provider === "mock" ? "가짜 응답 · API 키 없음" : "Claude API"}
+            {connection.provider === "mock"
+              ? strings.ai.panel.mockBadge
+              : strings.ai.panel.connectedBadge}
           </span>
         )}
         <button
           type="button"
           onClick={close}
-          aria-label="AI 패널 닫기"
+          aria-label={strings.ai.panel.close}
           className="icon-btn-sm ml-auto"
         >
           <X size={ICON.md} />
@@ -74,12 +71,9 @@ export function AiPanel() {
       <div ref={listRef} className="min-h-0 flex-1 space-y-lg overflow-y-auto p-lg">
         {messages.length === 0 ? (
           <div className="space-y-lg pt-md text-body text-fg-muted">
-            <p>
-              시트 내용을 바탕으로 AI가 값을 제안해요. 범위를 선택하고 요청하면 그 범위만 바꾸고,
-              결과는 원래 값과 비교한 뒤 적용할 수 있어요.
-            </p>
+            <p>{strings.ai.panel.intro}</p>
             <div className="flex flex-col items-start gap-sm">
-              {EXAMPLES.map((example) => (
+              {strings.ai.panel.examples.map((example) => (
                 <button
                   key={example}
                   type="button"
@@ -94,10 +88,7 @@ export function AiPanel() {
               ))}
             </div>
             {connection?.provider === "mock" && (
-              <Notice>
-                지금은 가짜 응답이에요. 요청에 {MOCK_TAGS.join(" ")}를 넣으면 지연·오류 상황을
-                재현할 수 있어요.
-              </Notice>
+              <Notice>{strings.ai.panel.mockHint(MOCK_TAGS)}</Notice>
             )}
           </div>
         ) : (
@@ -109,7 +100,7 @@ export function AiPanel() {
               >
                 <p className="whitespace-pre-wrap">{m.text}</p>
                 <p className="mt-xs text-caption text-ai-ink/70">
-                  {m.scope ? `범위 ${rangeToA1(m.scope)}` : "시트 전체"}
+                  {strings.ai.panel.requestScope(m.scope && rangeToA1(m.scope))}
                 </p>
               </div>
             ) : (

@@ -3,6 +3,7 @@
 import { Check, Pencil, Users } from "lucide-react";
 import { useState, type KeyboardEvent } from "react";
 import { Popover } from "@/components/ui/Popover";
+import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
 import type { Participant, Presence } from "@/lib/collab/presence";
 import { rangeToA1, toA1, type CellCoord } from "@/lib/sheet/address";
@@ -22,8 +23,8 @@ export function ParticipantList() {
   return (
     <Popover
       role="dialog"
-      label="참여자 목록"
-      triggerLabel={`참여자 ${participants.length}명`}
+      label={strings.participants.list}
+      triggerLabel={strings.participants.count(participants.length)}
       triggerClassName="flex items-center gap-md rounded-full py-xs pr-lg pl-xs hover:bg-hover"
       trigger={
         <>
@@ -74,7 +75,7 @@ function ParticipantPanel({
   return (
     <>
       <p className="px-lg pb-md text-label font-medium text-fg-subtle">
-        지금 이 시트에 {participants.length}명이 있어요
+        {strings.participants.heading(participants.length)}
       </p>
       <ul>
         {participants.map((p) => (
@@ -86,7 +87,7 @@ function ParticipantPanel({
                 type="button"
                 disabled={!p.selection}
                 onClick={() => p.selection && onJump(p.editing ?? p.selection.active)}
-                title="이 참여자의 위치로 이동"
+                title={strings.participants.jumpTo}
                 className="list-row"
               >
                 <Avatar participant={p} />
@@ -105,15 +106,16 @@ function ParticipantPanel({
 
 function statusText(p: Participant): string {
   if (p.ai) {
-    const where = p.ai.range ? rangeToA1(p.ai.range) : "시트 전체";
-    return `${where} AI ${p.ai.status === "reviewing" ? "결과 검토" : "편집"} 중`;
+    const where = p.ai.range ? rangeToA1(p.ai.range) : null;
+    return strings.participants.status.ai(where, p.ai.status === "reviewing");
   }
-  if (p.editing) return `${toA1(clampCoord(p.editing))} 입력 중`;
+  if (p.editing) return strings.participants.status.editing(toA1(clampCoord(p.editing)));
   if (p.selection) {
     const { anchor, focus, active } = p.selection;
-    return `${rangeToA1(selectionRange({ anchor: clampCoord(anchor), focus: clampCoord(focus), active }))} 보는 중`;
+    const range = selectionRange({ anchor: clampCoord(anchor), focus: clampCoord(focus), active });
+    return strings.participants.status.viewing(rangeToA1(range));
   }
-  return "들어오는 중";
+  return strings.participants.status.joining;
 }
 
 function SelfRow({
@@ -150,14 +152,15 @@ function SelfRow({
         <>
           <span className="min-w-0 flex-1">
             <span className="list-row-title">
-              {participant.user.name} <span className="text-fg-faint">(나)</span>
+              {participant.user.name}{" "}
+              <span className="text-fg-faint">{strings.participants.me}</span>
             </span>
             <span className="list-row-meta">{statusText(participant)}</span>
           </span>
           <button
             type="button"
-            aria-label="내 이름 바꾸기"
-            title="내 이름 바꾸기"
+            aria-label={strings.participants.rename}
+            title={strings.participants.rename}
             onClick={() => setDraft(participant.user.name)}
             className="icon-btn-sm"
           >
@@ -168,7 +171,7 @@ function SelfRow({
         <>
           <input
             autoFocus
-            aria-label="내 이름"
+            aria-label={strings.participants.nameInput}
             value={draft}
             maxLength={20}
             onChange={(e) => setDraft(e.target.value)}
@@ -177,7 +180,7 @@ function SelfRow({
           />
           <button
             type="button"
-            aria-label="이름 저장"
+            aria-label={strings.participants.saveName}
             onClick={save}
             className="icon-btn-sm text-accent hover:bg-accent/10 hover:text-accent"
           >
@@ -194,7 +197,7 @@ function Avatar({ participant, className = "" }: { participant: Participant; cla
   const initial = user.name.split(" ").at(-1)?.charAt(0) ?? "?";
   return (
     <span
-      title={isSelf ? `${user.name} (나)` : user.name}
+      title={isSelf ? strings.participants.withMe(user.name) : user.name}
       className={`avatar ${className}`}
       style={{ backgroundColor: user.color }}
     >

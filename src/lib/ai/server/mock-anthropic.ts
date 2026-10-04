@@ -7,6 +7,7 @@ import {
   type CellCoord,
   type CellRange,
 } from "@/lib/sheet/address";
+import { strings } from "@/resources/strings";
 import type { AiCell } from "../protocol";
 import { EDIT_TOOL_NAME, parseUserMessage } from "./prompt";
 
@@ -23,14 +24,9 @@ interface MockOptions {
 type Scenario =
   "normal" | "slow" | "rate_limited" | "auth" | "overloaded" | "refusal" | "truncated";
 
-const SCENARIO_TAGS: Array<[string, Scenario]> = [
-  ["[느림]", "slow"],
-  ["[한도]", "rate_limited"],
-  ["[키]", "auth"],
-  ["[과부하]", "overloaded"],
-  ["[거절]", "refusal"],
-  ["[잘림]", "truncated"],
-];
+const SCENARIO_TAGS = Object.entries(strings.ai.mockTags).map(
+  ([scenario, tag]) => [tag, scenario as Scenario] as const,
+);
 
 export function createMockAnthropicFetch({ delayScale = 1 }: MockOptions = {}): typeof fetch {
   return async (_input, init) => {

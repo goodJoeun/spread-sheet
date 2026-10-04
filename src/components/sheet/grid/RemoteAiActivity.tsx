@@ -5,6 +5,7 @@ import { intersectRanges } from "@/lib/sheet/address";
 import { outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { SHEET_RANGE } from "@/lib/sheet/schema";
 import { ICON } from "@/styles/icon";
+import { strings } from "@/resources/strings";
 import { Layer } from "./layers";
 
 interface RemoteAiActivityProps {
@@ -44,7 +45,7 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
           }}
         >
           <Sparkles size={ICON.xs} strokeWidth={2.5} aria-hidden />
-          {user.name} · {ai.status === "reviewing" ? "AI 결과 검토 중" : "AI 편집 중"}
+          {user.name} · {strings.grid.remoteAi(ai.status === "reviewing")}
         </div>
       </Fragment>
     );

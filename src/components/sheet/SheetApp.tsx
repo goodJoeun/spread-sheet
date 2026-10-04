@@ -4,6 +4,7 @@ import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { Notice } from "@/components/ui/Notice";
 import { useStore } from "@/lib/store";
+import { strings } from "@/resources/strings";
 import { AiPanel } from "./ai/AiPanel";
 import { FormulaBar } from "./FormulaBar";
 import { Grid } from "./grid/Grid";
@@ -23,7 +24,7 @@ export function SheetApp({ sheetId }: SheetAppProps) {
     return (
       <Shell>
         <div className="flex flex-1 items-center justify-center text-body text-fg-subtle">
-          시트를 불러오는 중…
+          {strings.app.loading}
         </div>
       </Shell>
     );
@@ -59,7 +60,7 @@ function Shell({ participants, children }: { participants?: ReactNode; children:
         <div className="flex size-7 items-center justify-center rounded-sm bg-accent text-body font-semibold text-fg-inverse">
           S
         </div>
-        <h1 className="text-title font-semibold text-fg">Spread Sheet</h1>
+        <h1 className="text-title font-semibold text-fg">{strings.app.title}</h1>
         <div className="ml-auto">{participants}</div>
       </header>
       {children}
@@ -70,8 +71,7 @@ function Shell({ participants, children }: { participants?: ReactNode; children:
 function StorageNotice() {
   return (
     <Notice variant="bar" role="alert" icon={TriangleAlert}>
-      이 브라우저에서 저장소를 열 수 없어 편집 내용이 저장되지 않아요. 열려 있는 다른 탭과의
-      동기화는 계속 동작해요.
+      {strings.app.storageUnavailable}
     </Notice>
   );
 }

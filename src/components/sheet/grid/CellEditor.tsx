@@ -2,6 +2,7 @@ import type { RefObject } from "react";
 import type { Rect } from "@/lib/sheet/geometry";
 import { COL_WIDTH } from "@/lib/sheet/geometry";
 import type { CellFormat } from "@/lib/sheet/schema";
+import { strings } from "@/resources/strings";
 import { Layer } from "./layers";
 import type { CellEditorBinding } from "@/hooks/grid/useCellEditor";
 
@@ -28,7 +29,7 @@ export function CellEditor({ inputRef, handlers, editing, format, rect }: CellEd
     <input
       ref={inputRef}
       type="text"
-      aria-label="셀 편집"
+      aria-label={strings.grid.cellEditor}
       autoComplete="off"
       spellCheck={false}
       className={editing ? EDITING : IDLE}

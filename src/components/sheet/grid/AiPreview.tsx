@@ -4,6 +4,7 @@ import type { AiRun } from "@/lib/ai/ai-controller";
 import { summarize, type ProposalState } from "@/lib/ai/coedit";
 import { COL_WIDTH, ROW_HEIGHT, cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { ICON } from "@/styles/icon";
+import { strings } from "@/resources/strings";
 import { Layer } from "./layers";
 
 const NUMBER_PATTERN = /^[-+]?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?%?$/;
@@ -28,9 +29,7 @@ export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: 
   const scope = run.scope ? outsetRect(rangeRect(run.scope)) : null;
   const { conflicts } = summarize(states);
   const count = states.filter((s) => s.status !== "same").length;
-  const label = generating
-    ? `AI가 제안을 만드는 중… ${count > 0 ? `${count}개` : ""}`
-    : `AI 제안 ${count}개 · 검토 중`;
+  const label = generating ? strings.grid.aiGenerating(count) : strings.grid.aiReviewing(count);
 
   return (
     <>
@@ -50,7 +49,9 @@ export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: 
           >
             <Sparkles size={ICON.xs} aria-hidden />
             {label}
-            {conflicts > 0 && <span className="text-warn-muted">· 바뀐 셀 {conflicts}개</span>}
+            {conflicts > 0 && (
+              <span className="text-warn-muted">{strings.grid.aiChanged(conflicts)}</span>
+            )}
           </div>
         </>
       )}

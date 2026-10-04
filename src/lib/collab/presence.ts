@@ -1,6 +1,8 @@
 import { removeAwarenessStates, type Awareness } from "y-protocols/awareness";
 import type { CellCoord, CellRange } from "@/lib/sheet/address";
 import type { Selection } from "@/lib/sheet/selection";
+import { PARTICIPANT_COLORS } from "@/resources/colors";
+import { NAME_ADJECTIVES, NAME_ANIMALS } from "@/resources/names";
 
 /**
  * 탭이 살아 있는지는 타이머 대신 Web Locks로 판단한다. 각 탭이 자기 clientID 이름의 잠금을 쥐고,
@@ -33,65 +35,13 @@ export interface Participant extends PresenceState {
   isSelf: boolean;
 }
 
-/** 흰 글자를 얹어도 읽히는 색. 내 선택 표시에 쓰는 파란색(#1a73e8)은 뺐다. */
-export const PARTICIPANT_COLORS = [
-  "#e8710a",
-  "#1e8e3e",
-  "#d93025",
-  "#9334e6",
-  "#00838f",
-  "#c2185b",
-  "#3f51b5",
-  "#795548",
-  "#b06000",
-  "#827717",
-];
-
-const ADJECTIVES = [
-  "용감한",
-  "졸린",
-  "배고픈",
-  "신난",
-  "차분한",
-  "수줍은",
-  "똑똑한",
-  "느긋한",
-  "상냥한",
-  "날쌘",
-  "엉뚱한",
-  "반짝이는",
-  "씩씩한",
-  "명랑한",
-  "꼼꼼한",
-  "부지런한",
-];
-
-const ANIMALS = [
-  "수달",
-  "판다",
-  "고래",
-  "여우",
-  "다람쥐",
-  "펭귄",
-  "부엉이",
-  "고양이",
-  "강아지",
-  "코알라",
-  "너구리",
-  "토끼",
-  "사슴",
-  "알파카",
-  "돌고래",
-  "햄스터",
-];
-
 const MAX_NAME_LENGTH = 20;
 
 const pick = <T>(items: readonly T[], random: () => number): T =>
   items[Math.floor(random() * items.length)];
 
 export function randomName(random: () => number = Math.random): string {
-  return `${pick(ADJECTIVES, random)} ${pick(ANIMALS, random)}`;
+  return `${pick(NAME_ADJECTIVES, random)} ${pick(NAME_ANIMALS, random)}`;
 }
 
 export function pickColor(taken: Set<string>, random: () => number = Math.random): string {

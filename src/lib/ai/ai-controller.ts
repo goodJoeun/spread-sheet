@@ -13,6 +13,7 @@ import { EditOrigin, valuesOf, writeValues } from "@/lib/sheet/document";
 import { SHEET_RANGE, isInSheet } from "@/lib/sheet/schema";
 import type { Selection } from "@/lib/sheet/selection";
 import { createStore } from "@/lib/store";
+import { strings } from "@/resources/strings";
 import {
   activityRange,
   boundingRange,
@@ -228,7 +229,7 @@ export class AiController {
     })
       .then(() => {
         if (!finished && this.inflight?.runId === run.id) {
-          this.fail(run.id, aiError("network", "응답이 중간에 끊겼어요. 다시 시도해 주세요."));
+          this.fail(run.id, aiError("network", strings.ai.errors.streamDropped));
         }
       })
       .catch((error: unknown) => {

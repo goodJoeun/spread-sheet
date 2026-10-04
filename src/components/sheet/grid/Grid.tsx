@@ -26,6 +26,7 @@ import { RemoteCursors } from "./RemoteCursors";
 import { SelectionOverlay } from "./SelectionOverlay";
 import { useCellEditor } from "@/hooks/grid/useCellEditor";
 import { useGridPointer } from "@/hooks/grid/useGridPointer";
+import { strings } from "@/resources/strings";
 import { revealCell, visibleRowCount } from "./viewport";
 
 const CONTENT_WIDTH = ROW_HEADER_WIDTH + COL_COUNT * COL_WIDTH;
@@ -71,12 +72,13 @@ export function Grid() {
     );
     // 같은 셀을 동시에 입력하면 나중에 확정한 값이 남는다.
     if (coEditors.length > 0) {
-      notices.push(`${coEditors.map((p) => p.user.name).join(", ")}님도 이 셀을 입력 중이에요`);
+      notices.push(strings.grid.coEditing(coEditors.map((p) => p.user.name).join(", ")));
     }
     // 다른 참여자의 AI 편집 범위여도 막지 않는다. 입력한 셀은 그 사람의 AI 결과에서 충돌로 표시된다.
     for (const { participant, activity } of aiActivitiesAt(participants, edit.coord)) {
-      const doing = activity.status === "reviewing" ? "AI 결과 검토" : "AI 편집";
-      notices.push(`${participant.user.name}님이 ${doing} 중 · 입력한 값은 기본으로 유지돼요`);
+      notices.push(
+        strings.grid.inRemoteAiRange(participant.user.name, activity.status === "reviewing"),
+      );
     }
   }
   // 문서가 바뀌면(version) 다시 그려지므로, 다른 참여자의 변경으로 생긴 충돌도 바로 반영된다.

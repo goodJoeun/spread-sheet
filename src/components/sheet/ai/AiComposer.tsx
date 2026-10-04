@@ -11,6 +11,7 @@ import { useSelection, useSheet } from "../SheetContext";
 import { useParticipants } from "@/hooks/sheet/useSheetSession";
 import { chooseModel } from "@/hooks/ai/useAiConnection";
 import { Notice } from "@/components/ui/Notice";
+import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
 
 type ScopeMode = "selection" | "sheet";
@@ -62,12 +63,13 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   return (
     <div className="border-t border-line p-lg">
       {overlaps.length > 0 && <OverlapNotice overlaps={overlaps} />}
-      <div role="radiogroup" aria-label="편집 범위" className="mb-md flex gap-xs">
+      <div role="radiogroup" aria-label={strings.ai.composer.scope} className="mb-md flex gap-xs">
         <ScopeOption checked={mode === "selection"} onSelect={() => setChosen("selection")}>
-          선택 범위 <span className="font-semibold">{rangeToA1(range)}</span>
+          {strings.ai.composer.scopeSelection}{" "}
+          <span className="font-semibold">{rangeToA1(range)}</span>
         </ScopeOption>
         <ScopeOption checked={mode === "sheet"} onSelect={() => setChosen("sheet")}>
-          시트 전체
+          {strings.ai.composer.scopeSheet}
         </ScopeOption>
       </div>
 
@@ -79,11 +81,9 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
           onKeyDown={onKeyDown}
           rows={2}
           maxLength={2000}
-          aria-label="AI에게 요청"
+          aria-label={strings.ai.composer.input}
           placeholder={
-            reviewing
-              ? "제안을 적용하거나 버리면 새 요청을 보낼 수 있어요"
-              : "예: 이 범위의 숫자를 두 배로 바꿔 줘"
+            reviewing ? strings.ai.composer.placeholderReviewing : strings.ai.composer.placeholder
           }
           className="block max-h-32 min-h-10 w-full resize-none bg-transparent text-body outline-none placeholder:text-fg-faint"
         />
@@ -93,8 +93,8 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
             <button
               type="button"
               onClick={() => ai.cancel()}
-              aria-label="생성 중단 (Esc)"
-              title="생성 중단 (Esc)"
+              aria-label={strings.ai.composer.stop}
+              title={strings.ai.composer.stop}
               className="round-btn round-btn-dark ml-auto"
             >
               <Square size={ICON.sm} fill="currentColor" aria-hidden />
@@ -104,8 +104,8 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
               type="button"
               onClick={send}
               disabled={!draft.trim() || reviewing}
-              aria-label="보내기 (Enter)"
-              title="보내기 (Enter)"
+              aria-label={strings.ai.composer.send}
+              title={strings.ai.composer.send}
               className="round-btn round-btn-ai ml-auto"
             >
               <ArrowUp size={ICON.md} aria-hidden />
@@ -113,9 +113,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
           )}
         </div>
       </div>
-      <p className="mt-sm text-caption text-fg-faint">
-        Enter로 보내기 · Shift+Enter 줄바꿈 · AI 결과는 적용하기 전까지 시트에 쓰이지 않아요
-      </p>
+      <p className="mt-sm text-caption text-fg-faint">{strings.ai.composer.hint}</p>
     </div>
   );
 }
@@ -127,8 +125,8 @@ function ModelSelect({ connection }: { connection: AiConnectionInfo }) {
     <select
       value={model}
       onChange={(e) => chooseModel(ai, e.target.value)}
-      aria-label="AI 모델"
-      title="다음 요청에 쓸 모델"
+      aria-label={strings.ai.composer.model}
+      title={strings.ai.composer.modelTitle}
       className={MODEL_SELECT}
     >
       {connection.models.map((m) => (
@@ -161,10 +159,7 @@ function OverlapNotice({ overlaps }: { overlaps: AiOverlap[] }) {
   const reviewing = overlaps.every((o) => o.activity.status === "reviewing");
   return (
     <Notice role="status" icon={Sparkles} className="mb-md">
-      <p>
-        {names}님이 이 범위를 AI로 {reviewing ? "검토" : "편집"} 중이에요. 요청할 수는 있지만, 먼저
-        적용된 셀은 내 결과에서 충돌로 표시되고 기본으로 건너뛰어요.
-      </p>
+      <p>{strings.ai.composer.overlap(names, reviewing)}</p>
     </Notice>
   );
 }

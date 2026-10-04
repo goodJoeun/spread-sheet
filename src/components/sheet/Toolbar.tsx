@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Popover } from "@/components/ui/Popover";
+import { CELL_FILL_COLORS, CELL_TEXT_COLORS } from "@/resources/colors";
+import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
 import { isApplePlatform } from "@/lib/platform";
 import { commonStyle, hasFormatEverywhere } from "@/lib/sheet/document";
@@ -28,51 +30,17 @@ import { useSelection, useSheet } from "./SheetContext";
 import { useUndoState } from "@/hooks/sheet/useUndoState";
 import { useDocVersion } from "@/hooks/sheet/useSheetSession";
 
-const TEXT_COLORS = [
-  "#000000",
-  "#434343",
-  "#666666",
-  "#999999",
-  "#cc0000",
-  "#e69138",
-  "#bf9000",
-  "#38761d",
-  "#134f5c",
-  "#1155cc",
-  "#351c75",
-  "#741b47",
-];
-
-const FILL_COLORS = [
-  "#f4cccc",
-  "#fce5cd",
-  "#fff2cc",
-  "#d9ead3",
-  "#d0e0e3",
-  "#cfe2f3",
-  "#d9d2e9",
-  "#ead1dc",
-  "#ea9999",
-  "#f9cb9c",
-  "#ffe599",
-  "#b6d7a8",
-  "#a2c4c9",
-  "#9fc5e8",
-  "#b4a7d6",
-  "#d5a6bd",
-];
-
 const FORMAT_BUTTONS: { key: FormatKey; label: string; icon: LucideIcon; shortcut: string }[] = [
-  { key: "bold", label: "굵게", icon: Bold, shortcut: "B" },
-  { key: "italic", label: "기울임꼴", icon: Italic, shortcut: "I" },
-  { key: "underline", label: "밑줄", icon: Underline, shortcut: "U" },
-  { key: "strike", label: "취소선", icon: Strikethrough, shortcut: "5" },
+  { key: "bold", label: strings.toolbar.bold, icon: Bold, shortcut: "B" },
+  { key: "italic", label: strings.toolbar.italic, icon: Italic, shortcut: "I" },
+  { key: "underline", label: strings.toolbar.underline, icon: Underline, shortcut: "U" },
+  { key: "strike", label: strings.toolbar.strike, icon: Strikethrough, shortcut: "5" },
 ];
 
 const ALIGN_BUTTONS: { value: Alignment; label: string; icon: LucideIcon; shortcut: string }[] = [
-  { value: "left", label: "왼쪽 정렬", icon: AlignLeft, shortcut: "Shift+L" },
-  { value: "center", label: "가운데 정렬", icon: AlignCenter, shortcut: "Shift+E" },
-  { value: "right", label: "오른쪽 정렬", icon: AlignRight, shortcut: "Shift+R" },
+  { value: "left", label: strings.toolbar.alignLeft, icon: AlignLeft, shortcut: "Shift+L" },
+  { value: "center", label: strings.toolbar.alignCenter, icon: AlignCenter, shortcut: "Shift+E" },
+  { value: "right", label: strings.toolbar.alignRight, icon: AlignRight, shortcut: "Shift+R" },
 ];
 
 /** 툴바 오른쪽 끝의 AI 편집 버튼. 패널이 열려 있으면 aria-pressed */
@@ -103,13 +71,13 @@ export function Toolbar() {
   return (
     <div
       role="toolbar"
-      aria-label="서식 도구"
+      aria-label={strings.toolbar.label}
       className="flex h-10 shrink-0 items-center gap-2xs border-b border-line bg-surface-muted px-md"
       // 버튼을 눌러도 그리드의 포커스(편집 중인 셀 포함)를 빼앗지 않는다.
       onMouseDown={(e) => e.preventDefault()}
     >
       <ToolbarButton
-        label="실행 취소"
+        label={strings.toolbar.undo}
         shortcut={`${mod}Z`}
         disabled={!canUndo}
         onClick={() => run(() => controller.undo())}
@@ -117,7 +85,7 @@ export function Toolbar() {
         <Undo2 size={ICON.md} />
       </ToolbarButton>
       <ToolbarButton
-        label="다시 실행"
+        label={strings.toolbar.redo}
         shortcut={`${mod}Y`}
         disabled={!canRedo}
         onClick={() => run(() => controller.redo())}
@@ -142,21 +110,21 @@ export function Toolbar() {
       <Divider />
 
       <ColorMenu
-        label="텍스트 색상"
+        label={strings.toolbar.textColor}
         icon={Baseline}
-        colors={TEXT_COLORS}
+        colors={CELL_TEXT_COLORS}
         value={commonStyle(doc, range, "color")}
         defaultSwatch="#000000"
-        resetLabel="기본 색상"
+        resetLabel={strings.toolbar.textColorReset}
         onPick={(color) => run(() => controller.setStyle("color", color))}
       />
       <ColorMenu
-        label="채우기 색상"
+        label={strings.toolbar.fillColor}
         icon={PaintBucket}
-        colors={FILL_COLORS}
+        colors={CELL_FILL_COLORS}
         value={commonStyle(doc, range, "fill")}
         defaultSwatch="#ffffff"
-        resetLabel="채우기 없음"
+        resetLabel={strings.toolbar.fillColorReset}
         onPick={(color) => run(() => controller.setStyle("fill", color))}
       />
 
@@ -177,7 +145,7 @@ export function Toolbar() {
       <Divider />
 
       <ToolbarButton
-        label="서식 지우기"
+        label={strings.toolbar.clearFormat}
         shortcut={`${mod}\\`}
         onClick={() => run(() => controller.clearFormats())}
       >
@@ -191,7 +159,7 @@ export function Toolbar() {
         className={AI_TOGGLE}
       >
         <Sparkles size={ICON.md} aria-hidden />
-        AI 편집
+        {strings.toolbar.ai}
       </button>
     </div>
   );
@@ -221,7 +189,7 @@ function ToolbarButton({
   return (
     <button
       type="button"
-      title={shortcut ? `${label} (${shortcut})` : label}
+      title={shortcut ? strings.toolbar.withShortcut(label, shortcut) : label}
       aria-label={label}
       aria-pressed={pressed}
       disabled={disabled}

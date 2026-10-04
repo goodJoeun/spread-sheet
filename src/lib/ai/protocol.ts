@@ -3,6 +3,8 @@
  * 스트림을 시작하기 전에 실패하면 HTTP 오류 상태와 { error: AiErrorInfo }를 돌려준다.
  */
 
+import { strings } from "@/resources/strings";
+
 export const AI_ENDPOINT = "/api/ai/edit";
 
 /** 요청 크기 상한. cells는 시트 전체(100×26) */
@@ -44,9 +46,9 @@ export interface AiModelOption {
 
 /** 화면에서 고를 수 있는 모델. 서버는 이 목록과 ANTHROPIC_MODEL로만 요청한다(비용 통제). */
 export const AI_MODELS: readonly AiModelOption[] = [
-  { id: "claude-opus-5-5", label: "Opus 5.5", description: "가장 정확" },
-  { id: "claude-sonnet-5-5", label: "Sonnet 5.5", description: "속도·정확도 균형" },
-  { id: "claude-haiku-4-5", label: "Haiku 4.5", description: "가장 빠르고 저렴" },
+  { id: "claude-opus-5-5", label: "Opus 5.5", description: strings.ai.models.opus },
+  { id: "claude-sonnet-5-5", label: "Sonnet 5.5", description: strings.ai.models.sonnet },
+  { id: "claude-haiku-4-5", label: "Haiku 4.5", description: strings.ai.models.haiku },
 ];
 
 /** 응답의 모델 id에는 날짜가 붙을 수 있다(claude-haiku-4-5-20251001). */
@@ -91,43 +93,43 @@ export const AI_ERRORS: Record<
   AiErrorCode,
   { status: number; message: string; retryable: boolean }
 > = {
-  bad_request: { status: 400, message: "요청 형식이 올바르지 않아요.", retryable: false },
+  bad_request: { status: 400, message: strings.ai.errors.bad_request, retryable: false },
   auth: {
     status: 401,
-    message: "AI 서비스 인증에 실패했어요. 서버의 API 키 설정을 확인해 주세요.",
+    message: strings.ai.errors.auth,
     retryable: false,
   },
   quota: {
     status: 402,
-    message: "AI 사용 한도에 도달했어요. 한도를 늘리거나 다음 달에 다시 시도해 주세요.",
+    message: strings.ai.errors.quota,
     retryable: false,
   },
   rate_limited: {
     status: 429,
-    message: "요청이 너무 많아요. 잠시 뒤 다시 시도해 주세요.",
+    message: strings.ai.errors.rate_limited,
     retryable: true,
   },
   overloaded: {
     status: 503,
-    message: "AI 서비스가 혼잡해요. 잠시 뒤 다시 시도해 주세요.",
+    message: strings.ai.errors.overloaded,
     retryable: true,
   },
   refused: {
     status: 422,
-    message: "AI가 이 요청에 답하지 않았어요. 표현을 바꿔 다시 요청해 보세요.",
+    message: strings.ai.errors.refused,
     retryable: false,
   },
   timeout: {
     status: 504,
-    message: "AI 응답이 너무 오래 걸려 중단했어요.",
+    message: strings.ai.errors.timeout,
     retryable: true,
   },
   network: {
     status: 502,
-    message: "AI 서버에 연결하지 못했어요. 네트워크를 확인해 주세요.",
+    message: strings.ai.errors.network,
     retryable: true,
   },
-  unknown: { status: 500, message: "알 수 없는 오류가 발생했어요.", retryable: true },
+  unknown: { status: 500, message: strings.ai.errors.unknown, retryable: true },
 };
 
 export function aiError(code: AiErrorCode, message?: string): AiErrorInfo {

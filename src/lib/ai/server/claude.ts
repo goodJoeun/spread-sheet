@@ -6,6 +6,7 @@ import {
   type AiModelOption,
   type AiStreamEvent,
 } from "../protocol";
+import { strings } from "@/resources/strings";
 import { createEditStreamParser } from "./edit-stream-parser";
 import { EDIT_TOOL, EDIT_TOOL_NAME, SYSTEM_PROMPT, buildMessages } from "./prompt";
 
@@ -116,11 +117,11 @@ export async function* streamClaudeEdits(
     if (message.stop_reason === "max_tokens") {
       yield {
         type: "warning",
-        message: "응답이 최대 길이에서 끊겼어요. 받은 제안까지만 검토할 수 있어요.",
+        message: strings.ai.warnings.truncated,
       };
     }
     if (invalid > 0) {
-      yield { type: "warning", message: `형식이 맞지 않는 제안 ${invalid}개는 뺐어요.` };
+      yield { type: "warning", message: strings.ai.warnings.invalidEdits(invalid) };
     }
     yield { type: "done" };
   } catch (error) {
@@ -131,7 +132,7 @@ export async function* streamClaudeEdits(
       if (started) {
         yield {
           type: "warning",
-          message: "AI 응답 일부를 해석하지 못해 받은 제안까지만 보여 드려요.",
+          message: strings.ai.warnings.unparsable,
         };
         yield { type: "done" };
         return;
@@ -164,7 +165,7 @@ export function toAiError(error: InstanceType<typeof Anthropic.APIError>): AiErr
   }
   if (error instanceof Anthropic.NotFoundError) {
     // 모델 이름이 틀렸거나 이 계정에서 쓸 수 없는 모델이다.
-    return aiError("bad_request", "이 모델을 쓸 수 없어요. 다른 모델을 골라 주세요.");
+    return aiError("bad_request", strings.ai.errors.modelUnavailable);
   }
 
   const body = error.error as ErrorBody | undefined;

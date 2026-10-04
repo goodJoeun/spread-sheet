@@ -4,6 +4,7 @@ import type { Participant } from "@/lib/collab/presence";
 import { cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { clampCoord, isMultiCell, selectionRange } from "@/lib/sheet/selection";
 import { ICON } from "@/styles/icon";
+import { strings } from "@/resources/strings";
 import { Layer } from "./layers";
 
 interface RemoteCursorsProps {
@@ -60,7 +61,7 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
         >
           {editing && <Pencil size={ICON.xs} strokeWidth={2.5} aria-hidden />}
           {user.name}
-          {editing && <span className="opacity-90">· 입력 중</span>}
+          {editing && <span className="opacity-90">{strings.grid.remoteEditing}</span>}
         </div>
       </Fragment>
     );

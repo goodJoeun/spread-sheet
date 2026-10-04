@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { strings } from "@/resources/strings";
 import { AI_MODELS, type AiModelOption } from "../protocol";
 import type { ClaudeSetup } from "./claude";
 import { createMockAnthropicFetch } from "./mock-anthropic";
@@ -46,5 +47,8 @@ export function getClaudeSetup(): ClaudeSetup {
 
 function offeredModels(defaultModel: string): AiModelOption[] {
   if (AI_MODELS.some((m) => m.id === defaultModel)) return [...AI_MODELS];
-  return [{ id: defaultModel, label: defaultModel, description: "서버 기본 모델" }, ...AI_MODELS];
+  return [
+    { id: defaultModel, label: defaultModel, description: strings.ai.models.serverDefault },
+    ...AI_MODELS,
+  ];
 }

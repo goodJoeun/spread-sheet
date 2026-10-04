@@ -1,4 +1,5 @@
-import { PARTICIPANT_COLORS, normalizeName, randomUser, type UserInfo } from "./presence";
+import { PARTICIPANT_COLORS } from "@/resources/colors";
+import { normalizeName, randomUser, type UserInfo } from "./presence";
 
 /**
  * 탭별 신원(이름·색). sessionStorage는 탭마다 따로라서 새 탭은 새 참여자가 되고,
