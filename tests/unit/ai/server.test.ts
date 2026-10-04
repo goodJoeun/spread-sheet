@@ -118,7 +118,6 @@ describe("models", () => {
   });
 });
 
-/** API가 돌려주는 오류 본문 그대로 SDK 오류를 만든다. */
 function apiError(status: number, type: string, message: string, errorCode?: string) {
   const details = errorCode ? { details: { error_code: errorCode } } : {};
   return Anthropic.APIError.generate(

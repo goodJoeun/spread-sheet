@@ -35,7 +35,6 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-/** 서버 응답을 테스트가 직접 흘려보내는 가짜 전송 */
 function scriptedTransport() {
   const calls: Array<{
     request: AiEditRequest;
@@ -137,7 +136,6 @@ describe("AiController", () => {
       ["B3", "200", "400"],
     ]);
     expect(lastRun()?.skipped).toBe(1);
-    // 미리보기도 생성 중 내용을 따라간다.
     expect(ai.active.get()?.proposals).toHaveLength(2);
 
     call.emit({ type: "done" });

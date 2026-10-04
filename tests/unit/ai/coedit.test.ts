@@ -34,7 +34,6 @@ function participant(clientId: number, ai: AiActivity | null, isSelf = false): P
 
 describe("classifyCell(base, current, proposed)", () => {
   it.each([
-    // 요청 뒤 아무도 바꾸지 않음
     ["1", "1", "2", "clean"],
     ["", "", "new", "clean"],
     // 요청 뒤 다른 값으로 바뀜(수정, 삭제, 빈칸에 입력)

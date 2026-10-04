@@ -49,7 +49,6 @@ async function openTab(sheetId: string, name: string) {
     await session.destroy();
   });
   await session.whenLoaded;
-  /** 이 탭에서 본 다른 참여자의 AI 편집 */
   const othersAi = () =>
     session.presence
       .getParticipants()
@@ -80,7 +79,6 @@ describe("co-editing × AI across tabs", () => {
     a.ai.send("두 배로", range("B2:B3"));
     a.calls[0].emit({ type: "edit", cell: "B2", value: "200" });
 
-    // B가 생성 중인 범위의 셀을 고친다.
     setValue(b.doc, at("B2"), "150", EditOrigin.User);
     await vi.waitFor(() => expect(getValue(a.doc, at("B2"))).toBe("150"));
     a.calls[0].emit({ type: "edit", cell: "B3", value: "400" }, { type: "done" });
@@ -139,7 +137,6 @@ describe("co-editing × AI across tabs", () => {
       { type: "done" },
     );
 
-    // A가 먼저 적용한다.
     a.ai.apply();
     await vi.waitFor(() => expect(getValue(b.doc, at("B3"))).toBe("400"));
 

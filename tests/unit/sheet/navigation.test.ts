@@ -13,7 +13,6 @@ import { collapsedSelection, selectionRange, type Selection } from "@/lib/sheet/
 const at = (a1: string): CellCoord => parseA1(a1)!;
 const context = { pageRows: 10, isFilled: () => false };
 
-/** 동작을 차례로 적용하고 매번의 active 셀 주소를 돌려준다. */
 function walk(start: Selection, actions: NavigationAction[]): string[] {
   let state: NavigationState = { selection: start, tabReturnCol: null };
   return actions.map((action) => {

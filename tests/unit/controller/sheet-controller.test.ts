@@ -14,7 +14,6 @@ afterEach(() => {
   cleanup = [];
 });
 
-/** 화면 대신 쓰는 가짜 뷰. 편집칸 글자와 스크롤·포커스 요청을 기록한다. */
 function fakeView() {
   const calls = { reveal: [] as string[], focus: 0 };
   let draft = "";
