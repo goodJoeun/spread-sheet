@@ -2,10 +2,12 @@
 
 import { ArrowUp, Square } from "lucide-react";
 import { useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import type { AiConnectionInfo } from "@/lib/ai/protocol";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { isMultiCell, selectionRange } from "@/lib/sheet/selection";
 import { useStore } from "@/lib/store";
 import { useSelection, useSheet } from "../SheetContext";
+import { chooseModel } from "./useAiConnection";
 
 type ScopeMode = "selection" | "sheet";
 
@@ -13,10 +15,15 @@ interface AiComposerProps {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   draft: string;
   onDraftChange: (text: string) => void;
+  /** 서버 연결 정보. 불러오기 전(또는 실패)이면 null이고 모델을 고를 수 없다. */
+  connection: AiConnectionInfo | null;
 }
 
-/** 요청 입력칸. 편집 범위(선택 범위 / 시트 전체)를 고르고 보낸다. 생성 중에는 중단 버튼이 된다. */
-export function AiComposer({ inputRef, draft, onDraftChange }: AiComposerProps) {
+/**
+ * 요청 입력칸. 편집 범위(선택 범위 / 시트 전체)와 모델을 고르고 보낸다.
+ * 생성 중에는 중단 버튼이 된다.
+ */
+export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiComposerProps) {
   const { ai } = useSheet();
   const selection = useSelection();
   const active = useStore(ai.active);
@@ -58,7 +65,7 @@ export function AiComposer({ inputRef, draft, onDraftChange }: AiComposerProps) 
         </ScopeOption>
       </div>
 
-      <div className="flex items-end gap-2 rounded-lg border border-header-line px-2.5 py-2 focus-within:border-ai">
+      <div className="rounded-lg border border-header-line px-2.5 pt-2 pb-1.5 focus-within:border-ai">
         <textarea
           ref={inputRef}
           value={draft}
@@ -72,35 +79,59 @@ export function AiComposer({ inputRef, draft, onDraftChange }: AiComposerProps) 
               ? "제안을 적용하거나 버리면 새 요청을 보낼 수 있어요"
               : "예: 이 범위의 숫자를 두 배로 바꿔 줘"
           }
-          className="max-h-32 min-h-10 flex-1 resize-none bg-transparent text-[13px] leading-5 outline-none placeholder:text-neutral-400"
+          className="block max-h-32 min-h-10 w-full resize-none bg-transparent text-[13px] leading-5 outline-none placeholder:text-neutral-400"
         />
-        {running ? (
-          <button
-            type="button"
-            onClick={() => ai.cancel()}
-            aria-label="생성 중단 (Esc)"
-            title="생성 중단 (Esc)"
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-white hover:bg-neutral-700"
-          >
-            <Square size={12} fill="currentColor" aria-hidden />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={send}
-            disabled={!draft.trim() || reviewing}
-            aria-label="보내기 (Enter)"
-            title="보내기 (Enter)"
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-ai text-white hover:bg-ai/90 disabled:bg-neutral-200 disabled:text-neutral-400"
-          >
-            <ArrowUp size={16} aria-hidden />
-          </button>
-        )}
+        <div className="mt-1 flex items-center gap-2">
+          {connection && <ModelSelect connection={connection} />}
+          {running ? (
+            <button
+              type="button"
+              onClick={() => ai.cancel()}
+              aria-label="생성 중단 (Esc)"
+              title="생성 중단 (Esc)"
+              className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-white hover:bg-neutral-700"
+            >
+              <Square size={12} fill="currentColor" aria-hidden />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={send}
+              disabled={!draft.trim() || reviewing}
+              aria-label="보내기 (Enter)"
+              title="보내기 (Enter)"
+              className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-full bg-ai text-white hover:bg-ai/90 disabled:bg-neutral-200 disabled:text-neutral-400"
+            >
+              <ArrowUp size={16} aria-hidden />
+            </button>
+          )}
+        </div>
       </div>
       <p className="mt-1.5 text-[11px] text-neutral-400">
         Enter로 보내기 · Shift+Enter 줄바꿈 · AI 결과는 적용하기 전까지 시트에 쓰이지 않아요
       </p>
     </div>
+  );
+}
+
+/** 다음 요청에 쓸 모델. 생성 중에 바꾸면 다음 요청부터 적용된다. */
+function ModelSelect({ connection }: { connection: AiConnectionInfo }) {
+  const { ai } = useSheet();
+  const model = useStore(ai.model) ?? connection.defaultModel;
+  return (
+    <select
+      value={model}
+      onChange={(e) => chooseModel(ai, e.target.value)}
+      aria-label="AI 모델"
+      title="다음 요청에 쓸 모델"
+      className="min-w-0 truncate rounded-md bg-transparent py-1 pr-1 pl-1.5 text-xs text-neutral-600 outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-ai/40"
+    >
+      {connection.models.map((m) => (
+        <option key={m.id} value={m.id}>
+          {m.label} · {m.description}
+        </option>
+      ))}
+    </select>
   );
 }
 

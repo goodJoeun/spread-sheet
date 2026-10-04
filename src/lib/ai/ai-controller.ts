@@ -96,6 +96,8 @@ export class AiController {
   readonly active = createStore<AiRun | null>(null);
   /** 검토 중 "원래 값 보기"를 켰는지 */
   readonly showOriginal = createStore(false);
+  /** 다음 요청에 쓸 모델. null이면 서버 기본 모델 */
+  readonly model = createStore<string | null>(null);
 
   private nextId = 1;
   private inflight: { runId: number; abort: AbortController } | null = null;
@@ -121,11 +123,13 @@ export class AiController {
 
     const range = scope ? intersectRanges(scope, SHEET_RANGE) : null;
     const cells = this.sheetCells();
+    const model = this.model.get();
     const request: AiEditRequest = {
       instruction: text,
       range: range ? rangeToA1(range) : null,
       cells,
       history: this.history(),
+      ...(model ? { model } : {}),
     };
     const run: AiRun = {
       id: 0,
@@ -135,7 +139,8 @@ export class AiController {
       connected: false,
       slow: false,
       provider: null,
-      model: null,
+      // 고른 모델을 먼저 보여 주고, 응답이 시작되면 실제로 답한 모델로 바꾼다.
+      model,
       text: "",
       proposals: [],
       skipped: 0,
@@ -222,7 +227,7 @@ export class AiController {
     this.closeReview();
   }
 
-  /** 실패·중단한 요청을 같은 지시와 범위로 다시 보낸다. */
+  /** 실패·중단한 요청을 같은 지시와 범위로 다시 보낸다(모델은 지금 고른 것으로). */
   retry(runId: number): boolean {
     const message = this.messages.get().find((m) => m.role === "assistant" && m.run.id === runId);
     if (!message || message.role !== "assistant") return false;

@@ -95,6 +95,19 @@ describe("AiController", () => {
     expect(ai.active.get()?.id).toBe(lastRun()?.id);
   });
 
+  it("sends the picked model and shows it until the server says which model answered", () => {
+    const { transport, calls } = scriptedTransport();
+    const { ai, lastRun } = setup(transport);
+    ai.model.set("claude-haiku-4-5");
+
+    ai.send("두 배로", range("B2:B5"));
+    expect(calls[0].request.model).toBe("claude-haiku-4-5");
+    expect(lastRun()?.model).toBe("claude-haiku-4-5");
+
+    calls[0].emit({ type: "meta", provider: "anthropic", model: "claude-haiku-4-5-20251001" });
+    expect(lastRun()?.model).toBe("claude-haiku-4-5-20251001");
+  });
+
   it("collects proposals as they stream: compares with the request-time value, skips out-of-range cells", () => {
     const { transport, calls } = scriptedTransport();
     const { ai, lastRun } = setup(transport);

@@ -3,6 +3,7 @@
 import { AlertTriangle, Check, Eye, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
 import type { ReactNode } from "react";
 import type { AiRun } from "@/lib/ai/ai-controller";
+import { modelLabel } from "@/lib/ai/protocol";
 import { isApplePlatform } from "@/lib/platform";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { useStore } from "@/lib/store";
@@ -25,6 +26,7 @@ export function AiRunCard({ run }: AiRunCardProps) {
       <div className="flex items-center gap-1.5 border-b border-header-line px-3 py-2 text-xs text-neutral-500">
         <Sparkles size={13} className="text-ai" aria-hidden />
         <span className="font-medium text-neutral-700">AI</span>
+        {run.model && <span title={run.model}>{modelLabel(run.model)}</span>}
         {run.provider === "mock" && (
           <span className="rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-800">
             가짜 응답

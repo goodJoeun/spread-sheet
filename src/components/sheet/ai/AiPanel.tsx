@@ -2,12 +2,12 @@
 
 import { Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { AI_ENDPOINT } from "@/lib/ai/protocol";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { useStore } from "@/lib/store";
 import { useSheet } from "../SheetContext";
 import { AiComposer } from "./AiComposer";
 import { AiRunCard } from "./AiRunCard";
+import { useAiConnection } from "./useAiConnection";
 
 const EXAMPLES = [
   "선택한 범위의 숫자를 두 배로 바꿔 줘",
@@ -18,35 +18,17 @@ const EXAMPLES = [
 /** 가짜 응답 모드에서 실패 상황을 재현하는 표시(서버의 mock-anthropic.ts 참고) */
 const MOCK_TAGS = ["[느림]", "[한도]", "[키]", "[과부하]", "[거절]", "[잘림]"];
 
-interface Connection {
-  provider: string;
-  model: string;
-}
-
 /** 오른쪽 AI 편집 패널: 대화, 진행 상태, 제안 검토, 요청 입력. */
 export function AiPanel() {
   const { ai, aiPanel, controller } = useSheet();
   const messages = useStore(ai.messages);
   const [draft, setDraft] = useState("");
-  const [connection, setConnection] = useState<Connection | null>(null);
+  const connection = useAiConnection(ai);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   // 패널을 열면 바로 입력할 수 있게 한다.
   useEffect(() => inputRef.current?.focus(), []);
-
-  useEffect(() => {
-    let active = true;
-    fetch(AI_ENDPOINT)
-      .then((res) => (res.ok ? (res.json() as Promise<Connection>) : null))
-      .then((info) => {
-        if (active && info) setConnection(info);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
 
   // 새 내용이 오면 맨 아래를 보여 준다(첫 안내 화면은 위에서부터).
   useEffect(() => {
@@ -75,10 +57,12 @@ export function AiPanel() {
                 : "bg-neutral-100 text-neutral-600"
             }`}
             title={
-              connection.provider === "mock" ? "API 키가 없어 가짜 응답으로 동작해요" : undefined
+              connection.provider === "mock"
+                ? "API 키가 없어 가짜 응답으로 동작해요"
+                : "서버가 Claude API에 연결되어 있어요"
             }
           >
-            {connection.provider === "mock" ? "가짜 응답 · API 키 없음" : connection.model}
+            {connection.provider === "mock" ? "가짜 응답 · API 키 없음" : "Claude API"}
           </span>
         )}
         <button
@@ -139,7 +123,12 @@ export function AiPanel() {
         )}
       </div>
 
-      <AiComposer inputRef={inputRef} draft={draft} onDraftChange={setDraft} />
+      <AiComposer
+        inputRef={inputRef}
+        draft={draft}
+        onDraftChange={setDraft}
+        connection={connection}
+      />
     </aside>
   );
 }
