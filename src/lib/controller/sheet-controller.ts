@@ -144,6 +144,11 @@ export class SheetController {
     this.view.focus();
   }
 
+  /** 선택은 그대로 두고 그 셀이 보이도록 스크롤한다. */
+  reveal(coord: CellCoord): void {
+    this.view.reveal(coord);
+  }
+
   /* ───────────── 편집 ───────────── */
 
   isEditing(): boolean {
