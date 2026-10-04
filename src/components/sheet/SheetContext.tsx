@@ -27,11 +27,12 @@ export function SheetProvider({
 }) {
   const controller = useMemo(() => new SheetController(session), [session]);
   const ai = useMemo(
-    () => new AiController(session.doc, controller, fetchAiTransport),
+    () => new AiController(session.doc, controller, fetchAiTransport, session.presence),
     [session, controller],
   );
   const [aiPanel] = useState(() => createStore(false));
   useEffect(() => controller.connect(), [controller]);
+  useEffect(() => ai.connect(), [ai]);
   useEffect(() => () => ai.destroy(), [ai]);
   const value = useMemo(
     () => ({ session, controller, ai, aiPanel }),

@@ -79,6 +79,37 @@ describe("Presence", () => {
     });
   });
 
+  it("shares the AI edit in progress, without the proposed values", async () => {
+    const room = crypto.randomUUID();
+    const a = openTab(room);
+    const b = openTab(room);
+    await Promise.all([a.presence.join(), b.presence.join()]);
+    const other = () => b.presence.getParticipants().find((p) => !p.isSelf);
+
+    const range = { start: { row: 1, col: 1 }, end: { row: 2, col: 1 } };
+    a.presence.setAi({ status: "reviewing", range });
+    await vi.waitFor(() => expect(other()?.ai).toEqual({ status: "reviewing", range }));
+
+    a.presence.setAi(null);
+    await vi.waitFor(() => expect(other()?.ai).toBeNull());
+  });
+
+  it("accepts presence without an AI field, and ignores a malformed one", async () => {
+    const room = crypto.randomUUID();
+    const a = openTab(room);
+    const b = openTab(room);
+    // 잠금을 쥔(살아 있는) 탭이 이전 형식이나 잘못된 형식의 상태를 보내는 경우
+    await Promise.all([a.presence.join(), b.presence.join()]);
+    const user = { name: "이전 버전", color: "#1e8e3e" };
+
+    b.awareness.setLocalState({ user, selection: null, editing: null });
+    await vi.waitFor(() => expect(a.presence.getParticipants()).toHaveLength(2));
+    expect(a.presence.getParticipants().find((p) => !p.isSelf)?.ai).toBeNull();
+
+    b.awareness.setLocalState({ user, selection: null, editing: null, ai: { status: "hacking" } });
+    await vi.waitFor(() => expect(a.presence.getParticipants()).toHaveLength(1));
+  });
+
   it("drops a participant who leaves the page", async () => {
     const room = crypto.randomUUID();
     const a = openTab(room);

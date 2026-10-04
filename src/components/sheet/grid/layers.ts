@@ -9,6 +9,8 @@ export const Layer = {
   remoteCursor: 7,
   /** AI 제안 미리보기(제안된 값, 편집 범위) */
   aiPreview: 8,
+  /** 다른 참여자의 AI 편집 범위 */
+  remoteAi: 9,
   /** 내 선택 범위와 active 셀 */
   selection: 10,
   /** 다른 참여자 이름표(내 선택에 가리지 않게 위로) */

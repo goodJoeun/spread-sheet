@@ -1,11 +1,11 @@
 import { removeAwarenessStates, type Awareness } from "y-protocols/awareness";
-import type { CellCoord } from "@/lib/sheet/address";
+import type { CellCoord, CellRange } from "@/lib/sheet/address";
 import type { Selection } from "@/lib/sheet/selection";
 
 /**
  * 참여자 표시(presence).
  *
- * awareness에 { user, selection, editing }을 싣고, 다른 탭의 상태를 참여자 목록으로 만든다.
+ * awareness에 { user, selection, editing, ai }를 싣고, 다른 탭의 상태를 참여자 목록으로 만든다.
  *
  * 탭이 살아 있는지는 타이머가 아니라 Web Locks로 판단한다.
  * - 각 탭은 자기 clientID 이름의 잠금을 쥔 다음에 awareness를 공개한다.
@@ -21,11 +21,23 @@ export interface UserInfo {
   color: string;
 }
 
+/**
+ * 내 AI 편집이 어디까지 왔는지. 다른 참여자에게 "○○님이 이 범위를 AI로 편집 중"으로 보인다.
+ * 제안 값 자체는 싣지 않는다(확정되지 않은 값이 실제 데이터처럼 보이지 않게, 토큰마다 방송하지 않게).
+ */
+export interface AiActivity {
+  status: "generating" | "reviewing";
+  /** 편집 범위. 시트 전체 요청이라 아직 제안이 없으면 null */
+  range: CellRange | null;
+}
+
 export interface PresenceState {
   user: UserInfo;
   selection: Selection | null;
   /** 지금 입력 중인 셀 */
   editing: CellCoord | null;
+  /** 진행 중인 AI 편집 */
+  ai: AiActivity | null;
 }
 
 export interface Participant extends PresenceState {
@@ -123,17 +135,30 @@ const isSelection = (value: unknown): value is Selection =>
   isCoord((value as Selection).focus) &&
   isCoord((value as Selection).active);
 
-/** 다른 탭에서 온 상태는 형식을 확인한 뒤에만 쓴다. */
+const isRange = (value: unknown): value is CellRange =>
+  typeof value === "object" &&
+  value !== null &&
+  isCoord((value as CellRange).start) &&
+  isCoord((value as CellRange).end);
+
+const isAiActivity = (value: unknown): value is AiActivity =>
+  typeof value === "object" &&
+  value !== null &&
+  ((value as AiActivity).status === "generating" || (value as AiActivity).status === "reviewing") &&
+  ((value as AiActivity).range === null || isRange((value as AiActivity).range));
+
+/** 다른 탭에서 온 상태는 형식을 확인한 뒤에만 쓴다. ai가 없으면(이전 버전 탭) 진행 중인 AI 편집이 없는 것으로 본다. */
 export function isPresenceState(value: unknown): value is PresenceState {
   if (typeof value !== "object" || value === null) return false;
-  const { user, selection, editing } = value as PresenceState;
+  const { user, selection, editing, ai } = value as PresenceState;
   return (
     typeof user === "object" &&
     user !== null &&
     typeof user.name === "string" &&
     typeof user.color === "string" &&
     (selection === null || isSelection(selection)) &&
-    (editing === null || isCoord(editing))
+    (editing === null || isCoord(editing)) &&
+    (ai === undefined || ai === null || isAiActivity(ai))
   );
 }
 
@@ -165,7 +190,7 @@ export class Presence {
     user: UserInfo,
     private readonly onUserChange?: (user: UserInfo) => void,
   ) {
-    this.local = { user, selection: null, editing: null };
+    this.local = { user, selection: null, editing: null, ai: null };
     if (this.locks) {
       // 생존 확인을 잠금으로 하므로, 시간이 지나면 다른 탭의 상태를 지우는 기본 타이머는 끈다.
       clearInterval(awareness._checkInterval);
@@ -206,6 +231,11 @@ export class Presence {
 
   setEditing(editing: CellCoord | null): void {
     this.local = { ...this.local, editing };
+    this.publish();
+  }
+
+  setAi(ai: AiActivity | null): void {
+    this.local = { ...this.local, ai };
     this.publish();
   }
 
@@ -309,7 +339,12 @@ export class Presence {
     const participants: Participant[] = [];
     this.awareness.getStates().forEach((state, clientId) => {
       if (!isPresenceState(state)) return;
-      participants.push({ ...state, clientId, isSelf: clientId === this.clientId });
+      participants.push({
+        ...state,
+        ai: state.ai ?? null,
+        clientId,
+        isSelf: clientId === this.clientId,
+      });
     });
     participants.sort(
       (a, b) => Number(b.isSelf) - Number(a.isSelf) || a.user.name.localeCompare(b.user.name, "ko"),

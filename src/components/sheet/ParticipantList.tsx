@@ -96,6 +96,10 @@ export function ParticipantList() {
 }
 
 function statusText(p: Participant): string {
+  if (p.ai) {
+    const where = p.ai.range ? rangeToA1(p.ai.range) : "시트 전체";
+    return `${where} AI ${p.ai.status === "reviewing" ? "결과 검토" : "편집"} 중`;
+  }
   if (p.editing) return `${toA1(clampCoord(p.editing))} 입력 중`;
   if (p.selection) {
     const { anchor, focus, active } = p.selection;

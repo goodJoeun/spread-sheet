@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 import { POST } from "@/app/api/ai/edit/route";
-import { AiController, IDLE_TIMEOUT_MS, SLOW_AFTER_MS, type AiRun } from "@/lib/ai/ai-controller";
+import {
+  AiController,
+  IDLE_TIMEOUT_MS,
+  SLOW_AFTER_MS,
+  type AiPresenceBinding,
+  type AiRun,
+} from "@/lib/ai/ai-controller";
 import { aiError, type AiEditRequest, type AiStreamEvent } from "@/lib/ai/protocol";
 import {
   AiRequestError,
@@ -15,6 +21,7 @@ import { SheetController } from "@/lib/controller/sheet-controller";
 import { parseA1, parseRangeA1, rangeToA1 } from "@/lib/sheet/address";
 import { EditOrigin, getValue, setValue } from "@/lib/sheet/document";
 import { collapsedSelection, selectionRange } from "@/lib/sheet/selection";
+import type { AiActivity } from "@/lib/collab/presence";
 
 const at = (a1: string) => parseA1(a1)!;
 const range = (a1: string) => parseRangeA1(a1)!;
@@ -53,7 +60,7 @@ function scriptedTransport() {
   return { transport, calls };
 }
 
-function setup(transport: AiTransport) {
+function setup(transport: AiTransport, presence?: AiPresenceBinding) {
   const doc = new Y.Doc();
   const undoManager = createUndoManager(doc);
   const sheet = new SheetController(
@@ -61,8 +68,9 @@ function setup(transport: AiTransport) {
     collapsedSelection(at("A1")),
   );
   cleanup.push(sheet.connect(), () => undoManager.destroy());
-  const ai = new AiController(doc, sheet, transport);
-  cleanup.push(() => ai.destroy());
+  const ai = new AiController(doc, sheet, transport, presence);
+  const disconnectAi = ai.connect();
+  cleanup.push(disconnectAi, () => ai.destroy());
   setValue(doc, at("B2"), "100", EditOrigin.User);
   setValue(doc, at("B3"), "200", EditOrigin.User);
   undoManager.clear();
@@ -70,7 +78,7 @@ function setup(transport: AiTransport) {
     const last = ai.messages.get().at(-1);
     return last?.role === "assistant" ? last.run : null;
   };
-  return { doc, undoManager, sheet, ai, lastRun };
+  return { doc, undoManager, sheet, ai, lastRun, disconnectAi };
 }
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -315,5 +323,198 @@ describe("AiController: following the generation", () => {
     expect(reveal).toHaveBeenCalledTimes(1);
     expect(reveal).toHaveBeenCalledWith(at("K40"));
     expect(sheet.selection.get()).toBe(before);
+  });
+});
+
+/** 다른 참여자가 이 셀을 바꾼 것처럼 원격 변경으로 적용한다(내 실행 취소 대상이 아니다). */
+function remoteEdit(doc: Y.Doc, a1: string, value: string) {
+  const other = new Y.Doc();
+  Y.applyUpdate(other, Y.encodeStateAsUpdate(doc));
+  setValue(other, at(a1), value, EditOrigin.User);
+  Y.applyUpdate(doc, Y.encodeStateAsUpdate(other, Y.encodeStateVector(doc)), "remote");
+}
+
+/** B2=100, B3=200인 시트에 B2:B3을 두 배로 하라고 요청하고, 첫 제안까지 받은 상태 */
+function generating(presence?: AiPresenceBinding) {
+  const { transport, calls } = scriptedTransport();
+  const env = setup(transport, presence);
+  env.ai.send("두 배로", range("B2:B3"));
+  calls[0].emit({ type: "edit", cell: "B2", value: "200" });
+  const finish = () => calls[0].emit({ type: "edit", cell: "B3", value: "400" }, { type: "done" });
+  return { ...env, calls, finish };
+}
+
+const statuses = (ai: AiController) => ai.states().map((s) => `${s.proposal.cell}:${s.status}`);
+
+describe("AiController: co-editing", () => {
+  it("skips a cell someone changed while it was generating, and one undo reverts only what was applied", () => {
+    const { ai, doc, undoManager, finish, lastRun } = generating();
+    remoteEdit(doc, "B2", "150");
+    finish();
+
+    expect(statuses(ai)).toEqual(["B2:conflict", "B3:clean"]);
+    expect(ai.states()[0]).toMatchObject({ current: "150", proposal: { before: "100" } });
+
+    ai.apply();
+    expect([getValue(doc, at("B2")), getValue(doc, at("B3"))]).toEqual(["150", "400"]);
+    expect(lastRun()?.result).toEqual({ applied: 1, skipped: 1 });
+
+    undoManager.undo();
+    expect([getValue(doc, at("B2")), getValue(doc, at("B3"))]).toEqual(["150", "200"]);
+    expect(undoManager.canUndo()).toBe(false);
+  });
+
+  it("treats a cell deleted while it was generating as a conflict too", () => {
+    const { ai, doc, finish } = generating();
+    remoteEdit(doc, "B3", "");
+    finish();
+    expect(statuses(ai)).toEqual(["B2:clean", "B3:conflict"]);
+    ai.apply();
+    expect([getValue(doc, at("B2")), getValue(doc, at("B3"))]).toEqual(["200", ""]);
+  });
+
+  it("re-checks at apply time, including a change that arrives during review", () => {
+    const { ai, doc, finish } = generating();
+    finish();
+    expect(statuses(ai)).toEqual(["B2:clean", "B3:clean"]);
+
+    remoteEdit(doc, "B3", "333");
+    expect(statuses(ai)).toEqual(["B2:clean", "B3:conflict"]);
+    ai.apply();
+    expect(getValue(doc, at("B3"))).toBe("333");
+  });
+
+  it("counts my own draft, committed by apply, as a change since the request", () => {
+    const { ai, doc, sheet, finish } = generating();
+    finish();
+    let draft = "";
+    sheet.attachView({
+      reveal() {},
+      focus() {},
+      visibleRowCount: () => 20,
+      readDraft: () => draft,
+      writeDraft: (text) => {
+        draft = text;
+      },
+    });
+    sheet.select(collapsedSelection(at("B2")));
+    sheet.startEdit("enter", false);
+    draft = "mine";
+
+    ai.apply();
+    expect([getValue(doc, at("B2")), getValue(doc, at("B3"))]).toEqual(["mine", "400"]);
+  });
+
+  it("does not count a cell someone already set to the proposed value", () => {
+    const { ai, doc, finish, lastRun } = generating();
+    remoteEdit(doc, "B2", "200");
+    finish();
+    expect(statuses(ai)).toEqual(["B2:same", "B3:clean"]);
+    ai.apply();
+    expect(lastRun()?.result).toEqual({ applied: 1, skipped: 0 });
+  });
+
+  it("overwrites a conflict only while it still holds the value seen when choosing", () => {
+    const { ai, doc, finish } = generating();
+    remoteEdit(doc, "B2", "150");
+    remoteEdit(doc, "B3", "250");
+    finish();
+
+    ai.setOverwrite("B2", true);
+    ai.setOverwrite("B3", true);
+    remoteEdit(doc, "B3", "275"); // 고른 뒤 또 바뀜
+    expect(ai.states().map((s) => s.overwrite)).toEqual([true, false]);
+
+    ai.apply();
+    expect([getValue(doc, at("B2")), getValue(doc, at("B3"))]).toEqual(["200", "275"]);
+  });
+
+  it("overwrites or skips every conflict at once", () => {
+    const { ai, doc, finish } = generating();
+    remoteEdit(doc, "B2", "150");
+    remoteEdit(doc, "B3", "250");
+    finish();
+
+    ai.setOverwriteAll(true);
+    expect(ai.states().every((s) => s.overwrite)).toBe(true);
+    ai.setOverwriteAll(false);
+    expect(ai.states().some((s) => s.overwrite)).toBe(false);
+    ai.setOverwrite("B3", true);
+    ai.apply();
+    expect([getValue(doc, at("B2")), getValue(doc, at("B3"))]).toEqual(["150", "400"]);
+  });
+
+  it("regenerates with the same instruction and the current values", () => {
+    const { ai, doc, calls, finish, lastRun } = generating();
+    remoteEdit(doc, "B2", "150");
+    finish();
+    const first = lastRun()!;
+
+    expect(ai.regenerate()).toBe(true);
+    expect(
+      ai.messages.get().find((m) => m.role === "assistant" && m.run.id === first.id),
+    ).toMatchObject({ run: { status: "discarded" } });
+    expect(calls[1].request).toMatchObject({ instruction: "두 배로", range: "B2:B3" });
+    expect(calls[1].request.cells).toContainEqual({ cell: "B2", value: "150" });
+    expect(ai.overwrites.get().size).toBe(0);
+  });
+
+  it("shares the range and stage with other participants, but not on every streamed token", () => {
+    const published: Array<AiActivity | null> = [];
+    const { transport, calls } = scriptedTransport();
+    const { ai } = setup(transport, { setAi: (a) => published.push(a) });
+
+    ai.send("두 배로", range("B2:B3"));
+    calls[0].emit(
+      { type: "text", delta: "두" },
+      { type: "text", delta: " 배" },
+      { type: "edit", cell: "B2", value: "200" },
+    );
+    calls[0].emit({ type: "done" });
+    ai.discard();
+
+    expect(published).toEqual([
+      { status: "generating", range: range("B2:B3") },
+      { status: "reviewing", range: range("B2:B3") },
+      null,
+    ]);
+  });
+
+  it("grows the shared range with the proposals of a whole-sheet request", () => {
+    const published: Array<AiActivity | null> = [];
+    const { transport, calls } = scriptedTransport();
+    const { ai } = setup(transport, { setAi: (a) => published.push(a) });
+
+    ai.send("채워 줘", null);
+    calls[0].emit(
+      { type: "edit", cell: "C3", value: "a" },
+      { type: "edit", cell: "E5", value: "b" },
+    );
+    ai.cancel();
+
+    expect(
+      published.map((a) => (a ? `${a.status}:${a.range ? rangeToA1(a.range) : "*"}` : null)),
+    ).toEqual(["generating:*", "generating:C3", "generating:C3:E5", null]);
+  });
+
+  it("stops sharing on error and when disconnected, and resumes when connected again", () => {
+    const published: Array<AiActivity | null> = [];
+    const { transport, calls } = scriptedTransport();
+    const { ai, disconnectAi } = setup(transport, { setAi: (a) => published.push(a) });
+    ai.send("두 배로", null);
+    calls[0].emit({ type: "error", error: aiError("overloaded") });
+    expect(published.at(-1)).toBeNull();
+
+    ai.send("다시", null);
+    expect(published.at(-1)).toMatchObject({ status: "generating" });
+    disconnectAi();
+    expect(published.at(-1)).toBeNull();
+
+    // React 개발 모드처럼 정리한 뒤 다시 연결하면 진행 중인 상태를 다시 알린다.
+    const reconnect = ai.connect();
+    cleanup.push(reconnect);
+    expect(published.at(-1)).toMatchObject({ status: "generating" });
+    calls[1].emit({ type: "edit", cell: "B2", value: "1" }, { type: "done" });
+    expect(published.at(-1)).toMatchObject({ status: "reviewing" });
   });
 });

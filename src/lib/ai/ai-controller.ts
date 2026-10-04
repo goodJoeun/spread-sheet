@@ -1,7 +1,7 @@
 import type * as Y from "yjs";
+import type { AiActivity } from "@/lib/collab/presence";
 import {
   intersectRanges,
-  normalizeRange,
   parseA1,
   rangeContains,
   rangeToA1,
@@ -13,6 +13,14 @@ import { EditOrigin, valuesOf, writeValues } from "@/lib/sheet/document";
 import { SHEET_RANGE, isInSheet } from "@/lib/sheet/schema";
 import type { Selection } from "@/lib/sheet/selection";
 import { createStore } from "@/lib/store";
+import {
+  activityRange,
+  boundingRange,
+  evaluateProposals,
+  summarize,
+  writable,
+  type ProposalState,
+} from "./coedit";
 import {
   AI_LIMITS,
   aiError,
@@ -31,6 +39,8 @@ import { AiRequestError, type AiTransport } from "./transport";
  *   그래서 적용한 결과는 실행 취소 한 번으로 모두 되돌아간다.
  * - 응답이 SLOW_AFTER_MS 동안 없으면 "응답 지연"을 표시하고, IDLE_TIMEOUT_MS 동안 없으면 중단한다.
  * - 요청 시점의 셀 값(base)을 기억해 둔다. 원래 값과 비교해 보여 주고, 다른 참여자가 그사이 바꾼 셀을 찾는 데 쓴다.
+ *   그사이 바뀐 셀은 충돌로 보고 기본으로 건너뛴다(규칙은 coedit.ts).
+ * - 생성·검토 중에는 편집 범위와 상태를 참여자 정보로 알린다. 제안 값은 알리지 않는다.
  */
 
 export const SLOW_AFTER_MS = 5_000;
@@ -74,6 +84,8 @@ export interface AiRun {
   error: AiErrorInfo | null;
   /** 요청 시점의 셀 값(비어 있지 않은 셀) */
   base: ReadonlyMap<string, string>;
+  /** 적용한 결과. 요청 뒤 바뀌어서 건너뛴 셀 수를 함께 보여 준다. */
+  result: { applied: number; skipped: number } | null;
 }
 
 export type AiMessage =
@@ -88,6 +100,11 @@ export interface AiSheetBinding {
   focus(): void;
 }
 
+/** 내 AI 편집 상태를 다른 참여자에게 알리는 곳(Presence가 이 모양을 갖는다). */
+export interface AiPresenceBinding {
+  setAi(activity: AiActivity | null): void;
+}
+
 const RUNNING: ReadonlySet<AiRunStatus> = new Set(["waiting", "streaming"]);
 
 export class AiController {
@@ -98,17 +115,75 @@ export class AiController {
   readonly showOriginal = createStore(false);
   /** 다음 요청에 쓸 모델. null이면 서버 기본 모델 */
   readonly model = createStore<string | null>(null);
+  /** 충돌한 셀 중 덮어쓰기로 고른 것: 셀 → 고를 때 본 값 */
+  readonly overwrites = createStore<ReadonlyMap<string, string>>(new Map());
 
   private nextId = 1;
   private inflight: { runId: number; abort: AbortController } | null = null;
   private slowTimer: ReturnType<typeof setTimeout> | null = null;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
+  private publishedActivity = "";
 
   constructor(
     private readonly doc: Y.Doc,
     private readonly sheet: AiSheetBinding,
     private readonly transport: AiTransport,
+    private readonly presence: AiPresenceBinding = { setAi() {} },
   ) {}
+
+  /**
+   * 내 AI 편집 상태를 참여자 정보로 알리기 시작한다. 정리 함수를 돌려준다.
+   * 생성자에서 하지 않는 이유: React가 개발 모드에서 정리 후 다시 연결할 때 구독이 끊기거나 새지 않게 하려고.
+   */
+  connect(): () => void {
+    this.publishedActivity = "";
+    this.publishActivity();
+    const off = this.active.subscribe(() => this.publishActivity());
+    return () => {
+      off();
+      this.publishedActivity = "";
+      this.presence.setAi(null);
+    };
+  }
+
+  /**
+   * 제안마다 지금 시트 값과 비교한 상태. 다른 참여자의 변경이 들어오면 다시 불러 화면을 갱신한다.
+   * 상태를 저장해 두지 않고 매번 계산하므로, 바꾼 사람이 원래 값으로 되돌리면 충돌도 저절로 풀린다.
+   */
+  states(run: AiRun | null = this.active.get()): ProposalState[] {
+    if (!run) return [];
+    const values = valuesOf(this.doc);
+    return evaluateProposals(
+      run.proposals,
+      (cell) => values.get(cell) ?? "",
+      this.overwrites.get(),
+    );
+  }
+
+  /** 충돌한 셀을 덮어쓸지 고른다. 지금 보이는 값을 덮어쓰기로 한 것으로 기억한다. */
+  setOverwrite(cell: string, overwrite: boolean): void {
+    const state = this.states().find((s) => s.proposal.cell === cell);
+    if (!state || state.status !== "conflict") return;
+    this.overwrites.set((prev) => {
+      const next = new Map(prev);
+      if (overwrite) next.set(cell, state.current);
+      else next.delete(cell);
+      return next;
+    });
+  }
+
+  /** 충돌한 셀 전체를 덮어쓰거나 모두 건너뛴다. */
+  setOverwriteAll(overwrite: boolean): void {
+    const conflicts = this.states().filter((s) => s.status === "conflict");
+    this.overwrites.set((prev) => {
+      const next = new Map(prev);
+      for (const s of conflicts) {
+        if (overwrite) next.set(s.proposal.cell, s.current);
+        else next.delete(s.proposal.cell);
+      }
+      return next;
+    });
+  }
 
   /** 생성 중이거나 검토를 기다리는 결과가 있으면 새 요청을 받지 않는다. */
   isBusy(): boolean {
@@ -146,7 +221,9 @@ export class AiController {
       skipped: 0,
       warnings: [],
       error: null,
+      // AI에 보낸 값과 같은 순간의 값이다. 이 값과 달라진 셀이 충돌이다.
       base: new Map(cells.map((c) => [c.cell, c.value])),
+      result: null,
     };
     const userId = this.nextId++;
     run.id = this.nextId++;
@@ -156,6 +233,7 @@ export class AiController {
       { id: run.id, role: "assistant", run },
     ]);
     this.showOriginal.set(false);
+    this.overwrites.set(new Map());
     this.active.set(run);
 
     const abort = new AbortController();
@@ -194,30 +272,47 @@ export class AiController {
     this.active.set(null);
   }
 
-  /** 검토 중인 제안을 문서에 쓴다. 한 트랜잭션이라 실행 취소 한 번으로 모두 되돌아간다. */
+  /**
+   * 검토 중인 제안을 문서에 쓴다. 한 트랜잭션이라 실행 취소 한 번으로 모두 되돌아간다.
+   * 요청 뒤에 바뀐 셀은 덮어쓰기를 고르지 않았으면 건너뛴다.
+   */
   apply(): void {
     const run = this.active.get();
     if (!run || run.status !== "review" || run.proposals.length === 0) return;
 
+    // 내가 입력 중이던 값도 먼저 확정한다. 그 셀이 대상이면 충돌로 판단된다.
     this.sheet.commitEdit();
-    // 적용 직전의 선택을 바뀐 범위로 옮겨 둔다. 실행 취소하면 이 범위로 돌아온다.
-    const box = run.proposals
-      .map((p) => normalizeRange(p.coord, p.coord))
-      .reduce((a, b) =>
-        normalizeRange(
-          { row: Math.min(a.start.row, b.start.row), col: Math.min(a.start.col, b.start.col) },
-          { row: Math.max(a.end.row, b.end.row), col: Math.max(a.end.col, b.end.col) },
-        ),
-      );
-    this.sheet.select({ anchor: box.start, focus: box.end, active: box.start }, box.start);
-    writeValues(
-      this.doc,
-      run.proposals.map((p) => ({ coord: p.coord, value: p.after })),
-      EditOrigin.Ai,
-    );
+    // 화면에 보이던 상태가 아니라 지금 값으로 다시 판단한다. 판단과 쓰기를 같은 동기 코드에서 하므로
+    // 그 사이에 다른 탭의 변경(BroadcastChannel 메시지)이 끼어들 수 없다.
+    const states = this.states(run);
+    const writes = states.filter(writable).map((s) => s.proposal);
+    const skipped = summarize(states).skipped;
 
-    this.update(run.id, (r) => ({ ...r, status: "applied" }));
+    const box = boundingRange(writes);
+    if (box) {
+      // 적용 직전의 선택을 바뀐 범위로 옮겨 둔다. 실행 취소하면 이 범위로 돌아온다.
+      this.sheet.select({ anchor: box.start, focus: box.end, active: box.start }, box.start);
+      writeValues(
+        this.doc,
+        writes.map((p) => ({ coord: p.coord, value: p.after })),
+        EditOrigin.Ai,
+      );
+    }
+
+    this.update(run.id, (r) => ({
+      ...r,
+      status: "applied",
+      result: { applied: writes.length, skipped },
+    }));
     this.closeReview();
+  }
+
+  /** 검토 중인 결과를 버리고, 같은 지시와 범위로 지금 시트 값을 보내 다시 만든다. */
+  regenerate(): boolean {
+    const run = this.active.get();
+    if (!run || run.status !== "review") return false;
+    this.discard();
+    return this.send(run.instruction, run.scope);
   }
 
   discard(): void {
@@ -313,7 +408,29 @@ export class AiController {
   private closeReview(): void {
     this.active.set(null);
     this.showOriginal.set(false);
+    this.overwrites.set(new Map());
     this.sheet.focus();
+  }
+
+  /**
+   * 생성·검토 상태와 범위가 바뀔 때만 참여자 정보로 알린다.
+   * 미리보기는 글자가 들어올 때마다 갱신되지만, 그때마다 다른 탭에 보내지는 않는다.
+   */
+  private publishActivity(): void {
+    const run = this.active.get();
+    let activity: AiActivity | null = null;
+    if (run && (RUNNING.has(run.status) || run.status === "review")) {
+      activity = {
+        status: run.status === "review" ? "reviewing" : "generating",
+        range: activityRange(run.scope, run.proposals),
+      };
+    }
+    const key = activity
+      ? `${activity.status}:${activity.range ? rangeToA1(activity.range) : "*"}`
+      : "";
+    if (key === this.publishedActivity) return;
+    this.publishedActivity = key;
+    this.presence.setAi(activity);
   }
 
   /** 진행 중 표시를 정리한다(타이머 해제, 진행 중 요청 없음). */

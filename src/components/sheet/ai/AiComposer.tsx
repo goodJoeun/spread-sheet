@@ -1,12 +1,14 @@
 "use client";
 
-import { ArrowUp, Square } from "lucide-react";
+import { ArrowUp, Sparkles, Square } from "lucide-react";
 import { useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import { overlappingAi, type AiOverlap } from "@/lib/ai/coedit";
 import type { AiConnectionInfo } from "@/lib/ai/protocol";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { isMultiCell, selectionRange } from "@/lib/sheet/selection";
 import { useStore } from "@/lib/store";
 import { useSelection, useSheet } from "../SheetContext";
+import { useParticipants } from "../useSheetSession";
 import { chooseModel } from "./useAiConnection";
 
 type ScopeMode = "selection" | "sheet";
@@ -24,8 +26,9 @@ interface AiComposerProps {
  * 생성 중에는 중단 버튼이 된다.
  */
 export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiComposerProps) {
-  const { ai } = useSheet();
+  const { ai, session } = useSheet();
   const selection = useSelection();
+  const participants = useParticipants(session.presence);
   const active = useStore(ai.active);
   const running = active?.status === "waiting" || active?.status === "streaming";
   const reviewing = active?.status === "review";
@@ -34,6 +37,8 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   const [chosen, setChosen] = useState<ScopeMode | null>(null);
   const mode: ScopeMode = chosen ?? (isMultiCell(selection) ? "selection" : "sheet");
   const range = selectionRange(selection);
+  // 보내기 전에 알린다. 겹쳐도 막지 않고, 먼저 적용된 셀은 내 결과에서 충돌로 표시된다.
+  const overlaps = active ? [] : overlappingAi(participants, mode === "selection" ? range : null);
 
   const send = () => {
     if (ai.send(draft, mode === "selection" ? range : null)) {
@@ -56,6 +61,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
 
   return (
     <div className="border-t border-header-line p-3">
+      {overlaps.length > 0 && <OverlapNotice overlaps={overlaps} />}
       <div role="radiogroup" aria-label="편집 범위" className="mb-2 flex gap-1 text-xs">
         <ScopeOption checked={mode === "selection"} onSelect={() => setChosen("selection")}>
           선택 범위 <span className="font-semibold">{rangeToA1(range)}</span>
@@ -158,5 +164,23 @@ function ScopeOption({
     >
       {children}
     </button>
+  );
+}
+
+/** 다른 참여자가 AI로 편집 중인 범위와 겹칠 때의 안내 */
+function OverlapNotice({ overlaps }: { overlaps: AiOverlap[] }) {
+  const names = overlaps.map((o) => o.participant.user.name).join(", ");
+  const reviewing = overlaps.every((o) => o.activity.status === "reviewing");
+  return (
+    <p
+      role="status"
+      className="mb-2 flex gap-1.5 rounded border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900"
+    >
+      <Sparkles size={13} className="mt-0.5 shrink-0" aria-hidden />
+      <span>
+        {names}님이 이 범위를 AI로 {reviewing ? "검토" : "편집"} 중이에요. 요청할 수는 있지만, 먼저
+        적용된 셀은 내 결과에서 충돌로 표시되고 기본으로 건너뛰어요.
+      </span>
+    </p>
   );
 }
