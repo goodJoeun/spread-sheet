@@ -1,25 +1,30 @@
 /*
- * 디자인 토큰. 화면 코드는 팔레트 이름(neutral-500, amber-300 등) 대신 이 의미 이름을 쓴다.
- * 색을 바꿀 때는 여기만 고치면 된다. 이름은 Tailwind 유틸리티가 된다(bg-surface, text-fg-muted, text-body…).
+ * 디자인 토큰. 화면 코드는 여기 정의된 단계만 쓴다.
+ * Tailwind 기본 팔레트·글자 크기·굵기·모서리·그림자는 initial로 꺼 두었다.
+ * 토큰 밖의 값(neutral-500, text-sm, rounded-xl…)은 클래스가 만들어지지 않으니 새 값이 필요하면 여기에 먼저 더한다.
  */
-@theme inline {
+@theme {
+  /* ───── 색 ───── */
+  --color-*: initial;
+
   /* 바탕과 선 */
-  --color-surface: var(--color-white);
-  --color-surface-muted: #f8f9fa; /* 툴바, 머리글, AI 패널 바탕 */
-  --color-fill: var(--color-neutral-100); /* 배지 */
-  --color-fill-strong: var(--color-neutral-200); /* 비활성 버튼, 더 보기 아바타 */
-  --color-hover: color-mix(in oklab, var(--color-black) 5%, transparent);
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8f9fa; /* 툴바, 머리글, AI 패널 */
+  --color-fill: #f5f5f5; /* 배지 */
+  --color-fill-strong: #e5e5e5; /* 비활성 버튼, 더 보기 아바타 */
+  --color-hover: rgb(0 0 0 / 5%);
   --color-line: #c7c7c7;
   --color-line-grid: #e2e3e3;
-  --color-outline: color-mix(in oklab, var(--color-black) 10%, transparent); /* 색 견본 테두리 */
+  --color-outline: rgb(0 0 0 / 10%); /* 색 견본 테두리 */
 
-  /* 글자: 진한 순서 */
+  /* 글자: 진한 순서, inverse는 진한 바탕 위 글자 */
   --color-fg: #1f2328;
-  --color-fg-secondary: var(--color-neutral-700);
-  --color-fg-muted: var(--color-neutral-600);
-  --color-fg-subtle: var(--color-neutral-500);
-  --color-fg-faint: var(--color-neutral-400);
-  --color-fg-disabled: var(--color-neutral-300);
+  --color-fg-secondary: #404040;
+  --color-fg-muted: #525252;
+  --color-fg-subtle: #737373;
+  --color-fg-faint: #a3a3a3;
+  --color-fg-disabled: #d4d4d4;
+  --color-fg-inverse: #ffffff;
 
   /* 강조: 내 선택과 편집 */
   --color-accent: #1a73e8;
@@ -31,25 +36,58 @@
   --color-ai-ink: #4c1d95;
 
   /* 주의: 충돌, 경고, 공동 편집 안내 */
-  --color-warn: var(--color-amber-500);
-  --color-warn-strong: var(--color-amber-600);
-  --color-warn-line: var(--color-amber-300);
-  --color-warn-muted: var(--color-amber-100);
-  --color-warn-soft: var(--color-amber-50);
-  --color-warn-ink: var(--color-amber-900);
+  --color-warn: #f59e0b;
+  --color-warn-strong: #d97706;
+  --color-warn-line: #fcd34d;
+  --color-warn-muted: #fef3c7;
+  --color-warn-soft: #fffbeb;
+  --color-warn-ink: #78350f;
 
-  --color-success: var(--color-emerald-700);
-  --color-danger: var(--color-red-700);
+  --color-success: #047857;
+  --color-danger: #b91c1c;
 
-  /* 글자 크기. 줄 높이는 정하지 않아 부모를 따른다. */
-  --text-tag: 10px; /* 그리드 위 이름표, 배지 */
-  --text-caption: 11px;
-  --text-body: 13px; /* 셀과 본문 */
-  --text-title: 15px;
+  /* ───── 글자 크기와 줄 높이 ───── */
+  --text-*: initial;
+  --text-caption: 11px; /* 보조 설명, 머리글, 이름표, 배지 */
+  --text-caption--line-height: 16px;
+  --text-label: 12px; /* 버튼, 칩, 작은 UI 글자 */
+  --text-label--line-height: 16px;
+  --text-body: 13px; /* 셀, 본문, 입력칸 */
+  --text-body--line-height: 20px;
+  --text-title: 15px; /* 화면·패널 제목 */
+  --text-title--line-height: 22px;
 
-  /* 셀 높이(geometry.ts의 ROW_HEIGHT 24px)에서 아래 격자선 1px을 뺀 값 */
-  --leading-cell: 23px;
-  --leading-label: 18px;
+  --leading-*: initial;
+  --leading-cell: 23px; /* 셀 높이(geometry.ts ROW_HEIGHT 24px) - 아래 격자선 1px */
+  --leading-label: 18px; /* 셀 위에 붙는 띠. AiPreview·CoEditNotice가 이 높이로 위치를 잡는다. */
+
+  /* ───── 굵기 ───── */
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500; /* 버튼, 강조할 짧은 글자 */
+  --font-weight-semibold: 600; /* 제목, 선택된 머리글 */
+
+  /* ───── 간격(gap, padding, margin) ───── */
+  /* 크기 고정값(size-8, h-10 같은 컴포넌트 치수)은 Tailwind의 4px 단위를 그대로 쓴다. */
+  --spacing-2xs: 2px;
+  --spacing-xs: 4px;
+  --spacing-sm: 6px;
+  --spacing-md: 8px;
+  --spacing-lg: 12px;
+  --spacing-xl: 16px;
+  --spacing-2xl: 24px;
+
+  /* ───── 모서리 ───── */
+  --radius-*: initial;
+  --radius-sm: 4px; /* 작은 버튼, 배지, 견본 */
+  --radius-md: 6px; /* 버튼, 입력 */
+  --radius-lg: 8px; /* 카드, 팝오버, 입력 상자 */
+
+  /* ───── 그림자 ───── */
+  --shadow-*: initial;
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%); /* 셀 위 이름표 */
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 10%); /* 편집칸 */
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -4px rgb(0 0 0 / 10%); /* 팝오버 */
 
   --font-sans:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic",

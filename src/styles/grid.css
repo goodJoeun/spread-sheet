@@ -1,6 +1,6 @@
 /*
- * 그리드. 셀 위에 겹쳐 그리는 것(선택, 다른 참여자, AI 미리보기)의 위치·크기·z-index와
- * 참여자 색은 계산값이라 인라인 style로 주고, 여기서는 모양만 정한다.
+ * 그리드 위에 겹쳐 그리는 것 중 여러 컴포넌트가 같이 쓰는 모양.
+ * 위치·크기·z-index와 참여자 색은 계산값이라 인라인 style로 준다.
  */
 
 /* 셀 위에 겹쳐 그리고 마우스는 아래 셀로 통과시킨다. */
@@ -10,82 +10,21 @@
 }
 
 @layer components {
-  .grid-viewport {
-    @apply relative min-h-0 min-w-0 flex-1 overflow-auto bg-surface;
-  }
-  .grid-content {
-    @apply relative grid cursor-cell select-none;
-  }
-
-  .cell {
-    @apply overflow-hidden border-r border-b border-line-grid px-1 text-body leading-cell whitespace-pre;
-  }
-
-  /* 행·열 머리글. 선택 범위에 걸치면 data-active */
-  .grid-header {
-    @apply sticky flex items-center justify-center border-r border-b border-line select-none;
-    @apply bg-surface-muted text-caption text-fg-muted;
-    @apply data-active:bg-accent-soft data-active:font-semibold data-active:text-accent;
-  }
-
-  /*
-   * 셀 편집칸. 편집 중이 아닐 때도 투명하게 active 셀 위에 남아 포커스를 쥔다(한글 첫 자모를 잃지 않게).
-   * 편집 중이면 data-editing
-   */
-  .cell-editor {
-    @apply absolute cursor-cell border-0 bg-transparent p-0 opacity-0 outline-none;
-    @apply data-editing:cursor-text data-editing:border-2 data-editing:border-accent;
-    @apply data-editing:bg-surface data-editing:px-[3px] data-editing:text-body;
-    @apply data-editing:opacity-100 data-editing:shadow-md data-editing:select-text;
-    @apply data-editing:[field-sizing:content];
-  }
-
-  /* 내 선택 */
-  .selection-range {
-    @apply overlay border border-accent bg-accent/10;
-  }
-  .selection-cursor {
-    @apply overlay border-2 border-accent;
-  }
-
-  /* 다른 참여자(테두리 색은 그 사람 색) */
-  .remote-range {
-    @apply overlay border;
-  }
-  .remote-cursor {
-    @apply overlay border-2;
-  }
-  .remote-ai-range {
-    @apply overlay border-2 border-dashed;
-  }
+  /* 다른 참여자 이름표(바탕은 그 사람 색) */
   .name-tag {
-    @apply overlay flex items-center gap-1 px-1 shadow-sm;
-    @apply text-tag leading-4 font-medium whitespace-nowrap text-white;
+    @apply overlay flex items-center gap-xs px-xs shadow-sm;
+    @apply text-caption font-medium whitespace-nowrap text-fg-inverse;
   }
 
-  /* 셀이나 범위 위에 붙는 띠: AI 편집 범위 이름표, 공동 편집 안내 */
+  /* 셀이나 범위 위에 붙는 띠: AI 편집 범위 이름표(.grid-label-ai), 공동 편집 안내(.grid-label-warn) */
   .grid-label {
-    @apply overlay rounded-t px-1.5 text-caption leading-label font-medium whitespace-nowrap text-white;
+    @apply overlay rounded-t-sm px-sm text-caption leading-label font-medium whitespace-nowrap;
+    @apply text-fg-inverse;
   }
   .grid-label-ai {
-    @apply flex items-center gap-1 bg-ai;
+    @apply flex items-center gap-xs bg-ai;
   }
   .grid-label-warn {
-    @apply bg-warn shadow;
-  }
-
-  /* 내 AI 제안 미리보기. 생성 중이면 data-generating */
-  .ai-scope {
-    @apply overlay border-2 border-dashed border-ai data-generating:animate-pulse;
-  }
-  .ai-proposal {
-    @apply overlay overflow-hidden bg-ai-soft px-1 text-body leading-cell whitespace-pre text-ai-ink;
-    @apply shadow-[inset_2px_0_0_var(--color-ai)];
-    /* 충돌한 셀을 덮어쓰기로 고른 경우 */
-    @apply data-overwrite:shadow-[inset_2px_0_0_var(--color-ai),inset_0_0_0_1px_var(--color-warn)];
-  }
-  /* 요청 뒤 다른 값으로 바뀐 셀: 지금 값을 가리지 않고 테두리만 두른다. */
-  .ai-conflict {
-    @apply overlay border-2 border-warn bg-warn/10;
+    @apply bg-warn shadow-sm;
   }
 }

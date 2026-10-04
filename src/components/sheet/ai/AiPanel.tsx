@@ -8,6 +8,7 @@ import { useSheet } from "../SheetContext";
 import { AiComposer } from "./AiComposer";
 import { AiRunCard } from "./AiRunCard";
 import { useAiConnection } from "./useAiConnection";
+import { ICON } from "@/components/ui/icon";
 
 const EXAMPLES = [
   "선택한 범위의 숫자를 두 배로 바꿔 줘",
@@ -40,10 +41,13 @@ export function AiPanel() {
   };
 
   return (
-    <aside aria-label="AI 편집" className="ai-panel">
-      <header className="panel-header">
-        <Sparkles size={16} className="text-ai" aria-hidden />
-        <h2 className="panel-title">AI 편집</h2>
+    <aside
+      aria-label="AI 편집"
+      className="flex w-[360px] shrink-0 flex-col border-l border-line bg-surface-muted"
+    >
+      <header className="flex h-10 shrink-0 items-center gap-md border-b border-line bg-surface px-lg">
+        <Sparkles size={ICON.md} className="text-ai" aria-hidden />
+        <h2 className="text-title font-semibold text-fg">AI 편집</h2>
         {connection && (
           <span
             className={connection.provider === "mock" ? "badge badge-warn" : "badge"}
@@ -62,18 +66,18 @@ export function AiPanel() {
           aria-label="AI 패널 닫기"
           className="icon-btn-sm ml-auto"
         >
-          <X size={16} />
+          <X size={ICON.md} />
         </button>
       </header>
 
-      <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+      <div ref={listRef} className="min-h-0 flex-1 space-y-lg overflow-y-auto p-lg">
         {messages.length === 0 ? (
-          <div className="space-y-3 pt-2 text-body text-fg-muted">
+          <div className="space-y-lg pt-md text-body text-fg-muted">
             <p>
               시트 내용을 바탕으로 AI가 값을 제안해요. 범위를 선택하고 요청하면 그 범위만 바꾸고,
               결과는 원래 값과 비교한 뒤 적용할 수 있어요.
             </p>
-            <div className="flex flex-col items-start gap-1.5">
+            <div className="flex flex-col items-start gap-sm">
               {EXAMPLES.map((example) => (
                 <button
                   key={example}
@@ -89,7 +93,7 @@ export function AiPanel() {
               ))}
             </div>
             {connection?.provider === "mock" && (
-              <p className="notice leading-relaxed">
+              <p className="notice">
                 지금은 가짜 응답이에요. 요청에 {MOCK_TAGS.join(" ")}를 넣으면 지연·오류 상황을
                 재현할 수 있어요.
               </p>
@@ -98,9 +102,12 @@ export function AiPanel() {
         ) : (
           messages.map((m) =>
             m.role === "user" ? (
-              <div key={m.id} className="user-message">
+              <div
+                key={m.id}
+                className="ml-2xl rounded-lg bg-ai-soft px-lg py-md text-body text-fg"
+              >
                 <p className="whitespace-pre-wrap">{m.text}</p>
-                <p className="mt-1 text-caption text-ai-ink/70">
+                <p className="mt-xs text-caption text-ai-ink/70">
                   {m.scope ? `범위 ${rangeToA1(m.scope)}` : "시트 전체"}
                 </p>
               </div>

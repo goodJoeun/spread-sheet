@@ -1,24 +1,24 @@
 /*
- * 여러 화면에서 같이 쓰는 컨트롤. 상태는 클래스를 바꾸지 않고 aria-* / data-* 속성으로 표현한다
- * (aria-pressed, aria-checked, aria-expanded). 접근성 속성과 모양이 어긋날 일이 없다.
+ * 여러 곳에서 다시 쓰는 컨트롤만 둔다. 한 곳에서만 쓰는 모양은 그 컴포넌트에 유틸리티로 적는다.
+ * 상태는 클래스를 바꾸지 않고 aria-* 속성으로 표현한다(aria-pressed, aria-checked, aria-expanded).
  */
 @layer components {
-  /* 글자 버튼: .btn + 종류(.btn-ai, .btn-outline, .btn-ghost, .btn-warn) + 크기(.btn-sm) */
+  /* 글자 버튼: .btn + 종류(.btn-ai, .btn-outline, .btn-ghost, .btn-warn) + 작은 크기(.btn-sm) */
   .btn {
-    @apply inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium;
+    @apply inline-flex items-center gap-xs rounded-md px-lg py-sm text-label font-medium;
   }
   .btn-sm {
-    @apply rounded px-2 py-0.5;
+    @apply rounded-sm px-md py-2xs;
   }
   .btn-ai {
-    @apply bg-ai font-semibold text-white hover:bg-ai/90;
+    @apply bg-ai font-semibold text-fg-inverse hover:bg-ai/90;
     @apply disabled:bg-fill-strong disabled:text-fg-faint;
   }
   .btn-outline {
     @apply border border-line text-fg-secondary hover:bg-hover disabled:opacity-40;
   }
   .btn-ghost {
-    @apply px-2 text-fg-muted hover:bg-hover;
+    @apply px-md text-fg-muted hover:bg-hover;
     @apply aria-pressed:bg-accent-soft aria-pressed:text-accent aria-pressed:hover:bg-accent-soft;
   }
   .btn-warn {
@@ -27,21 +27,18 @@
 
   /* 아이콘 버튼: 툴바(32px), 패널·목록 안의 작은 버튼(.icon-btn-sm) */
   .icon-btn {
-    @apply flex size-8 items-center justify-center rounded text-fg-secondary transition-colors;
+    @apply flex size-8 items-center justify-center rounded-sm text-fg-secondary transition-colors;
     @apply hover:bg-hover aria-expanded:bg-hover;
     @apply disabled:text-fg-disabled disabled:hover:bg-transparent;
     @apply aria-pressed:bg-accent-soft aria-pressed:text-accent aria-pressed:hover:bg-accent-soft;
   }
   .icon-btn-sm {
-    @apply rounded p-1 text-fg-subtle hover:bg-hover hover:text-fg;
-  }
-  .icon-btn-accent {
-    @apply text-accent hover:bg-accent/10 hover:text-accent;
+    @apply rounded-sm p-xs text-fg-subtle hover:bg-hover hover:text-fg;
   }
 
   /* 둥근 보내기·중단 버튼 */
   .round-btn {
-    @apply flex size-8 shrink-0 items-center justify-center rounded-full text-white;
+    @apply flex size-8 shrink-0 items-center justify-center rounded-full text-fg-inverse;
   }
   .round-btn-ai {
     @apply bg-ai hover:bg-ai/90 disabled:bg-fill-strong disabled:text-fg-faint;
@@ -50,42 +47,35 @@
     @apply bg-fg hover:bg-fg-secondary;
   }
 
-  /* 알약 모양 선택지: 고른 것은 aria-checked */
+  /* 알약 모양 선택지: 고른 것은 aria-checked. .chip-suggest는 눌러서 채워 넣는 예시 */
   .chip {
-    @apply rounded-full border border-line px-2.5 py-1 text-fg-muted hover:bg-hover;
+    @apply rounded-full border border-line px-md py-xs text-label text-fg-muted hover:bg-hover;
     @apply aria-checked:border-ai aria-checked:bg-ai-soft aria-checked:text-ai-ink;
     @apply aria-checked:hover:bg-ai-soft;
   }
   .chip-suggest {
-    @apply bg-surface px-3 text-xs text-fg-secondary;
+    @apply bg-surface px-lg text-fg-secondary;
     @apply hover:border-ai hover:bg-surface hover:text-ai-ink;
   }
 
   .badge {
-    @apply truncate rounded bg-fill px-1.5 text-tag leading-4 font-medium text-fg-muted;
+    @apply truncate rounded-sm bg-fill px-sm text-caption font-medium text-fg-muted;
   }
   .badge-warn {
     @apply bg-warn-muted text-warn-ink;
   }
 
-  /* 주의 안내: 상자(.notice), 화면 폭 띠(.notice-bar) */
+  /* 주의 안내 상자 */
   .notice {
-    @apply rounded border border-warn-line bg-warn-soft px-2.5 py-1.5 text-xs text-warn-ink;
-  }
-  .notice-bar {
-    @apply flex shrink-0 items-center gap-2 border-b border-warn-line bg-warn-soft px-4 py-1.5;
-    @apply text-body text-warn-ink;
+    @apply rounded-sm border border-warn-line bg-warn-soft px-md py-sm text-label text-warn-ink;
   }
 
-  /* 팝오버와 그 안의 항목. 위치와 너비는 쓰는 곳에서 정한다. */
+  /* 팝오버와 그 안의 목록 행. 팝오버의 위치와 너비는 쓰는 곳에서 정한다. */
   .popover {
     @apply absolute z-50 rounded-lg border border-line bg-surface shadow-lg;
   }
-  .menu-item {
-    @apply w-full rounded px-2 py-1 text-left text-xs text-fg-secondary hover:bg-hover;
-  }
   .list-row {
-    @apply flex w-full items-center gap-3 px-3 py-1.5 text-left;
+    @apply flex w-full items-center gap-lg px-lg py-sm text-left;
   }
   button.list-row {
     @apply hover:bg-hover disabled:hover:bg-transparent;
@@ -97,28 +87,8 @@
     @apply block text-caption text-fg-subtle;
   }
 
-  .text-input {
-    @apply rounded border border-accent px-2 py-1 text-body outline-none;
-  }
-  .select-inline {
-    @apply min-w-0 truncate rounded-md bg-transparent py-1 pr-1 pl-1.5 text-xs text-fg-muted;
-    @apply outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-ai/40;
-  }
-
   .avatar {
     @apply flex size-7 shrink-0 items-center justify-center rounded-full;
-    @apply text-xs font-semibold text-white ring-2 ring-white;
-  }
-  .avatar-more {
-    @apply bg-fill-strong text-caption text-fg-muted;
-  }
-
-  /* 색 견본: 고른 색은 aria-checked */
-  .swatch {
-    @apply size-5 rounded-sm border border-outline hover:scale-110;
-    @apply aria-checked:ring-2 aria-checked:ring-accent aria-checked:ring-offset-1;
-  }
-  .swatch-bar {
-    @apply mt-0.5 h-[3px] w-4 rounded-sm border border-outline;
+    @apply text-label font-semibold text-fg-inverse ring-2 ring-surface;
   }
 }

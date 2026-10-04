@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useRef, useState, type ReactNode } from "react";
+import { ICON } from "@/components/ui/icon";
 import { useDismiss } from "@/components/ui/useDismiss";
 import { isApplePlatform } from "@/lib/platform";
 import { commonStyle, hasFormatEverywhere } from "@/lib/sheet/document";
@@ -74,6 +75,17 @@ const ALIGN_BUTTONS: { value: Alignment; label: string; icon: LucideIcon; shortc
   { value: "right", label: "오른쪽 정렬", icon: AlignRight, shortcut: "Shift+R" },
 ];
 
+/** 툴바 오른쪽 끝의 AI 편집 버튼. 패널이 열려 있으면 aria-pressed */
+const AI_TOGGLE =
+  "ml-auto flex h-8 items-center gap-sm rounded-full px-lg text-body font-medium transition-colors " +
+  "text-ai-ink hover:bg-ai-soft " +
+  "aria-pressed:bg-ai aria-pressed:text-fg-inverse aria-pressed:hover:bg-ai/90";
+
+/** 고른 색은 aria-checked */
+const SWATCH =
+  "size-5 rounded-sm border border-outline hover:scale-110 " +
+  "aria-checked:ring-2 aria-checked:ring-accent aria-checked:ring-offset-1";
+
 export function Toolbar() {
   const { session, controller, aiPanel } = useSheet();
   const aiOpen = useStore(aiPanel);
@@ -92,7 +104,7 @@ export function Toolbar() {
     <div
       role="toolbar"
       aria-label="서식 도구"
-      className="toolbar"
+      className="flex h-10 shrink-0 items-center gap-2xs border-b border-line bg-surface-muted px-md"
       // 버튼을 눌러도 그리드의 포커스(편집 중인 셀 포함)를 빼앗지 않는다.
       onMouseDown={(e) => e.preventDefault()}
     >
@@ -102,7 +114,7 @@ export function Toolbar() {
         disabled={!canUndo}
         onClick={() => run(() => controller.undo())}
       >
-        <Undo2 size={16} />
+        <Undo2 size={ICON.md} />
       </ToolbarButton>
       <ToolbarButton
         label="다시 실행"
@@ -110,7 +122,7 @@ export function Toolbar() {
         disabled={!canRedo}
         onClick={() => run(() => controller.redo())}
       >
-        <Redo2 size={16} />
+        <Redo2 size={ICON.md} />
       </ToolbarButton>
 
       <Divider />
@@ -123,7 +135,7 @@ export function Toolbar() {
           pressed={hasFormatEverywhere(doc, range, key)}
           onClick={() => run(() => controller.toggleFormat(key))}
         >
-          <Icon size={16} />
+          <Icon size={ICON.md} />
         </ToolbarButton>
       ))}
 
@@ -158,7 +170,7 @@ export function Toolbar() {
           pressed={commonStyle(doc, range, "align") === value}
           onClick={() => run(() => controller.setStyle("align", value))}
         >
-          <Icon size={16} />
+          <Icon size={ICON.md} />
         </ToolbarButton>
       ))}
 
@@ -169,16 +181,16 @@ export function Toolbar() {
         shortcut={`${mod}\\`}
         onClick={() => run(() => controller.clearFormats())}
       >
-        <RemoveFormatting size={16} />
+        <RemoveFormatting size={ICON.md} />
       </ToolbarButton>
 
       <button
         type="button"
         aria-pressed={aiOpen}
         onClick={() => aiPanel.set((open) => !open)}
-        className="ai-toggle ml-auto"
+        className={AI_TOGGLE}
       >
-        <Sparkles size={15} aria-hidden />
+        <Sparkles size={ICON.md} aria-hidden />
         AI 편집
       </button>
     </div>
@@ -186,7 +198,7 @@ export function Toolbar() {
 }
 
 function Divider() {
-  return <div className="toolbar-divider" aria-hidden />;
+  return <div className="mx-xs h-5 w-px bg-line" aria-hidden />;
 }
 
 interface ToolbarButtonProps {
@@ -262,20 +274,23 @@ function ColorMenu({
         onClick={() => setOpen((o) => !o)}
         className="icon-btn flex-col"
       >
-        <Icon size={15} />
-        <span className="swatch-bar" style={{ backgroundColor: value ?? defaultSwatch }} />
+        <Icon size={ICON.md} />
+        <span
+          className="mt-2xs h-[3px] w-4 rounded-sm border border-outline"
+          style={{ backgroundColor: value ?? defaultSwatch }}
+        />
       </button>
       {open && (
-        <div role="menu" aria-label={label} className="popover top-9 left-0 w-[188px] p-2">
+        <div role="menu" aria-label={label} className="popover top-9 left-0 w-[188px] p-md">
           <button
             type="button"
             role="menuitem"
             onClick={() => pick(null)}
-            className="menu-item mb-2"
+            className="mb-md w-full rounded-sm px-md py-xs text-left text-label text-fg-secondary hover:bg-hover"
           >
             {resetLabel}
           </button>
-          <div className="grid grid-cols-8 gap-1">
+          <div className="grid grid-cols-8 gap-xs">
             {colors.map((color) => (
               <button
                 key={color}
@@ -285,7 +300,7 @@ function ColorMenu({
                 aria-label={color}
                 title={color}
                 onClick={() => pick(color)}
-                className="swatch"
+                className={SWATCH}
                 style={{ backgroundColor: color }}
               />
             ))}

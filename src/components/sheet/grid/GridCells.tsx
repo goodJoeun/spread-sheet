@@ -36,7 +36,7 @@ const Cell = memo(function Cell({
   const decoration = [underline && "underline", strike && "line-through"].filter(Boolean).join(" ");
   return (
     <div
-      className="cell"
+      className="overflow-hidden border-r border-b border-line-grid px-xs text-body leading-cell whitespace-pre"
       style={{
         gridRow: row + 2,
         gridColumn: col + 2,

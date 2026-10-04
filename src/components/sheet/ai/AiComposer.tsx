@@ -10,8 +10,13 @@ import { useStore } from "@/lib/store";
 import { useSelection, useSheet } from "../SheetContext";
 import { useParticipants } from "../useSheetSession";
 import { chooseModel } from "./useAiConnection";
+import { ICON } from "@/components/ui/icon";
 
 type ScopeMode = "selection" | "sheet";
+
+const MODEL_SELECT =
+  "min-w-0 truncate rounded-md bg-transparent py-xs pr-xs pl-sm text-label text-fg-muted " +
+  "outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-ai/40";
 
 interface AiComposerProps {
   inputRef: RefObject<HTMLTextAreaElement | null>;
@@ -54,9 +59,9 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   };
 
   return (
-    <div className="border-t border-line p-3">
+    <div className="border-t border-line p-lg">
       {overlaps.length > 0 && <OverlapNotice overlaps={overlaps} />}
-      <div role="radiogroup" aria-label="편집 범위" className="mb-2 flex gap-1 text-xs">
+      <div role="radiogroup" aria-label="편집 범위" className="mb-md flex gap-xs">
         <ScopeOption checked={mode === "selection"} onSelect={() => setChosen("selection")}>
           선택 범위 <span className="font-semibold">{rangeToA1(range)}</span>
         </ScopeOption>
@@ -65,7 +70,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
         </ScopeOption>
       </div>
 
-      <div className="composer">
+      <div className="rounded-lg border border-line px-md pt-md pb-sm focus-within:border-ai">
         <textarea
           ref={inputRef}
           value={draft}
@@ -79,9 +84,9 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
               ? "제안을 적용하거나 버리면 새 요청을 보낼 수 있어요"
               : "예: 이 범위의 숫자를 두 배로 바꿔 줘"
           }
-          className="composer-input"
+          className="block max-h-32 min-h-10 w-full resize-none bg-transparent text-body outline-none placeholder:text-fg-faint"
         />
-        <div className="mt-1 flex items-center gap-2">
+        <div className="mt-xs flex items-center gap-md">
           {connection && <ModelSelect connection={connection} />}
           {running ? (
             <button
@@ -91,7 +96,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
               title="생성 중단 (Esc)"
               className="round-btn round-btn-dark ml-auto"
             >
-              <Square size={12} fill="currentColor" aria-hidden />
+              <Square size={ICON.sm} fill="currentColor" aria-hidden />
             </button>
           ) : (
             <button
@@ -102,12 +107,12 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
               title="보내기 (Enter)"
               className="round-btn round-btn-ai ml-auto"
             >
-              <ArrowUp size={16} aria-hidden />
+              <ArrowUp size={ICON.md} aria-hidden />
             </button>
           )}
         </div>
       </div>
-      <p className="mt-1.5 text-caption text-fg-faint">
+      <p className="mt-sm text-caption text-fg-faint">
         Enter로 보내기 · Shift+Enter 줄바꿈 · AI 결과는 적용하기 전까지 시트에 쓰이지 않아요
       </p>
     </div>
@@ -123,7 +128,7 @@ function ModelSelect({ connection }: { connection: AiConnectionInfo }) {
       onChange={(e) => chooseModel(ai, e.target.value)}
       aria-label="AI 모델"
       title="다음 요청에 쓸 모델"
-      className="select-inline"
+      className={MODEL_SELECT}
     >
       {connection.models.map((m) => (
         <option key={m.id} value={m.id}>
@@ -154,8 +159,8 @@ function OverlapNotice({ overlaps }: { overlaps: AiOverlap[] }) {
   const names = overlaps.map((o) => o.participant.user.name).join(", ");
   const reviewing = overlaps.every((o) => o.activity.status === "reviewing");
   return (
-    <p role="status" className="notice mb-2 flex gap-1.5">
-      <Sparkles size={13} className="mt-0.5 shrink-0" aria-hidden />
+    <p role="status" className="notice mb-md flex gap-sm">
+      <Sparkles size={ICON.sm} className="mt-2xs shrink-0" aria-hidden />
       <span>
         {names}님이 이 범위를 AI로 {reviewing ? "검토" : "편집"} 중이에요. 요청할 수는 있지만, 먼저
         적용된 셀은 내 결과에서 충돌로 표시되고 기본으로 건너뛰어요.

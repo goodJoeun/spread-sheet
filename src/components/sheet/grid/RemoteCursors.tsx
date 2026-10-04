@@ -3,6 +3,7 @@ import { Fragment, memo } from "react";
 import type { Participant } from "@/lib/collab/presence";
 import { cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { clampCoord, isMultiCell, selectionRange } from "@/lib/sheet/selection";
+import { ICON } from "@/components/ui/icon";
 import { Layer } from "./layers";
 
 interface RemoteCursorsProps {
@@ -30,7 +31,7 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
       <Fragment key={clientId}>
         {isMultiCell(safe) && (
           <div
-            className="remote-range"
+            className="overlay border"
             style={{
               ...range,
               zIndex: Layer.remoteRange,
@@ -40,7 +41,7 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
           />
         )}
         <div
-          className="remote-cursor"
+          className="overlay border-2"
           style={{
             ...rect,
             zIndex: Layer.remoteCursor,
@@ -49,16 +50,15 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
           }}
         />
         <div
-          className="name-tag"
+          className={`name-tag ${labelBelow ? "rounded-b-sm" : "rounded-t-sm"}`}
           style={{
             left: rect.left,
             top: labelBelow ? rect.top + rect.height : rect.top - 16,
             zIndex: Layer.remoteLabel,
             backgroundColor: user.color,
-            borderRadius: labelBelow ? "0 0 3px 3px" : "3px 3px 0 0",
           }}
         >
-          {editing && <Pencil size={9} strokeWidth={2.5} aria-hidden />}
+          {editing && <Pencil size={ICON.xs} strokeWidth={2.5} aria-hidden />}
           {user.name}
           {editing && <span className="opacity-90">· 입력 중</span>}
         </div>

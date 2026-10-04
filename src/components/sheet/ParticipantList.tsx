@@ -2,6 +2,7 @@
 
 import { Check, Pencil, Users } from "lucide-react";
 import { useCallback, useRef, useState, type KeyboardEvent } from "react";
+import { ICON } from "@/components/ui/icon";
 import { useDismiss } from "@/components/ui/useDismiss";
 import type { Participant, Presence } from "@/lib/collab/presence";
 import { rangeToA1, toA1, type CellCoord } from "@/lib/sheet/address";
@@ -36,27 +37,27 @@ export function ParticipantList() {
         aria-expanded={open}
         aria-label={`참여자 ${participants.length}명`}
         onClick={() => setOpen((o) => !o)}
-        className="participants-button"
+        className="flex items-center gap-md rounded-full py-xs pr-lg pl-xs hover:bg-hover"
       >
         <span className="flex">
           {shown.map((p, i) => (
-            <Avatar key={p.clientId} participant={p} className={i > 0 ? "-ml-1.5" : ""} />
+            <Avatar key={p.clientId} participant={p} className={i > 0 ? "-ml-sm" : ""} />
           ))}
-          {hidden > 0 && <span className="avatar avatar-more -ml-1.5">+{hidden}</span>}
+          {hidden > 0 && (
+            <span className="avatar -ml-sm bg-fill-strong text-caption text-fg-muted">
+              +{hidden}
+            </span>
+          )}
         </span>
-        <span className="flex items-center gap-1 text-body text-fg-muted">
-          <Users size={14} aria-hidden />
+        <span className="flex items-center gap-xs text-body text-fg-muted">
+          <Users size={ICON.sm} aria-hidden />
           {participants.length}
         </span>
       </button>
 
       {open && (
-        <div
-          role="dialog"
-          aria-label="참여자 목록"
-          className="popover top-11 right-0 w-72 py-2 shadow-xl"
-        >
-          <p className="px-3 pb-2 text-xs font-medium text-fg-subtle">
+        <div role="dialog" aria-label="참여자 목록" className="popover top-11 right-0 w-72 py-md">
+          <p className="px-lg pb-md text-label font-medium text-fg-subtle">
             지금 이 시트에 {participants.length}명이 있어요
           </p>
           <ul>
@@ -146,7 +147,7 @@ function SelfRow({
             onClick={() => setDraft(participant.user.name)}
             className="icon-btn-sm"
           >
-            <Pencil size={14} />
+            <Pencil size={ICON.sm} />
           </button>
         </>
       ) : (
@@ -158,15 +159,15 @@ function SelfRow({
             maxLength={20}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onKeyDown}
-            className="text-input min-w-0 flex-1"
+            className="min-w-0 flex-1 rounded-sm border border-accent px-md py-xs text-body outline-none"
           />
           <button
             type="button"
             aria-label="이름 저장"
             onClick={save}
-            className="icon-btn-sm icon-btn-accent"
+            className="icon-btn-sm text-accent hover:bg-accent/10 hover:text-accent"
           >
-            <Check size={16} />
+            <Check size={ICON.sm} />
           </button>
         </>
       )}

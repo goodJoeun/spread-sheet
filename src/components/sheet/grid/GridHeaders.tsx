@@ -7,11 +7,17 @@ interface GridHeadersProps {
   range: CellRange;
 }
 
+/** 선택 범위에 걸친 머리글은 data-active */
+const HEADER =
+  "sticky flex items-center justify-center border-r border-b border-line select-none " +
+  "bg-surface-muted text-caption text-fg-muted " +
+  "data-active:bg-accent-soft data-active:font-semibold data-active:text-accent";
+
 export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps) {
   const items = [
     <div
       key="corner"
-      className="grid-header top-0 left-0"
+      className={`${HEADER} top-0 left-0`}
       style={{ gridRow: 1, gridColumn: 1, zIndex: Layer.corner }}
     />,
   ];
@@ -20,7 +26,7 @@ export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps
     items.push(
       <div
         key={`c${col}`}
-        className="grid-header top-0"
+        className={`${HEADER} top-0`}
         data-active={active || undefined}
         style={{ gridRow: 1, gridColumn: col + 2, zIndex: Layer.header }}
       >
@@ -33,7 +39,7 @@ export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps
     items.push(
       <div
         key={`r${row}`}
-        className="grid-header left-0"
+        className={`${HEADER} left-0`}
         data-active={active || undefined}
         style={{ gridRow: row + 2, gridColumn: 1, zIndex: Layer.header }}
       >

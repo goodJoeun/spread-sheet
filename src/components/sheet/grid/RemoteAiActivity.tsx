@@ -4,6 +4,7 @@ import type { Participant } from "@/lib/collab/presence";
 import { intersectRanges } from "@/lib/sheet/address";
 import { outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { SHEET_RANGE } from "@/lib/sheet/schema";
+import { ICON } from "@/components/ui/icon";
 import { Layer } from "./layers";
 
 interface RemoteAiActivityProps {
@@ -24,7 +25,7 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
     return (
       <Fragment key={clientId}>
         <div
-          className="remote-ai-range"
+          className="overlay border-2 border-dashed"
           style={{
             ...rect,
             zIndex: Layer.remoteAi,
@@ -33,17 +34,16 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
           }}
         />
         <div
-          className="name-tag"
+          className={`name-tag ${labelBelow ? "rounded-b-sm" : "rounded-t-sm"}`}
           style={{
             // 같은 범위의 선택 이름표와 겹치지 않게 오른쪽 끝에 붙인다.
             right: `calc(100% - ${rect.left + rect.width}px)`,
             top: labelBelow ? rect.top + rect.height : rect.top - 16,
             zIndex: Layer.remoteLabel,
             backgroundColor: user.color,
-            borderRadius: labelBelow ? "0 0 3px 3px" : "3px 3px 0 0",
           }}
         >
-          <Sparkles size={9} strokeWidth={2.5} aria-hidden />
+          <Sparkles size={ICON.xs} strokeWidth={2.5} aria-hidden />
           {user.name} · {ai.status === "reviewing" ? "AI 결과 검토 중" : "AI 편집 중"}
         </div>
       </Fragment>
