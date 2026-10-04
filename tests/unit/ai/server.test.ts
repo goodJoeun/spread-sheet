@@ -118,6 +118,95 @@ describe("models", () => {
   });
 });
 
+/** API가 돌려주는 오류 본문 그대로 SDK 오류를 만든다. */
+function apiError(status: number, type: string, message: string, errorCode?: string) {
+  const details = errorCode ? { details: { error_code: errorCode } } : {};
+  return Anthropic.APIError.generate(
+    status,
+    { type: "error", error: { type, message, ...details } },
+    undefined,
+    new Headers(),
+  );
+}
+
+describe("toAiError: usage limits", () => {
+  it("treats the tier's monthly spend cap as a quota error, not a retryable rate limit", () => {
+    // 상한 429에는 retry-after가 없어 다시 보내도 다음 달까지 실패한다.
+    const error = apiError(
+      429,
+      "rate_limit_error",
+      "You have reached your API usage limits: your organization has crossed its monthly API usage threshold.",
+      "enforced_spend_limit_reached",
+    );
+    expect(toAiError(error)).toMatchObject({ code: "quota", retryable: false });
+  });
+
+  it("keeps an ordinary 429 retryable", () => {
+    const error = apiError(
+      429,
+      "rate_limit_error",
+      "Number of request tokens has exceeded your limit.",
+    );
+    expect(toAiError(error)).toMatchObject({ code: "rate_limited", retryable: true });
+  });
+
+  it.each([
+    [
+      "organization",
+      "You have reached your specified API usage limits. You will regain access on 2026-11-01.",
+    ],
+    [
+      "workspace",
+      "You have reached your specified workspace API usage limits. You will regain access on 2026-11-01.",
+    ],
+  ])("treats the %s spend limit I set (400) as a quota error", (_, message) => {
+    const error = apiError(400, "invalid_request_error", message);
+    expect(toAiError(error)).toMatchObject({ code: "quota", retryable: false });
+  });
+
+  it("keeps other 400s as bad requests", () => {
+    const error = apiError(400, "invalid_request_error", "max_tokens: Field required");
+    expect(toAiError(error)).toMatchObject({ code: "bad_request", retryable: false });
+  });
+});
+
+describe("toAiError: other failures", () => {
+  it.each([
+    [401, "authentication_error", "auth", false],
+    [403, "permission_error", "auth", false],
+    [500, "api_error", "overloaded", true],
+    [529, "overloaded_error", "overloaded", true],
+  ])("maps HTTP %i to %s", (status, type, code, retryable) => {
+    expect(toAiError(apiError(status, type, "x"))).toMatchObject({ code, retryable });
+  });
+
+  it.each([
+    ["overloaded_error", "overloaded"],
+    ["rate_limit_error", "rate_limited"],
+    ["authentication_error", "auth"],
+  ] as const)("maps a %s that arrives mid-stream (no HTTP status)", (type, code) => {
+    // SDK는 SSE error 이벤트를 상태 코드 없는 APIError로 던진다.
+    const error = new Anthropic.APIError(
+      undefined,
+      { type: "error", error: { type, message: "x" } },
+      undefined,
+      new Headers(),
+      type,
+    );
+    expect(toAiError(error).code).toBe(code);
+  });
+
+  it("separates a connection timeout from a dropped connection", () => {
+    expect(toAiError(new Anthropic.APIConnectionTimeoutError())).toMatchObject({
+      code: "timeout",
+      retryable: true,
+    });
+    expect(
+      toAiError(new Anthropic.APIConnectionError({ message: "socket hang up" })),
+    ).toMatchObject({ code: "network", retryable: true });
+  });
+});
+
 describe("streamClaudeEdits (real SDK against the mock API)", () => {
   it("streams meta, explanation text, edits in order, then done", async () => {
     const events = await collect(
