@@ -1,29 +1,20 @@
 @import "tailwindcss";
+@import "../styles/tokens.css";
+@import "../styles/controls.css";
+@import "../styles/sheet.css";
+@import "../styles/grid.css";
+@import "../styles/ai.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #1f2328;
-}
-
+/* 화면 코드를 새 토큰으로 옮기는 동안 남겨 두는 이전 이름 */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-accent: #1a73e8;
   --color-grid-line: #e2e3e3;
   --color-header: #f8f9fa;
   --color-header-active: #d3e3fd;
   --color-header-line: #c7c7c7;
-  /* AI 제안(미리보기·패널) */
-  --color-ai: #7c3aed;
-  --color-ai-soft: #f3efff;
-  --color-ai-ink: #4c1d95;
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic",
-    "Noto Sans KR", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-surface);
+  color: var(--color-fg);
   font-family: var(--font-sans);
 }
