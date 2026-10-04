@@ -5,11 +5,11 @@ import { useState, type KeyboardEvent } from "react";
 import { Popover } from "@/components/ui/Popover";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
-import type { Participant, Presence } from "@/lib/collab/presence";
+import { MAX_NAME_LENGTH, type Participant, type Presence } from "@/lib/collab/presence";
 import { rangeToA1, toA1, type CellCoord } from "@/lib/sheet/address";
 import { clampCoord, selectionRange } from "@/lib/sheet/selection";
 import { useSheet } from "./SheetContext";
-import { useParticipants } from "@/hooks/sheet/useSheetSession";
+import { useParticipants } from "@/hooks/sheet/useParticipants";
 
 const MAX_AVATARS = 4;
 
@@ -173,7 +173,7 @@ function SelfRow({
             autoFocus
             aria-label={strings.participants.nameInput}
             value={draft}
-            maxLength={20}
+            maxLength={MAX_NAME_LENGTH}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onKeyDown}
             className="min-w-0 flex-1 rounded-sm border border-accent px-md py-xs text-body outline-none"

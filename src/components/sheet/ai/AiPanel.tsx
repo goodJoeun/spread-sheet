@@ -3,7 +3,7 @@
 import { Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { rangeToA1 } from "@/lib/sheet/address";
-import { useStore } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
 import { useSheet } from "../SheetContext";
 import { AiComposer } from "./AiComposer";
 import { AiRunCard } from "./AiRunCard";

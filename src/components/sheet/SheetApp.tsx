@@ -3,7 +3,7 @@
 import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { Notice } from "@/components/ui/Notice";
-import { useStore } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
 import { strings } from "@/resources/strings";
 import { AiPanel } from "./ai/AiPanel";
 import { FormulaBar } from "./FormulaBar";

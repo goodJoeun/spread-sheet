@@ -77,13 +77,7 @@ ai/run-card/
 
 ## 알려진 예외 (고치면 이 목록에서 지운다)
 
-- `hooks/grid/useGridPointer.ts`가 `components/sheet/grid/viewport.ts`를 import한다.
-- `lib/ai/coedit.ts` ↔ `lib/ai/ai-controller.ts` 순환(타입 `AiProposal`).
-- `lib/store.ts`가 React(`useStore`)를 import한다.
 - `lib/ai/protocol.ts`, `lib/ai/server/claude.ts`가 `strings`의 화면 문구를 보낸다. `strings.ai.mockTags`가 가짜 서버의 동작 키로 쓰인다.
-- `lib/ai/server/*`에 `server-only`가 없다.
 - `components/sheet/ai/AiComposer.tsx`의 `ModelSelect`가 하위 컴포넌트인데 `useSheet()`를 직접 읽는다 → 분리 대상.
 - `components/sheet/ai/AiRunCard.tsx`(약 300줄) → `run-card/` 폴더 대상.
-- `NUMBER_PATTERN`이 `GridCells.tsx`, `AiPreview.tsx`에 중복된다. 이름표 위치 계산(`-16`/`-18`)이 오버레이 컴포넌트마다 다르다.
-- 시트 크기(100×26)가 `lib/ai/server/prompt.ts`, `validate.ts`, `protocol.ts`에 숫자로 적혀 있다.
-- `hooks/sheet/useSheetSession.ts`에 `useParticipants`, `useDocVersion`이 함께 있다.
+- 이름표 위치 계산(`-16`/`-18`)이 오버레이 컴포넌트마다 다르다.

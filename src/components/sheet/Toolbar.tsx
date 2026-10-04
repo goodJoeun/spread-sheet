@@ -25,10 +25,10 @@ import { isApplePlatform } from "@/lib/platform";
 import { commonStyle, hasFormatEverywhere } from "@/lib/sheet/document";
 import type { Alignment, FormatKey } from "@/lib/sheet/schema";
 import { selectionRange } from "@/lib/sheet/selection";
-import { useStore } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
 import { useSelection, useSheet } from "./SheetContext";
 import { useUndoState } from "@/hooks/sheet/useUndoState";
-import { useDocVersion } from "@/hooks/sheet/useSheetSession";
+import { useDocVersion } from "@/hooks/sheet/useDocVersion";
 
 const FORMAT_BUTTONS: { key: FormatKey; label: string; icon: LucideIcon; shortcut: string }[] = [
   { key: "bold", label: strings.toolbar.bold, icon: Bold, shortcut: "B" },

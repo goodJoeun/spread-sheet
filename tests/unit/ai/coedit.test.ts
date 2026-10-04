@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AiProposal } from "@/lib/ai/ai-controller";
+import type { AiProposal } from "@/lib/ai/run";
 import {
   activityRange,
   aiActivitiesAt,

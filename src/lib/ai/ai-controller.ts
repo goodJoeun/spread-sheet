@@ -31,6 +31,7 @@ import {
   type AiHistoryItem,
   type AiStreamEvent,
 } from "./protocol";
+import { isRunning, type AiMessage, type AiProposal, type AiRun } from "./run";
 import { AiRequestError, type AiTransport } from "./transport";
 
 /**
@@ -40,50 +41,6 @@ import { AiRequestError, type AiTransport } from "./transport";
 
 export const SLOW_AFTER_MS = 5_000;
 export const IDLE_TIMEOUT_MS = 60_000;
-
-export type AiRunStatus =
-  | "waiting"
-  | "streaming"
-  | "review"
-  | "answered" // 바꿀 셀 없이 답만 함
-  | "applied"
-  | "discarded"
-  | "cancelled"
-  | "error";
-
-export interface AiProposal {
-  coord: CellCoord;
-  cell: string;
-  /** 요청 시점의 값 */
-  before: string;
-  after: string;
-}
-
-export interface AiRun {
-  id: number;
-  instruction: string;
-  /** 편집을 허용한 범위. null이면 시트 전체 */
-  scope: CellRange | null;
-  status: AiRunStatus;
-  connected: boolean;
-  slow: boolean;
-  provider: string | null;
-  model: string | null;
-  text: string;
-  proposals: AiProposal[];
-  /** 범위 밖 등으로 뺀 제안 수 */
-  skipped: number;
-  warnings: string[];
-  error: AiErrorInfo | null;
-  /** 요청 시점의 셀 값(비어 있지 않은 셀) */
-  base: ReadonlyMap<string, string>;
-  /** 적용한 결과. 요청 뒤 바뀌어서 건너뛴 셀 수를 함께 보여 준다. */
-  result: { applied: number; skipped: number } | null;
-}
-
-export type AiMessage =
-  | { id: number; role: "user"; text: string; scope: CellRange | null }
-  | { id: number; role: "assistant"; run: AiRun };
 
 export interface AiSheetBinding {
   commitEdit(): void;
@@ -95,8 +52,6 @@ export interface AiSheetBinding {
 export interface AiPresenceBinding {
   setAi(activity: AiActivity | null): void;
 }
-
-const RUNNING: ReadonlySet<AiRunStatus> = new Set(["waiting", "streaming"]);
 
 export class AiController {
   readonly messages = createStore<AiMessage[]>([]);
@@ -386,7 +341,7 @@ export class AiController {
   private publishActivity(): void {
     const run = this.active.get();
     let activity: AiActivity | null = null;
-    if (run && (RUNNING.has(run.status) || run.status === "review")) {
+    if (run && (isRunning(run) || run.status === "review")) {
       activity = {
         status: run.status === "review" ? "reviewing" : "generating",
         range: activityRange(run.scope, run.proposals),
@@ -428,7 +383,7 @@ export class AiController {
     );
     const active = this.active.get();
     const updated = this.findRun(runId);
-    if (updated && active?.id === runId && RUNNING.has(active.status)) this.active.set(updated);
+    if (updated && active?.id === runId && isRunning(active)) this.active.set(updated);
   }
 
   private sheetCells(): AiCell[] {

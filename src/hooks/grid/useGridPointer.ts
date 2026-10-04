@@ -1,7 +1,7 @@
 import { useMemo, useRef, type MouseEvent, type PointerEvent, type RefObject } from "react";
-import type { PointerTargetKind, SheetController } from "@/lib/controller/sheet-controller";
+import type { SheetController } from "@/lib/controller/sheet-controller";
+import { hitTest, type PointerTargetKind } from "@/lib/sheet/viewport";
 import type { CellEditorBinding } from "./useCellEditor";
-import { hitTest } from "@/components/sheet/grid/viewport";
 
 interface GridPointerOptions {
   controller: SheetController;

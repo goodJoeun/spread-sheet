@@ -1,15 +1,11 @@
-import type { CellCoord } from "@/lib/sheet/address";
-import {
-  COL_HEADER_HEIGHT,
-  COL_WIDTH,
-  ROW_HEADER_WIDTH,
-  ROW_HEIGHT,
-  cellRect,
-} from "@/lib/sheet/geometry";
-import type { PointerTargetKind } from "@/lib/controller/sheet-controller";
-import { clampCoord } from "@/lib/sheet/selection";
+import type { CellCoord } from "./address";
+import { COL_HEADER_HEIGHT, COL_WIDTH, ROW_HEADER_WIDTH, ROW_HEIGHT, cellRect } from "./geometry";
+import { clampCoord } from "./selection";
 
 /** 고정 머리글에 가리는 부분은 빼고 계산한다. */
+
+/** 그리드에서 누른 곳: 셀, 행 머리글, 열 머리글, 왼쪽 위 모서리 */
+export type PointerTargetKind = "cell" | "row" | "col" | "corner";
 
 export function revealCell(scroller: HTMLElement | null, coord: CellCoord): void {
   if (!scroller) return;

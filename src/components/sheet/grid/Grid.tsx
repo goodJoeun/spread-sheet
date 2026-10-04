@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useStore } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
 import { getFormat } from "@/lib/sheet/document";
 import {
   COL_HEADER_HEIGHT,
@@ -14,7 +14,8 @@ import {
 import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
 import { sameCoord, selectionRange } from "@/lib/sheet/selection";
 import { useEditState, useSelection, useSheet } from "../SheetContext";
-import { useDocVersion, useParticipants } from "@/hooks/sheet/useSheetSession";
+import { useDocVersion } from "@/hooks/sheet/useDocVersion";
+import { useParticipants } from "@/hooks/sheet/useParticipants";
 import { aiActivitiesAt } from "@/lib/ai/coedit";
 import { AiPreview } from "./AiPreview";
 import { CellEditor } from "./CellEditor";
@@ -27,7 +28,7 @@ import { SelectionOverlay } from "./SelectionOverlay";
 import { useCellEditor } from "@/hooks/grid/useCellEditor";
 import { useGridPointer } from "@/hooks/grid/useGridPointer";
 import { strings } from "@/resources/strings";
-import { revealCell, visibleRowCount } from "./viewport";
+import { revealCell, visibleRowCount } from "@/lib/sheet/viewport";
 
 const CONTENT_WIDTH = ROW_HEADER_WIDTH + COL_COUNT * COL_WIDTH;
 const CONTENT_HEIGHT = COL_HEADER_HEIGHT + ROW_COUNT * ROW_HEIGHT;

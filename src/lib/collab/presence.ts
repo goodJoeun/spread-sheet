@@ -35,7 +35,7 @@ export interface Participant extends PresenceState {
   isSelf: boolean;
 }
 
-const MAX_NAME_LENGTH = 20;
+export const MAX_NAME_LENGTH = 20;
 
 const pick = <T>(items: readonly T[], random: () => number): T =>
   items[Math.floor(random() * items.length)];

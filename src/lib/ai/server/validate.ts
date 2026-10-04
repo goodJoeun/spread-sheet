@@ -1,14 +1,23 @@
+import "server-only";
 import { z } from "zod";
+import { isSheetCellA1 } from "@/lib/sheet/schema";
 import { AI_LIMITS, type AiEditRequest } from "../protocol";
 
-const CELL = /^[A-Z]{1,2}[1-9]\d{0,2}$/;
-const RANGE = /^[A-Z]{1,2}[1-9]\d{0,2}(:[A-Z]{1,2}[1-9]\d{0,2})?$/;
+const isSheetRangeA1 = (input: string) => {
+  const parts = input.split(":");
+  return parts.length <= 2 && parts.every(isSheetCellA1);
+};
 
 const requestSchema = z.object({
   instruction: z.string().trim().min(1).max(AI_LIMITS.instruction),
-  range: z.string().regex(RANGE).nullable(),
+  range: z.string().refine(isSheetRangeA1).nullable(),
   cells: z
-    .array(z.object({ cell: z.string().regex(CELL), value: z.string().max(AI_LIMITS.cellValue) }))
+    .array(
+      z.object({
+        cell: z.string().refine(isSheetCellA1),
+        value: z.string().max(AI_LIMITS.cellValue),
+      }),
+    )
     .max(AI_LIMITS.cells),
   history: z
     .array(

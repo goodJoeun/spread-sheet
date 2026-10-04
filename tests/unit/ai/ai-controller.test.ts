@@ -6,8 +6,8 @@ import {
   IDLE_TIMEOUT_MS,
   SLOW_AFTER_MS,
   type AiPresenceBinding,
-  type AiRun,
 } from "@/lib/ai/ai-controller";
+import type { AiRun } from "@/lib/ai/run";
 import { aiError, type AiEditRequest, type AiStreamEvent } from "@/lib/ai/protocol";
 import {
   AiRequestError,

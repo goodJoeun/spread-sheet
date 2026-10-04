@@ -1,3 +1,4 @@
+import "server-only";
 import { AI_LIMITS } from "../protocol";
 
 export interface ParsedEdit {

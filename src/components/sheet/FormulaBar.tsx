@@ -5,7 +5,7 @@ import { getValue } from "@/lib/sheet/document";
 import { selectionRange } from "@/lib/sheet/selection";
 import { useSelection, useSheet } from "./SheetContext";
 import { strings } from "@/resources/strings";
-import { useDocVersion } from "@/hooks/sheet/useSheetSession";
+import { useDocVersion } from "@/hooks/sheet/useDocVersion";
 
 export function FormulaBar() {
   const { session } = useSheet();

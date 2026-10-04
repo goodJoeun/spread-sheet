@@ -6,7 +6,7 @@ import {
 } from "@/lib/sheet/address";
 import { SHEET_RANGE } from "@/lib/sheet/schema";
 import type { AiActivity, Participant } from "@/lib/collab/presence";
-import type { AiProposal } from "./ai-controller";
+import type { AiProposal } from "./run";
 
 /**
  * 요청 시점 값(base)에서 바뀐 셀은 충돌로 보고 기본으로 건너뛴다.

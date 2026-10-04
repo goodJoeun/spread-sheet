@@ -53,6 +53,9 @@ describe("POST /api/ai/edit", () => {
     const invalid = await post({ ...body("x"), range: "A1:ZZZ9999" });
     expect(invalid.status).toBe(400);
     expect(await invalid.json()).toMatchObject({ error: { code: "bad_request" } });
+    // 형식은 맞지만 시트(A1:Z100) 밖인 주소
+    const outside = await post({ ...body("x"), cells: [{ cell: "AA1", value: "1" }] });
+    expect(outside.status).toBe(400);
   });
 
   it("answers with the picked model and refuses models the server does not offer", async () => {

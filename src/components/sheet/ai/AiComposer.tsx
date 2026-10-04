@@ -3,12 +3,13 @@
 import { ArrowUp, Sparkles, Square } from "lucide-react";
 import { useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { overlappingAi, type AiOverlap } from "@/lib/ai/coedit";
-import type { AiConnectionInfo } from "@/lib/ai/protocol";
+import { AI_LIMITS, type AiConnectionInfo } from "@/lib/ai/protocol";
+import { isRunning } from "@/lib/ai/run";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { isMultiCell, selectionRange } from "@/lib/sheet/selection";
-import { useStore } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
 import { useSelection, useSheet } from "../SheetContext";
-import { useParticipants } from "@/hooks/sheet/useSheetSession";
+import { useParticipants } from "@/hooks/sheet/useParticipants";
 import { chooseModel } from "@/hooks/ai/useAiConnection";
 import { Notice } from "@/components/ui/Notice";
 import { strings } from "@/resources/strings";
@@ -32,7 +33,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   const selection = useSelection();
   const participants = useParticipants(session.presence);
   const active = useStore(ai.active);
-  const running = active?.status === "waiting" || active?.status === "streaming";
+  const running = isRunning(active);
   const reviewing = active?.status === "review";
 
   // 범위를 여러 칸 선택해 두었으면 그 범위로, 아니면 시트 전체로. 사용자가 고르면 그걸 따른다.
@@ -80,7 +81,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
           onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={onKeyDown}
           rows={2}
-          maxLength={2000}
+          maxLength={AI_LIMITS.instruction}
           aria-label={strings.ai.composer.input}
           placeholder={
             reviewing ? strings.ai.composer.placeholderReviewing : strings.ai.composer.placeholder

@@ -1,13 +1,12 @@
 import { Sparkles } from "lucide-react";
 import { memo } from "react";
-import type { AiRun } from "@/lib/ai/ai-controller";
+import { isRunning, type AiRun } from "@/lib/ai/run";
 import { summarize, type ProposalState } from "@/lib/ai/coedit";
 import { COL_WIDTH, ROW_HEIGHT, cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
+import { defaultAlignment } from "@/lib/sheet/schema";
 import { ICON } from "@/styles/icon";
 import { strings } from "@/resources/strings";
 import { Layer } from "./layers";
-
-const NUMBER_PATTERN = /^[-+]?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?%?$/;
 
 const PROPOSAL =
   "overlay overflow-hidden bg-ai-soft px-xs text-body leading-cell whitespace-pre text-ai-ink";
@@ -25,7 +24,7 @@ interface AiPreviewProps {
 /** 문서에는 쓰지 않고 셀 위에 제안 값을 덮어 그리기만 한다. */
 export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: AiPreviewProps) {
   if (!run) return null;
-  const generating = run.status === "waiting" || run.status === "streaming";
+  const generating = isRunning(run);
   const scope = run.scope ? outsetRect(rangeRect(run.scope)) : null;
   const { conflicts } = summarize(states);
   const count = states.filter((s) => s.status !== "same").length;
@@ -78,7 +77,7 @@ export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: 
             <div
               key={p.cell}
               className={`${PROPOSAL} ${overwrite ? PROPOSAL_MARK_OVERWRITE : PROPOSAL_MARK}`}
-              style={{ ...box, textAlign: NUMBER_PATTERN.test(p.after) ? "right" : "left" }}
+              style={{ ...box, textAlign: defaultAlignment(p.after) }}
             >
               {cleared ? <span className="text-fg-faint line-through">{current}</span> : p.after}
             </div>

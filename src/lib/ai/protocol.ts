@@ -3,15 +3,16 @@
  * 스트림을 시작하기 전에 실패하면 HTTP 오류 상태와 { error: AiErrorInfo }를 돌려준다.
  */
 
+import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
 import { strings } from "@/resources/strings";
 
 export const AI_ENDPOINT = "/api/ai/edit";
 
-/** 요청 크기 상한. cells는 시트 전체(100×26) */
+/** 요청 크기 상한. cells는 시트 전체 */
 export const AI_LIMITS = {
   instruction: 2000,
   cellValue: 1000,
-  cells: 2600,
+  cells: ROW_COUNT * COL_COUNT,
   history: 10,
   historyText: 4000,
 } as const;

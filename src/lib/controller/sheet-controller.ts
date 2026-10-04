@@ -22,6 +22,7 @@ import {
   selectionRange,
   type Selection,
 } from "@/lib/sheet/selection";
+import type { PointerTargetKind } from "@/lib/sheet/viewport";
 import { createStore, type Store } from "@/lib/store";
 
 /**
@@ -51,8 +52,6 @@ export interface ControllerSession {
     setEditing(coord: CellCoord | null): void;
   };
 }
-
-export type PointerTargetKind = "cell" | "row" | "col" | "corner";
 
 function detachedView(): SheetView {
   let draft = "";

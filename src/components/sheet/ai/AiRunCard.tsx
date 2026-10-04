@@ -12,14 +12,14 @@ import {
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import type { AiProposal, AiRun } from "@/lib/ai/ai-controller";
+import { isRunning, type AiProposal, type AiRun } from "@/lib/ai/run";
 import { summarize, type ProposalState } from "@/lib/ai/coedit";
 import { modelLabel } from "@/lib/ai/protocol";
 import { isApplePlatform } from "@/lib/platform";
 import { rangeToA1 } from "@/lib/sheet/address";
-import { useStore } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
 import { useSheet } from "../SheetContext";
-import { useDocVersion } from "@/hooks/sheet/useSheetSession";
+import { useDocVersion } from "@/hooks/sheet/useDocVersion";
 import { Notice } from "@/components/ui/Notice";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
@@ -41,7 +41,7 @@ export function AiRunCard({ run }: AiRunCardProps) {
   const showOriginal = useStore(ai.showOriginal);
   const active = useStore(ai.active);
   const busy = active !== null;
-  const generating = run.status === "waiting" || run.status === "streaming";
+  const generating = isRunning(run);
   const reviewing = run.status === "review";
   // 생성·검토 중인 실행만 지금 시트 값과 비교한다. 문서나 덮어쓰기 선택이 바뀌면 다시 그린다.
   useDocVersion(session.doc);

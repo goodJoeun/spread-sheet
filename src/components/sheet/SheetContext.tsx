@@ -5,7 +5,8 @@ import { AiController } from "@/lib/ai/ai-controller";
 import { fetchAiTransport } from "@/lib/ai/transport";
 import type { SheetSession } from "@/lib/collab/session";
 import { SheetController } from "@/lib/controller/sheet-controller";
-import { createStore, useStore, type Store } from "@/lib/store";
+import { useStore } from "@/hooks/useStore";
+import { createStore, type Store } from "@/lib/store";
 
 interface SheetContextValue {
   session: SheetSession;

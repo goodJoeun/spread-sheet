@@ -2,9 +2,7 @@ import { memo } from "react";
 import type * as Y from "yjs";
 import { toA1 } from "@/lib/sheet/address";
 import { getFormat, valuesOf } from "@/lib/sheet/document";
-import { COL_COUNT, ROW_COUNT, type Alignment } from "@/lib/sheet/schema";
-
-const NUMBER_PATTERN = /^[-+]?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?%?$/;
+import { COL_COUNT, ROW_COUNT, defaultAlignment, type Alignment } from "@/lib/sheet/schema";
 
 interface CellProps {
   row: number;
@@ -31,8 +29,7 @@ const Cell = memo(function Cell({
   fill,
   align,
 }: CellProps) {
-  // 정렬을 지정하지 않으면 스프레드시트 관례대로 숫자는 오른쪽, 글자는 왼쪽.
-  const textAlign = align ?? (NUMBER_PATTERN.test(value) ? "right" : "left");
+  const textAlign = align ?? defaultAlignment(value);
   const decoration = [underline && "underline", strike && "line-through"].filter(Boolean).join(" ");
   return (
     <div

@@ -1,3 +1,4 @@
+import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { strings } from "@/resources/strings";
 import { AI_MODELS, type AiModelOption } from "../protocol";

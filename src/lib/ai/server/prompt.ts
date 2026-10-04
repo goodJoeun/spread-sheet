@@ -1,5 +1,10 @@
+import "server-only";
 import type Anthropic from "@anthropic-ai/sdk";
+import { rangeToA1, toA1 } from "@/lib/sheet/address";
+import { COL_COUNT, ROW_COUNT, SHEET_RANGE } from "@/lib/sheet/schema";
 import type { AiCell, AiEditRequest } from "../protocol";
+
+const WHOLE_SHEET = rangeToA1(SHEET_RANGE);
 
 /**
  * 편집 결과는 propose_edits 도구 호출로 받는다. 도구 입력을 스트리밍(eager_input_streaming)하면
@@ -38,7 +43,7 @@ export const EDIT_TOOL: Anthropic.Beta.BetaTool = {
 };
 
 export const SYSTEM_PROMPT = `You are the editing assistant inside a collaborative web spreadsheet.
-The sheet has 100 rows and 26 columns (A1 to Z100). Several people may be editing it at the same time.
+The sheet has ${ROW_COUNT} rows and ${COL_COUNT} columns (${toA1(SHEET_RANGE.start)} to ${toA1(SHEET_RANGE.end)}). Several people may be editing it at the same time.
 
 How to respond:
 - Reply in the user's language.
@@ -61,7 +66,7 @@ export function formatSheet(cells: readonly AiCell[]): string {
 export function buildUserMessage(request: AiEditRequest): string {
   const range = request.range
     ? `Editable range: ${request.range} (do not change cells outside it)`
-    : "Editable range: entire sheet (A1:Z100)";
+    : `Editable range: entire sheet (${WHOLE_SHEET})`;
   return [
     "Current sheet (non-empty cells only):",
     "<sheet>",
