@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { POST } from "@/app/api/ai/edit/route";
-import { parseStreamEvent, type AiEditRequest } from "@/lib/ai/protocol";
+import { GET, POST } from "@/app/api/ai/edit/route";
+import { parseStreamEvent, type AiConnectionInfo, type AiEditRequest } from "@/lib/ai/protocol";
 
 // API 키 없이 → 가짜 Claude API(같은 SDK 경로). 지연 없이 돌린다.
 beforeAll(() => {
@@ -24,6 +24,15 @@ const post = (payload: unknown) =>
     }),
   );
 
+describe("GET /api/ai/edit", () => {
+  it("tells whether it is the mock and which models can be picked", async () => {
+    const info = (await (await GET()).json()) as AiConnectionInfo;
+    expect(info.provider).toBe("mock");
+    expect(info.models.map((m) => m.id)).toContain(info.defaultModel);
+    expect(info.models.map((m) => m.id)).toContain("claude-haiku-4-5");
+  });
+});
+
 describe("POST /api/ai/edit", () => {
   it("streams NDJSON events", async () => {
     const response = await post(body("대문자로"));
@@ -44,6 +53,16 @@ describe("POST /api/ai/edit", () => {
     const invalid = await post({ ...body("x"), range: "A1:ZZZ9999" });
     expect(invalid.status).toBe(400);
     expect(await invalid.json()).toMatchObject({ error: { code: "bad_request" } });
+  });
+
+  it("answers with the picked model and refuses models the server does not offer", async () => {
+    const picked = await post({ ...body("대문자로"), model: "claude-haiku-4-5" });
+    const first = parseStreamEvent(JSON.parse((await picked.text()).split("\n")[0]));
+    expect(first).toEqual({ type: "meta", provider: "mock", model: "claude-haiku-4-5" });
+
+    const unknown = await post({ ...body("대문자로"), model: "claude-unknown" });
+    expect(unknown.status).toBe(400);
+    expect(await unknown.json()).toMatchObject({ error: { code: "bad_request" } });
   });
 
   it("returns the HTTP status of errors that happen before streaming", async () => {

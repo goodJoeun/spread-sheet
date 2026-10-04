@@ -1,5 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { aiError, type AiEditRequest, type AiErrorInfo, type AiStreamEvent } from "../protocol";
+import {
+  aiError,
+  type AiEditRequest,
+  type AiErrorInfo,
+  type AiModelOption,
+  type AiStreamEvent,
+} from "../protocol";
 import { createEditStreamParser } from "./edit-stream-parser";
 import { EDIT_TOOL, EDIT_TOOL_NAME, SYSTEM_PROMPT, buildMessages } from "./prompt";
 
@@ -10,7 +16,10 @@ import { EDIT_TOOL, EDIT_TOOL_NAME, SYSTEM_PROMPT, buildMessages } from "./promp
 
 export interface ClaudeSetup {
   client: Anthropic;
-  model: string;
+  /** 요청에 모델이 없을 때 쓴다 */
+  defaultModel: string;
+  /** 화면에서 고를 수 있는 모델. 이 밖의 모델로 온 요청은 받지 않는다. */
+  models: AiModelOption[];
   effort: "low" | "medium" | "high";
   /** 화면에 보여 줄 공급자 이름. 가짜면 "mock" */
   provider: "anthropic" | "mock";
@@ -43,7 +52,7 @@ const MODEL_FEATURES: Record<string, { effort: boolean; fallbacks: boolean }> = 
 };
 
 export function buildParams(
-  setup: Pick<ClaudeSetup, "model" | "effort">,
+  setup: { model: string; effort: ClaudeSetup["effort"] },
   request: AiEditRequest,
 ): StreamParams {
   const features = MODEL_FEATURES[setup.model] ?? { effort: false, fallbacks: false };
@@ -65,7 +74,11 @@ export async function* streamClaudeEdits(
   request: AiEditRequest,
   signal: AbortSignal,
 ): AsyncGenerator<AiStreamEvent> {
-  const stream = setup.client.beta.messages.stream(buildParams(setup, request), { signal });
+  const model = request.model ?? setup.defaultModel;
+  const stream = setup.client.beta.messages.stream(
+    buildParams({ model, effort: setup.effort }, request),
+    { signal },
+  );
 
   let started = false;
   let toolBlock: number | null = null;
@@ -154,6 +167,10 @@ export function toAiError(error: InstanceType<typeof Anthropic.APIError>): AiErr
     error instanceof Anthropic.PermissionDeniedError
   ) {
     return aiError("auth");
+  }
+  if (error instanceof Anthropic.NotFoundError) {
+    // 모델 이름이 틀렸거나 이 계정에서 쓸 수 없는 모델이다.
+    return aiError("bad_request", "이 모델을 쓸 수 없어요. 다른 모델을 골라 주세요.");
   }
 
   const body = error.error as ErrorBody | undefined;

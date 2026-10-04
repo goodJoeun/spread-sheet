@@ -20,6 +20,7 @@ const requestSchema = z.object({
       }),
     )
     .max(AI_LIMITS.history),
+  model: z.string().max(100).optional(),
 });
 
 export function parseEditRequest(body: unknown): AiEditRequest | null {

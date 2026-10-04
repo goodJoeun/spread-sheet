@@ -1,4 +1,10 @@
-import { AI_ERRORS, aiError, type AiErrorInfo, type AiStreamEvent } from "@/lib/ai/protocol";
+import {
+  AI_ERRORS,
+  aiError,
+  type AiConnectionInfo,
+  type AiErrorInfo,
+  type AiStreamEvent,
+} from "@/lib/ai/protocol";
 import { AiProviderError, streamClaudeEdits } from "@/lib/ai/server/claude";
 import { getClaudeSetup } from "@/lib/ai/server/setup";
 import { parseEditRequest } from "@/lib/ai/server/validate";
@@ -15,10 +21,11 @@ function errorResponse(error: AiErrorInfo): Response {
   return Response.json({ error }, { status: AI_ERRORS[error.code].status });
 }
 
-/** GET /api/ai/edit — 연결 상태(실제 Claude인지 가짜인지, 모델). 패널 머리말에 보여 준다. */
+/** GET /api/ai/edit — 연결 상태(실제 Claude인지 가짜인지)와 고를 수 있는 모델. */
 export async function GET(): Promise<Response> {
-  const { provider, model } = getClaudeSetup();
-  return Response.json({ provider, model }, { headers: { "cache-control": "no-store" } });
+  const { provider, defaultModel, models } = getClaudeSetup();
+  const info: AiConnectionInfo = { provider, defaultModel, models };
+  return Response.json(info, { headers: { "cache-control": "no-store" } });
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -31,8 +38,16 @@ export async function POST(request: Request): Promise<Response> {
   const editRequest = parseEditRequest(body);
   if (!editRequest) return errorResponse(aiError("bad_request"));
 
+  const setup = getClaudeSetup();
+  // 고를 수 있게 한 모델만 받는다. 브라우저가 임의의 모델로 비용을 쓰지 못하게.
+  if (editRequest.model && !setup.models.some((m) => m.id === editRequest.model)) {
+    return errorResponse(
+      aiError("bad_request", "고른 모델을 쓸 수 없어요. 다른 모델을 골라 주세요."),
+    );
+  }
+
   // 브라우저가 요청을 취소하면(중단 버튼, 탭 닫기) request.signal이 끊기고 모델 호출도 멈춘다.
-  const events = streamClaudeEdits(getClaudeSetup(), editRequest, request.signal);
+  const events = streamClaudeEdits(setup, editRequest, request.signal);
 
   // 첫 이벤트까지 기다린다. 스트림 시작 전에 실패하면(키 오류, 요청 한도 등) HTTP 오류로 알린다.
   let first: IteratorResult<AiStreamEvent>;

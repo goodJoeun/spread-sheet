@@ -1,10 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
-import type { AiEditRequest, AiStreamEvent } from "@/lib/ai/protocol";
+import { AI_MODELS, modelLabel, type AiEditRequest, type AiStreamEvent } from "@/lib/ai/protocol";
 import {
   AiProviderError,
   buildParams,
   streamClaudeEdits,
+  toAiError,
   type ClaudeSetup,
 } from "@/lib/ai/server/claude";
 import { createEditStreamParser } from "@/lib/ai/server/edit-stream-parser";
@@ -21,7 +22,8 @@ function mockSetup(model = "claude-opus-5-5"): ClaudeSetup {
       fetch: createMockAnthropicFetch({ delayScale: 0 }),
       maxRetries: 0,
     }),
-    model,
+    defaultModel: model,
+    models: [...AI_MODELS],
     effort: "low",
     provider: "mock",
   };
@@ -97,6 +99,25 @@ describe("prompt", () => {
   });
 });
 
+describe("models", () => {
+  it("labels model ids, including dated ids the API answers with", () => {
+    expect(modelLabel("claude-haiku-4-5")).toBe("Haiku 4.5");
+    expect(modelLabel("claude-haiku-4-5-20251001")).toBe("Haiku 4.5");
+    expect(modelLabel("claude-opus-5")).toBe("claude-opus-5");
+  });
+
+  it("tells the user to pick another model when the API does not know the model", () => {
+    const error = Anthropic.APIError.generate(
+      404,
+      { type: "error", error: { type: "not_found_error", message: "model: claude-x" } },
+      undefined,
+      new Headers(),
+    );
+    expect(toAiError(error)).toMatchObject({ code: "bad_request", retryable: false });
+    expect(toAiError(error).message).toContain("다른 모델");
+  });
+});
+
 describe("streamClaudeEdits (real SDK against the mock API)", () => {
   it("streams meta, explanation text, edits in order, then done", async () => {
     const events = await collect(
@@ -107,6 +128,17 @@ describe("streamClaudeEdits (real SDK against the mock API)", () => {
     expect(text).toContain("두 배");
     expect(edits(events)).toEqual(["B2=2,400", "B3=600"]);
     expect(events.at(-1)).toEqual({ type: "done" });
+  });
+
+  it("uses the model the request picked instead of the default", async () => {
+    const events = await collect(
+      streamClaudeEdits(
+        mockSetup(),
+        request("두 배로", { model: "claude-haiku-4-5" }),
+        new AbortController().signal,
+      ),
+    );
+    expect(events[0]).toEqual({ type: "meta", provider: "mock", model: "claude-haiku-4-5" });
   });
 
   it("answers a question with text only", async () => {

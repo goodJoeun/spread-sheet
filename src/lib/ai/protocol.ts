@@ -40,6 +40,34 @@ export interface AiEditRequest {
   cells: AiCell[];
   /** 이전 대화(최근 것만) */
   history: AiHistoryItem[];
+  /** 쓸 모델 id. 없으면 서버 기본 모델. 서버가 고를 수 있게 한 모델만 받는다. */
+  model?: string;
+}
+
+export interface AiModelOption {
+  id: string;
+  label: string;
+  description: string;
+}
+
+/** 화면에서 고를 수 있는 모델. 서버는 이 목록과 ANTHROPIC_MODEL로만 요청한다(비용 통제). */
+export const AI_MODELS: readonly AiModelOption[] = [
+  { id: "claude-opus-5-5", label: "Opus 5.5", description: "가장 정확" },
+  { id: "claude-sonnet-5-5", label: "Sonnet 5.5", description: "속도·정확도 균형" },
+  { id: "claude-haiku-4-5", label: "Haiku 4.5", description: "가장 빠르고 저렴" },
+];
+
+/** 화면에 보여 줄 모델 이름. 응답의 모델 id는 날짜가 붙어 올 수 있다(claude-haiku-4-5-20251001). */
+export function modelLabel(id: string, options: readonly AiModelOption[] = AI_MODELS): string {
+  return options.find((m) => id === m.id || id.startsWith(`${m.id}-`))?.label ?? id;
+}
+
+/** GET /api/ai/edit 응답: 연결 상태와 고를 수 있는 모델 */
+export interface AiConnectionInfo {
+  /** 실제 Claude API면 "anthropic", API 키가 없어 가짜로 동작하면 "mock" */
+  provider: "anthropic" | "mock";
+  defaultModel: string;
+  models: AiModelOption[];
 }
 
 export type AiErrorCode =
