@@ -20,7 +20,8 @@ import { rangeToA1 } from "@/lib/sheet/address";
 import { useStore } from "@/lib/store";
 import { useSheet } from "../SheetContext";
 import { useDocVersion } from "@/hooks/sheet/useSheetSession";
-import { ICON } from "@/components/ui/icon";
+import { Notice } from "@/components/ui/Notice";
+import { ICON } from "@/styles/icon";
 
 const DIFF_ROW =
   "grid w-full grid-cols-[2.5rem_1fr_auto_1fr] items-center gap-sm px-md py-xs text-left text-label " +
@@ -68,10 +69,9 @@ export function AiRunCard({ run }: AiRunCardProps) {
         )}
 
         {run.warnings.map((warning) => (
-          <p key={warning} className="flex gap-sm text-label text-warn-ink">
-            <AlertTriangle size={ICON.sm} className="mt-2xs shrink-0" aria-hidden />
+          <Notice key={warning} variant="inline" icon={AlertTriangle}>
             {warning}
-          </p>
+          </Notice>
         ))}
         {run.skipped > 0 && (
           <p className="text-label text-fg-subtle">
@@ -226,30 +226,27 @@ function ConflictBanner({
   onRegenerate: () => void;
 }) {
   return (
-    <div role="status" className="notice flex gap-sm py-md">
-      <GitCompareArrows size={ICON.sm} className="mt-2xs shrink-0" aria-hidden />
-      <div>
-        <p>
-          요청한 뒤 다른 값으로 바뀐 셀이 {conflicts}개 있어요.{" "}
-          {skipped > 0 ? "지금 값을 지키고 건너뛰어요." : "모두 덮어쓰기로 골랐어요."}
-        </p>
-        {reviewing && (
-          <div className="mt-sm flex flex-wrap gap-sm">
-            <button
-              type="button"
-              onClick={() => onOverwriteAll(skipped > 0)}
-              className="btn btn-sm btn-warn"
-            >
-              {skipped > 0 ? "모두 덮어쓰기" : "모두 건너뛰기"}
-            </button>
-            <button type="button" onClick={onRegenerate} className="btn btn-sm btn-warn">
-              <RefreshCw size={ICON.sm} aria-hidden />
-              지금 값으로 다시 요청
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    <Notice role="status" icon={GitCompareArrows}>
+      <p>
+        요청한 뒤 다른 값으로 바뀐 셀이 {conflicts}개 있어요.{" "}
+        {skipped > 0 ? "지금 값을 지키고 건너뛰어요." : "모두 덮어쓰기로 골랐어요."}
+      </p>
+      {reviewing && (
+        <div className="mt-sm flex flex-wrap gap-sm">
+          <button
+            type="button"
+            onClick={() => onOverwriteAll(skipped > 0)}
+            className="btn btn-sm btn-warn"
+          >
+            {skipped > 0 ? "모두 덮어쓰기" : "모두 건너뛰기"}
+          </button>
+          <button type="button" onClick={onRegenerate} className="btn btn-sm btn-warn">
+            <RefreshCw size={ICON.sm} aria-hidden />
+            지금 값으로 다시 요청
+          </button>
+        </div>
+      )}
+    </Notice>
   );
 }
 

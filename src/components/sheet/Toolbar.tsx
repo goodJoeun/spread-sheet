@@ -16,9 +16,9 @@ import {
   Undo2,
   type LucideIcon,
 } from "lucide-react";
-import { useCallback, useRef, useState, type ReactNode } from "react";
-import { ICON } from "@/components/ui/icon";
-import { useDismiss } from "@/hooks/ui/useDismiss";
+import type { ReactNode } from "react";
+import { Popover } from "@/components/ui/Popover";
+import { ICON } from "@/styles/icon";
 import { isApplePlatform } from "@/lib/platform";
 import { commonStyle, hasFormatEverywhere } from "@/lib/sheet/document";
 import type { Alignment, FormatKey } from "@/lib/sheet/schema";
@@ -252,61 +252,57 @@ function ColorMenu({
   resetLabel,
   onPick,
 }: ColorMenuProps) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  const close = useCallback(() => setOpen(false), []);
-  useDismiss(rootRef, open, close);
-
-  const pick = (color: string | null) => {
-    setOpen(false);
-    onPick(color);
-  };
-
   return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        title={label}
-        aria-label={label}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-        className="icon-btn flex-col"
-      >
-        <Icon size={ICON.md} />
-        <span
-          className="mt-2xs h-[3px] w-4 rounded-sm border border-outline"
-          style={{ backgroundColor: value ?? defaultSwatch }}
-        />
-      </button>
-      {open && (
-        <div role="menu" aria-label={label} className="popover top-9 left-0 w-[188px] p-md">
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => pick(null)}
-            className="mb-md w-full rounded-sm px-md py-xs text-left text-label text-fg-secondary hover:bg-hover"
-          >
-            {resetLabel}
-          </button>
-          <div className="grid grid-cols-8 gap-xs">
-            {colors.map((color) => (
-              <button
-                key={color}
-                type="button"
-                role="menuitemradio"
-                aria-checked={value === color}
-                aria-label={color}
-                title={color}
-                onClick={() => pick(color)}
-                className={SWATCH}
-                style={{ backgroundColor: color }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    <Popover
+      role="menu"
+      label={label}
+      triggerLabel={label}
+      triggerTitle={label}
+      triggerClassName="icon-btn flex-col"
+      trigger={
+        <>
+          <Icon size={ICON.md} />
+          <span
+            className="mt-2xs h-[3px] w-4 rounded-sm border border-outline"
+            style={{ backgroundColor: value ?? defaultSwatch }}
+          />
+        </>
+      }
+      panelClassName="top-9 left-0 w-[188px] p-md"
+    >
+      {(close) => {
+        const pick = (color: string | null) => {
+          close();
+          onPick(color);
+        };
+        return (
+          <>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => pick(null)}
+              className="mb-md w-full rounded-sm px-md py-xs text-left text-label text-fg-secondary hover:bg-hover"
+            >
+              {resetLabel}
+            </button>
+            <div className="grid grid-cols-8 gap-xs">
+              {colors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={value === color}
+                  aria-label={color}
+                  title={color}
+                  onClick={() => pick(color)}
+                  className={SWATCH}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </>
+        );
+      }}
+    </Popover>
   );
 }

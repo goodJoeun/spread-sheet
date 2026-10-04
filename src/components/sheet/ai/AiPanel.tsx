@@ -8,7 +8,8 @@ import { useSheet } from "../SheetContext";
 import { AiComposer } from "./AiComposer";
 import { AiRunCard } from "./AiRunCard";
 import { useAiConnection } from "@/hooks/ai/useAiConnection";
-import { ICON } from "@/components/ui/icon";
+import { Notice } from "@/components/ui/Notice";
+import { ICON } from "@/styles/icon";
 
 const EXAMPLES = [
   "선택한 범위의 숫자를 두 배로 바꿔 줘",
@@ -93,10 +94,10 @@ export function AiPanel() {
               ))}
             </div>
             {connection?.provider === "mock" && (
-              <p className="notice">
+              <Notice>
                 지금은 가짜 응답이에요. 요청에 {MOCK_TAGS.join(" ")}를 넣으면 지연·오류 상황을
                 재현할 수 있어요.
-              </p>
+              </Notice>
             )}
           </div>
         ) : (

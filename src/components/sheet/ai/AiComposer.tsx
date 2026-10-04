@@ -10,7 +10,8 @@ import { useStore } from "@/lib/store";
 import { useSelection, useSheet } from "../SheetContext";
 import { useParticipants } from "@/hooks/sheet/useSheetSession";
 import { chooseModel } from "@/hooks/ai/useAiConnection";
-import { ICON } from "@/components/ui/icon";
+import { Notice } from "@/components/ui/Notice";
+import { ICON } from "@/styles/icon";
 
 type ScopeMode = "selection" | "sheet";
 
@@ -159,12 +160,11 @@ function OverlapNotice({ overlaps }: { overlaps: AiOverlap[] }) {
   const names = overlaps.map((o) => o.participant.user.name).join(", ");
   const reviewing = overlaps.every((o) => o.activity.status === "reviewing");
   return (
-    <p role="status" className="notice mb-md flex gap-sm">
-      <Sparkles size={ICON.sm} className="mt-2xs shrink-0" aria-hidden />
-      <span>
+    <Notice role="status" icon={Sparkles} className="mb-md">
+      <p>
         {names}님이 이 범위를 AI로 {reviewing ? "검토" : "편집"} 중이에요. 요청할 수는 있지만, 먼저
         적용된 셀은 내 결과에서 충돌로 표시되고 기본으로 건너뛰어요.
-      </span>
-    </p>
+      </p>
+    </Notice>
   );
 }

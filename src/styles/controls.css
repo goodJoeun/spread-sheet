@@ -65,15 +65,7 @@
     @apply bg-warn-muted text-warn-ink;
   }
 
-  /* 주의 안내 상자 */
-  .notice {
-    @apply rounded-sm border border-warn-line bg-warn-soft px-md py-sm text-label text-warn-ink;
-  }
-
-  /* 팝오버와 그 안의 목록 행. 팝오버의 위치와 너비는 쓰는 곳에서 정한다. */
-  .popover {
-    @apply absolute z-50 rounded-lg border border-line bg-surface shadow-lg;
-  }
+  /* 목록 행(참여자 목록) */
   .list-row {
     @apply flex w-full items-center gap-lg px-lg py-sm text-left;
   }

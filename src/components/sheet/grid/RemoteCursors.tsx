@@ -3,7 +3,7 @@ import { Fragment, memo } from "react";
 import type { Participant } from "@/lib/collab/presence";
 import { cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { clampCoord, isMultiCell, selectionRange } from "@/lib/sheet/selection";
-import { ICON } from "@/components/ui/icon";
+import { ICON } from "@/styles/icon";
 import { Layer } from "./layers";
 
 interface RemoteCursorsProps {

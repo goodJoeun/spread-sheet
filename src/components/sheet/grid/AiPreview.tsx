@@ -3,7 +3,7 @@ import { memo } from "react";
 import type { AiRun } from "@/lib/ai/ai-controller";
 import { summarize, type ProposalState } from "@/lib/ai/coedit";
 import { COL_WIDTH, ROW_HEIGHT, cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
-import { ICON } from "@/components/ui/icon";
+import { ICON } from "@/styles/icon";
 import { Layer } from "./layers";
 
 const NUMBER_PATTERN = /^[-+]?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?%?$/;

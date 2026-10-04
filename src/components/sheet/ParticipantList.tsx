@@ -1,9 +1,9 @@
 "use client";
 
 import { Check, Pencil, Users } from "lucide-react";
-import { useCallback, useRef, useState, type KeyboardEvent } from "react";
-import { ICON } from "@/components/ui/icon";
-import { useDismiss } from "@/hooks/ui/useDismiss";
+import { useState, type KeyboardEvent } from "react";
+import { Popover } from "@/components/ui/Popover";
+import { ICON } from "@/styles/icon";
 import type { Participant, Presence } from "@/lib/collab/presence";
 import { rangeToA1, toA1, type CellCoord } from "@/lib/sheet/address";
 import { clampCoord, selectionRange } from "@/lib/sheet/selection";
@@ -16,76 +16,90 @@ export function ParticipantList() {
   const { session, controller } = useSheet();
   const { presence } = session;
   const participants = useParticipants(presence);
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const close = useCallback(() => setOpen(false), []);
-  useDismiss(rootRef, open, close);
-
   const shown = participants.slice(0, MAX_AVATARS);
   const hidden = participants.length - shown.length;
 
-  const jumpTo = (coord: CellCoord) => {
-    setOpen(false);
-    controller.jumpTo(clampCoord(coord));
-  };
-
   return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label={`참여자 ${participants.length}명`}
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-md rounded-full py-xs pr-lg pl-xs hover:bg-hover"
-      >
-        <span className="flex">
-          {shown.map((p, i) => (
-            <Avatar key={p.clientId} participant={p} className={i > 0 ? "-ml-sm" : ""} />
-          ))}
-          {hidden > 0 && (
-            <span className="avatar -ml-sm bg-fill-strong text-caption text-fg-muted">
-              +{hidden}
-            </span>
-          )}
-        </span>
-        <span className="flex items-center gap-xs text-body text-fg-muted">
-          <Users size={ICON.sm} aria-hidden />
-          {participants.length}
-        </span>
-      </button>
-
-      {open && (
-        <div role="dialog" aria-label="참여자 목록" className="popover top-11 right-0 w-72 py-md">
-          <p className="px-lg pb-md text-label font-medium text-fg-subtle">
-            지금 이 시트에 {participants.length}명이 있어요
-          </p>
-          <ul>
-            {participants.map((p) => (
-              <li key={p.clientId}>
-                {p.isSelf ? (
-                  <SelfRow participant={p} presence={presence} onDone={() => controller.focus()} />
-                ) : (
-                  <button
-                    type="button"
-                    disabled={!p.selection}
-                    onClick={() => p.selection && jumpTo(p.editing ?? p.selection.active)}
-                    title="이 참여자의 위치로 이동"
-                    className="list-row"
-                  >
-                    <Avatar participant={p} />
-                    <span className="min-w-0 flex-1">
-                      <span className="list-row-title">{p.user.name}</span>
-                      <span className="list-row-meta">{statusText(p)}</span>
-                    </span>
-                  </button>
-                )}
-              </li>
+    <Popover
+      role="dialog"
+      label="참여자 목록"
+      triggerLabel={`참여자 ${participants.length}명`}
+      triggerClassName="flex items-center gap-md rounded-full py-xs pr-lg pl-xs hover:bg-hover"
+      trigger={
+        <>
+          <span className="flex">
+            {shown.map((p, i) => (
+              <Avatar key={p.clientId} participant={p} className={i > 0 ? "-ml-sm" : ""} />
             ))}
-          </ul>
-        </div>
+            {hidden > 0 && (
+              <span className="avatar -ml-sm bg-fill-strong text-caption text-fg-muted">
+                +{hidden}
+              </span>
+            )}
+          </span>
+          <span className="flex items-center gap-xs text-body text-fg-muted">
+            <Users size={ICON.sm} aria-hidden />
+            {participants.length}
+          </span>
+        </>
+      }
+      panelClassName="top-11 right-0 w-72 py-md"
+    >
+      {(close) => (
+        <ParticipantPanel
+          participants={participants}
+          presence={presence}
+          onJump={(coord) => {
+            close();
+            controller.jumpTo(clampCoord(coord));
+          }}
+          onRenamed={() => controller.focus()}
+        />
       )}
-    </div>
+    </Popover>
+  );
+}
+
+function ParticipantPanel({
+  participants,
+  presence,
+  onJump,
+  onRenamed,
+}: {
+  participants: Participant[];
+  presence: Presence;
+  onJump: (coord: CellCoord) => void;
+  onRenamed: () => void;
+}) {
+  return (
+    <>
+      <p className="px-lg pb-md text-label font-medium text-fg-subtle">
+        지금 이 시트에 {participants.length}명이 있어요
+      </p>
+      <ul>
+        {participants.map((p) => (
+          <li key={p.clientId}>
+            {p.isSelf ? (
+              <SelfRow participant={p} presence={presence} onDone={onRenamed} />
+            ) : (
+              <button
+                type="button"
+                disabled={!p.selection}
+                onClick={() => p.selection && onJump(p.editing ?? p.selection.active)}
+                title="이 참여자의 위치로 이동"
+                className="list-row"
+              >
+                <Avatar participant={p} />
+                <span className="min-w-0 flex-1">
+                  <span className="list-row-title">{p.user.name}</span>
+                  <span className="list-row-meta">{statusText(p)}</span>
+                </span>
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 

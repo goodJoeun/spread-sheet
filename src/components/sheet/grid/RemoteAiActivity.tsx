@@ -4,7 +4,7 @@ import type { Participant } from "@/lib/collab/presence";
 import { intersectRanges } from "@/lib/sheet/address";
 import { outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { SHEET_RANGE } from "@/lib/sheet/schema";
-import { ICON } from "@/components/ui/icon";
+import { ICON } from "@/styles/icon";
 import { Layer } from "./layers";
 
 interface RemoteAiActivityProps {
