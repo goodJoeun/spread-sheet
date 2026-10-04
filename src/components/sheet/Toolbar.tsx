@@ -18,15 +18,15 @@ import {
 } from "lucide-react";
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { ICON } from "@/components/ui/icon";
-import { useDismiss } from "@/components/ui/useDismiss";
+import { useDismiss } from "@/hooks/ui/useDismiss";
 import { isApplePlatform } from "@/lib/platform";
 import { commonStyle, hasFormatEverywhere } from "@/lib/sheet/document";
 import type { Alignment, FormatKey } from "@/lib/sheet/schema";
 import { selectionRange } from "@/lib/sheet/selection";
 import { useStore } from "@/lib/store";
 import { useSelection, useSheet } from "./SheetContext";
-import { useUndoState } from "./useUndoState";
-import { useDocVersion } from "./useSheetSession";
+import { useUndoState } from "@/hooks/sheet/useUndoState";
+import { useDocVersion } from "@/hooks/sheet/useSheetSession";
 
 const TEXT_COLORS = [
   "#000000",

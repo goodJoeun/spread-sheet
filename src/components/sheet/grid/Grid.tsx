@@ -14,7 +14,7 @@ import {
 import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
 import { sameCoord, selectionRange } from "@/lib/sheet/selection";
 import { useEditState, useSelection, useSheet } from "../SheetContext";
-import { useDocVersion, useParticipants } from "../useSheetSession";
+import { useDocVersion, useParticipants } from "@/hooks/sheet/useSheetSession";
 import { aiActivitiesAt } from "@/lib/ai/coedit";
 import { AiPreview } from "./AiPreview";
 import { CellEditor } from "./CellEditor";
@@ -24,8 +24,8 @@ import { GridHeaders } from "./GridHeaders";
 import { RemoteAiActivity } from "./RemoteAiActivity";
 import { RemoteCursors } from "./RemoteCursors";
 import { SelectionOverlay } from "./SelectionOverlay";
-import { useCellEditor } from "./useCellEditor";
-import { useGridPointer } from "./useGridPointer";
+import { useCellEditor } from "@/hooks/grid/useCellEditor";
+import { useGridPointer } from "@/hooks/grid/useGridPointer";
 import { revealCell, visibleRowCount } from "./viewport";
 
 const CONTENT_WIDTH = ROW_HEADER_WIDTH + COL_COUNT * COL_WIDTH;

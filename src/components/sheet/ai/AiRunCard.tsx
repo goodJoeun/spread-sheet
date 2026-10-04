@@ -19,7 +19,7 @@ import { isApplePlatform } from "@/lib/platform";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { useStore } from "@/lib/store";
 import { useSheet } from "../SheetContext";
-import { useDocVersion } from "../useSheetSession";
+import { useDocVersion } from "@/hooks/sheet/useSheetSession";
 import { ICON } from "@/components/ui/icon";
 
 const DIFF_ROW =

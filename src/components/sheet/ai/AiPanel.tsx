@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 import { useSheet } from "../SheetContext";
 import { AiComposer } from "./AiComposer";
 import { AiRunCard } from "./AiRunCard";
-import { useAiConnection } from "./useAiConnection";
+import { useAiConnection } from "@/hooks/ai/useAiConnection";
 import { ICON } from "@/components/ui/icon";
 
 const EXAMPLES = [

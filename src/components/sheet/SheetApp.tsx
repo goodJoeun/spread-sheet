@@ -10,7 +10,7 @@ import { Grid } from "./grid/Grid";
 import { ParticipantList } from "./ParticipantList";
 import { SheetProvider, useSheet } from "./SheetContext";
 import { Toolbar } from "./Toolbar";
-import { useSheetSession } from "./useSheetSession";
+import { useSheetSession } from "@/hooks/sheet/useSheetSession";
 
 interface SheetAppProps {
   sheetId: string;

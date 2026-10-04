@@ -3,12 +3,12 @@
 import { Check, Pencil, Users } from "lucide-react";
 import { useCallback, useRef, useState, type KeyboardEvent } from "react";
 import { ICON } from "@/components/ui/icon";
-import { useDismiss } from "@/components/ui/useDismiss";
+import { useDismiss } from "@/hooks/ui/useDismiss";
 import type { Participant, Presence } from "@/lib/collab/presence";
 import { rangeToA1, toA1, type CellCoord } from "@/lib/sheet/address";
 import { clampCoord, selectionRange } from "@/lib/sheet/selection";
 import { useSheet } from "./SheetContext";
-import { useParticipants } from "./useSheetSession";
+import { useParticipants } from "@/hooks/sheet/useSheetSession";
 
 const MAX_AVATARS = 4;
 

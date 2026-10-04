@@ -3,7 +3,7 @@ import type { Rect } from "@/lib/sheet/geometry";
 import { COL_WIDTH } from "@/lib/sheet/geometry";
 import type { CellFormat } from "@/lib/sheet/schema";
 import { Layer } from "./layers";
-import type { CellEditorBinding } from "./useCellEditor";
+import type { CellEditorBinding } from "@/hooks/grid/useCellEditor";
 
 interface CellEditorProps {
   inputRef: RefObject<HTMLInputElement | null>;

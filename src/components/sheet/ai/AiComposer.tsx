@@ -8,8 +8,8 @@ import { rangeToA1 } from "@/lib/sheet/address";
 import { isMultiCell, selectionRange } from "@/lib/sheet/selection";
 import { useStore } from "@/lib/store";
 import { useSelection, useSheet } from "../SheetContext";
-import { useParticipants } from "../useSheetSession";
-import { chooseModel } from "./useAiConnection";
+import { useParticipants } from "@/hooks/sheet/useSheetSession";
+import { chooseModel } from "@/hooks/ai/useAiConnection";
 import { ICON } from "@/components/ui/icon";
 
 type ScopeMode = "selection" | "sheet";
