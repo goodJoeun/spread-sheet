@@ -6,10 +6,11 @@ import { Popover } from "@/components/ui/Popover";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
 import { MAX_NAME_LENGTH } from "@/lib/collab/identity";
+import { participantStatus } from "@/lib/collab/messages";
 import type { Presence } from "@/lib/collab/presence";
 import type { Participant } from "@/lib/collab/presence-state";
-import { rangeToA1, toA1, type CellCoord } from "@/lib/sheet/address";
-import { clampCoord, selectionRange } from "@/lib/sheet/selection";
+import type { CellCoord } from "@/lib/sheet/address";
+import { clampCoord } from "@/lib/sheet/selection";
 import { useSheet } from "./SheetContext";
 import { useParticipants } from "@/hooks/sheet/useParticipants";
 
@@ -95,7 +96,7 @@ function ParticipantPanel({
                 <Avatar participant={p} />
                 <span className="min-w-0 flex-1">
                   <span className="list-row-title">{p.user.name}</span>
-                  <span className="list-row-meta">{statusText(p)}</span>
+                  <span className="list-row-meta">{participantStatus(p)}</span>
                 </span>
               </button>
             )}
@@ -104,20 +105,6 @@ function ParticipantPanel({
       </ul>
     </>
   );
-}
-
-function statusText(p: Participant): string {
-  if (p.ai) {
-    const where = p.ai.range ? rangeToA1(p.ai.range) : null;
-    return strings.participants.status.ai(where, p.ai.status === "reviewing");
-  }
-  if (p.editing) return strings.participants.status.editing(toA1(clampCoord(p.editing)));
-  if (p.selection) {
-    const { anchor, focus, active } = p.selection;
-    const range = selectionRange({ anchor: clampCoord(anchor), focus: clampCoord(focus), active });
-    return strings.participants.status.viewing(rangeToA1(range));
-  }
-  return strings.participants.status.joining;
 }
 
 function SelfRow({
@@ -157,7 +144,7 @@ function SelfRow({
               {participant.user.name}{" "}
               <span className="text-fg-faint">{strings.participants.me}</span>
             </span>
-            <span className="list-row-meta">{statusText(participant)}</span>
+            <span className="list-row-meta">{participantStatus(participant)}</span>
           </span>
           <button
             type="button"

@@ -6,6 +6,7 @@ import { outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { SHEET_RANGE } from "@/lib/sheet/schema";
 import { ICON } from "@/styles/icon";
 import { strings } from "@/resources/strings";
+import { AnchoredLabel } from "./AnchoredLabel";
 import { Layer } from "./layers";
 
 interface RemoteAiActivityProps {
@@ -34,19 +35,18 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
             backgroundColor: `${user.color}0d`,
           }}
         />
-        <div
-          className={`name-tag ${labelBelow ? "rounded-b-sm" : "rounded-t-sm"}`}
-          style={{
-            // 같은 범위의 선택 이름표와 겹치지 않게 오른쪽 끝에 붙인다.
-            right: `calc(100% - ${rect.left + rect.width}px)`,
-            top: labelBelow ? rect.top + rect.height : rect.top - 16,
-            zIndex: Layer.remoteLabel,
-            backgroundColor: user.color,
-          }}
+        {/* 같은 범위의 선택 이름표와 겹치지 않게 오른쪽 끝에 붙인다. */}
+        <AnchoredLabel
+          rect={rect}
+          below={labelBelow}
+          align="end"
+          zIndex={Layer.remoteLabel}
+          className="name-tag"
+          color={user.color}
         >
           <Sparkles size={ICON.xs} strokeWidth={2.5} aria-hidden />
           {user.name} · {strings.grid.remoteAi(ai.status === "reviewing")}
-        </div>
+        </AnchoredLabel>
       </Fragment>
     );
   });

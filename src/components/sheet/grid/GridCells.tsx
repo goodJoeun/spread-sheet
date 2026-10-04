@@ -3,6 +3,7 @@ import type * as Y from "yjs";
 import { toA1 } from "@/lib/sheet/address";
 import { getFormat, valuesOf } from "@/lib/sheet/document";
 import { COL_COUNT, ROW_COUNT, defaultAlignment, type Alignment } from "@/lib/sheet/schema";
+import { cellTextStyle } from "./cell-style";
 
 interface CellProps {
   row: number;
@@ -29,19 +30,14 @@ const Cell = memo(function Cell({
   fill,
   align,
 }: CellProps) {
-  const textAlign = align ?? defaultAlignment(value);
-  const decoration = [underline && "underline", strike && "line-through"].filter(Boolean).join(" ");
   return (
     <div
       className="overflow-hidden border-r border-b border-line-grid px-xs text-body leading-cell whitespace-pre"
       style={{
         gridRow: row + 2,
         gridColumn: col + 2,
-        textAlign,
-        fontWeight: bold ? 700 : undefined,
-        fontStyle: italic ? "italic" : undefined,
-        textDecorationLine: decoration || undefined,
-        color,
+        textAlign: align ?? defaultAlignment(value),
+        ...cellTextStyle({ bold, italic, underline, strike, color }),
         backgroundColor: fill,
       }}
     >

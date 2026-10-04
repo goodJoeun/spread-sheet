@@ -18,7 +18,7 @@
 
   /* 셀이나 범위 위에 붙는 띠: AI 편집 범위 이름표(.grid-label-ai), 공동 편집 안내(.grid-label-warn) */
   .grid-label {
-    @apply overlay rounded-t-sm px-sm text-caption leading-label font-medium whitespace-nowrap;
+    @apply overlay px-sm text-caption leading-label font-medium whitespace-nowrap;
     @apply text-fg-inverse;
   }
   .grid-label-ai {

@@ -6,6 +6,7 @@ import { COL_WIDTH, ROW_HEIGHT, cellRect, outsetRect, rangeRect } from "@/lib/sh
 import { defaultAlignment } from "@/lib/sheet/schema";
 import { ICON } from "@/styles/icon";
 import { strings } from "@/resources/strings";
+import { AnchoredLabel } from "./AnchoredLabel";
 import { Layer } from "./layers";
 
 const PROPOSAL =
@@ -26,6 +27,7 @@ export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: 
   if (!run) return null;
   const generating = isRunning(run);
   const scope = run.scope ? outsetRect(rangeRect(run.scope)) : null;
+  const labelBelow = run.scope?.start.row === 0;
   const { conflicts } = summarize(states);
   const count = states.filter((s) => s.status !== "same").length;
   const label = generating ? strings.grid.aiGenerating(count) : strings.grid.aiReviewing(count);
@@ -38,20 +40,18 @@ export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: 
             className={`overlay border-2 border-dashed border-ai ${generating ? "animate-pulse" : ""}`}
             style={{ ...scope, zIndex: Layer.aiPreview }}
           />
-          <div
+          <AnchoredLabel
+            rect={scope}
+            below={labelBelow}
+            zIndex={Layer.aiLabel}
             className="grid-label grid-label-ai"
-            style={{
-              left: scope.left,
-              top: run.scope!.start.row === 0 ? scope.top + scope.height : scope.top - 18,
-              zIndex: Layer.aiLabel,
-            }}
           >
             <Sparkles size={ICON.xs} aria-hidden />
             {label}
             {conflicts > 0 && (
               <span className="text-warn-muted">{strings.grid.aiChanged(conflicts)}</span>
             )}
-          </div>
+          </AnchoredLabel>
         </>
       )}
       {!showOriginal &&

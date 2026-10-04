@@ -1,4 +1,5 @@
 import type { Rect } from "@/lib/sheet/geometry";
+import { AnchoredLabel } from "./AnchoredLabel";
 import { Layer } from "./layers";
 
 interface CoEditNoticeProps {
@@ -11,20 +12,18 @@ interface CoEditNoticeProps {
 /** 확인 창으로 묻지 않고 알리기만 한다. 확인 창은 편집칸 포커스를 빼앗아 한글 조합을 끊는다. */
 export function CoEditNotice({ messages, rect, below }: CoEditNoticeProps) {
   if (messages.length === 0) return null;
-  const height = 18 * messages.length;
   return (
-    <div
+    <AnchoredLabel
       role="status"
-      className="grid-label grid-label-warn"
-      style={{
-        left: rect.left,
-        top: below ? rect.top + rect.height + 2 : rect.top - height,
-        zIndex: Layer.editorNotice,
-      }}
+      rect={rect}
+      below={below}
+      zIndex={Layer.editorNotice}
+      // 아래에 붙을 때는 편집칸 테두리·그림자와 겹치지 않게 조금 띄운다.
+      className={`grid-label grid-label-warn ${below ? "mt-2xs" : ""}`}
     >
       {messages.map((message) => (
         <p key={message}>{message}</p>
       ))}
-    </div>
+    </AnchoredLabel>
   );
 }

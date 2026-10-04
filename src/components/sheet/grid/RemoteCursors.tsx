@@ -5,6 +5,7 @@ import { cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { clampCoord, isMultiCell, selectionRange } from "@/lib/sheet/selection";
 import { ICON } from "@/styles/icon";
 import { strings } from "@/resources/strings";
+import { AnchoredLabel } from "./AnchoredLabel";
 import { Layer } from "./layers";
 
 interface RemoteCursorsProps {
@@ -50,19 +51,17 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
             backgroundColor: editing ? `${user.color}1f` : undefined,
           }}
         />
-        <div
-          className={`name-tag ${labelBelow ? "rounded-b-sm" : "rounded-t-sm"}`}
-          style={{
-            left: rect.left,
-            top: labelBelow ? rect.top + rect.height : rect.top - 16,
-            zIndex: Layer.remoteLabel,
-            backgroundColor: user.color,
-          }}
+        <AnchoredLabel
+          rect={rect}
+          below={labelBelow}
+          zIndex={Layer.remoteLabel}
+          className="name-tag"
+          color={user.color}
         >
           {editing && <Pencil size={ICON.xs} strokeWidth={2.5} aria-hidden />}
           {user.name}
           {editing && <span className="opacity-90">{strings.grid.remoteEditing}</span>}
-        </div>
+        </AnchoredLabel>
       </Fragment>
     );
   });

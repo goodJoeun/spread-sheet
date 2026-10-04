@@ -3,6 +3,7 @@ import type { Rect } from "@/lib/sheet/geometry";
 import { COL_WIDTH } from "@/lib/sheet/geometry";
 import type { CellFormat } from "@/lib/sheet/schema";
 import { strings } from "@/resources/strings";
+import { cellTextStyle } from "./cell-style";
 import { Layer } from "./layers";
 import type { CellEditorBinding } from "@/hooks/grid/useCellEditor";
 
@@ -22,9 +23,6 @@ const EDITING =
 
 /** 편집 중이 아닐 때도 투명하게 active 셀 위에 남아 포커스를 쥔다. 그래야 IME 후보창도 셀 위치에 뜬다. */
 export function CellEditor({ inputRef, handlers, editing, format, rect }: CellEditorProps) {
-  const decoration = [format.underline && "underline", format.strike && "line-through"]
-    .filter(Boolean)
-    .join(" ");
   return (
     <input
       ref={inputRef}
@@ -41,10 +39,7 @@ export function CellEditor({ inputRef, handlers, editing, format, rect }: CellEd
         width: editing ? undefined : rect.width,
         maxWidth: editing ? COL_WIDTH * 6 : undefined,
         zIndex: Layer.editor,
-        fontWeight: format.bold ? 700 : undefined,
-        fontStyle: format.italic ? "italic" : undefined,
-        textDecorationLine: decoration || undefined,
-        color: format.color,
+        ...cellTextStyle(format),
         backgroundColor: editing ? (format.fill ?? "#ffffff") : undefined,
         textAlign: format.align,
       }}

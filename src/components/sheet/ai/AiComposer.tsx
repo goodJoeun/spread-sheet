@@ -3,7 +3,6 @@
 import { ArrowUp, Sparkles, Square } from "lucide-react";
 import { useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { overlappingAi, type AiOverlap } from "@/lib/ai/coedit";
-import { modelDescription } from "@/lib/ai/messages";
 import { AI_LIMITS, type AiConnectionInfo } from "@/lib/ai/protocol";
 import { isRunning } from "@/lib/ai/run";
 import { rangeToA1 } from "@/lib/sheet/address";
@@ -11,16 +10,12 @@ import { isMultiCell, selectionRange } from "@/lib/sheet/selection";
 import { useStore } from "@/hooks/useStore";
 import { useSelection, useSheet } from "../SheetContext";
 import { useParticipants } from "@/hooks/sheet/useParticipants";
-import { chooseModel } from "@/hooks/ai/useAiConnection";
 import { Notice } from "@/components/ui/Notice";
+import { ModelSelect } from "./ModelSelect";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
 
 type ScopeMode = "selection" | "sheet";
-
-const MODEL_SELECT =
-  "min-w-0 truncate rounded-md bg-transparent py-xs pr-xs pl-sm text-label text-fg-muted " +
-  "outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-ai/40";
 
 interface AiComposerProps {
   inputRef: RefObject<HTMLTextAreaElement | null>;
@@ -117,26 +112,6 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
       </div>
       <p className="mt-sm text-caption text-fg-faint">{strings.ai.composer.hint}</p>
     </div>
-  );
-}
-
-function ModelSelect({ connection }: { connection: AiConnectionInfo }) {
-  const { ai } = useSheet();
-  const model = useStore(ai.model) ?? connection.defaultModel;
-  return (
-    <select
-      value={model}
-      onChange={(e) => chooseModel(ai, e.target.value)}
-      aria-label={strings.ai.composer.model}
-      title={strings.ai.composer.modelTitle}
-      className={MODEL_SELECT}
-    >
-      {connection.models.map((m) => (
-        <option key={m.id} value={m.id}>
-          {m.label} · {modelDescription(m.id)}
-        </option>
-      ))}
-    </select>
   );
 }
 

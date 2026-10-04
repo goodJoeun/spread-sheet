@@ -7,7 +7,7 @@ import { rangeToA1 } from "@/lib/sheet/address";
 import { useStore } from "@/hooks/useStore";
 import { useSheet } from "../SheetContext";
 import { AiComposer } from "./AiComposer";
-import { AiRunCard } from "./AiRunCard";
+import { AiRunCard } from "./run-card";
 import { useAiConnection } from "@/hooks/ai/useAiConnection";
 import { Notice } from "@/components/ui/Notice";
 import { strings } from "@/resources/strings";

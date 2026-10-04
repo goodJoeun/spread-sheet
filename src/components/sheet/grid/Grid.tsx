@@ -12,11 +12,11 @@ import {
   outsetRect,
 } from "@/lib/sheet/geometry";
 import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
-import { sameCoord, selectionRange } from "@/lib/sheet/selection";
+import { selectionRange } from "@/lib/sheet/selection";
 import { useEditState, useSelection, useSheet } from "../SheetContext";
 import { useDocVersion } from "@/hooks/sheet/useDocVersion";
 import { useParticipants } from "@/hooks/sheet/useParticipants";
-import { aiActivitiesAt } from "@/lib/ai/coedit";
+import { editorNotices } from "@/lib/ai/messages";
 import { AiPreview } from "./AiPreview";
 import { CellEditor } from "./CellEditor";
 import { CoEditNotice } from "./CoEditNotice";
@@ -27,7 +27,6 @@ import { RemoteCursors } from "./RemoteCursors";
 import { SelectionOverlay } from "./SelectionOverlay";
 import { useCellEditor } from "@/hooks/grid/useCellEditor";
 import { useGridPointer } from "@/hooks/grid/useGridPointer";
-import { strings } from "@/resources/strings";
 import { revealCell, visibleRowCount } from "@/lib/sheet/viewport";
 
 const CONTENT_WIDTH = ROW_HEADER_WIDTH + COL_COUNT * COL_WIDTH;
@@ -66,22 +65,7 @@ export function Grid() {
 
   const activeCoord = edit?.coord ?? selection.active;
   const activeRect = outsetRect(cellRect(activeCoord));
-  const notices: string[] = [];
-  if (edit) {
-    const coEditors = participants.filter(
-      (p) => !p.isSelf && p.editing && sameCoord(p.editing, edit.coord),
-    );
-    // 같은 셀을 동시에 입력하면 나중에 확정한 값이 남는다.
-    if (coEditors.length > 0) {
-      notices.push(strings.grid.coEditing(coEditors.map((p) => p.user.name).join(", ")));
-    }
-    // 다른 참여자의 AI 편집 범위여도 막지 않는다. 입력한 셀은 그 사람의 AI 결과에서 충돌로 표시된다.
-    for (const { participant, activity } of aiActivitiesAt(participants, edit.coord)) {
-      notices.push(
-        strings.grid.inRemoteAiRange(participant.user.name, activity.status === "reviewing"),
-      );
-    }
-  }
+  const notices = edit ? editorNotices(participants, edit.coord) : [];
   // 문서가 바뀌면(version) 다시 그려지므로, 다른 참여자의 변경으로 생긴 충돌도 바로 반영된다.
   const aiStates = aiRun ? ai.states(aiRun) : [];
 
