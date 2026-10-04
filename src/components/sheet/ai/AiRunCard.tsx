@@ -39,16 +39,12 @@ export function AiRunCard({ run }: AiRunCardProps) {
   const summary = states ? summarize(states) : null;
 
   return (
-    <div className="rounded-lg border border-header-line bg-white text-[13px]">
-      <div className="flex items-center gap-1.5 border-b border-header-line px-3 py-2 text-xs text-neutral-500">
+    <div className="run-card">
+      <div className="run-card-header">
         <Sparkles size={13} className="text-ai" aria-hidden />
-        <span className="font-medium text-neutral-700">AI</span>
+        <span className="font-medium text-fg-secondary">AI</span>
         {run.model && <span title={run.model}>{modelLabel(run.model)}</span>}
-        {run.provider === "mock" && (
-          <span className="rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-800">
-            가짜 응답
-          </span>
-        )}
+        {run.provider === "mock" && <span className="badge badge-warn">가짜 응답</span>}
         <span className="ml-auto">{run.scope ? rangeToA1(run.scope) : "시트 전체"}</span>
       </div>
 
@@ -56,22 +52,20 @@ export function AiRunCard({ run }: AiRunCardProps) {
         <StatusLine run={run} />
 
         {run.text && (
-          <p className="leading-relaxed whitespace-pre-wrap text-neutral-800">
+          <p className="leading-relaxed whitespace-pre-wrap text-fg">
             {run.text}
-            {generating && (
-              <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-ai/60 align-middle" />
-            )}
+            {generating && <span className="typing-cursor" />}
           </p>
         )}
 
         {run.warnings.map((warning) => (
-          <p key={warning} className="flex gap-1.5 text-xs text-amber-800">
+          <p key={warning} className="flex gap-1.5 text-xs text-warn-ink">
             <AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden />
             {warning}
           </p>
         ))}
         {run.skipped > 0 && (
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-fg-subtle">
             범위 밖이거나 주소가 잘못된 제안 {run.skipped}개는 제외했어요.
           </p>
         )}
@@ -87,10 +81,7 @@ export function AiRunCard({ run }: AiRunCardProps) {
         )}
 
         {run.proposals.length > 0 && run.status !== "error" && run.status !== "cancelled" && (
-          <ul
-            aria-label="제안 목록"
-            className="max-h-56 divide-y divide-header-line/60 overflow-y-auto rounded border border-header-line"
-          >
+          <ul aria-label="제안 목록" className="diff-list">
             {(states ?? run.proposals.map(plainState)).map((state) => (
               <ProposalRow
                 key={state.proposal.cell}
@@ -110,16 +101,12 @@ export function AiRunCard({ run }: AiRunCardProps) {
               onClick={() => ai.apply()}
               disabled={summary?.toApply === 0}
               title={summary?.toApply === 0 ? "적용할 셀이 없어요" : undefined}
-              className="inline-flex items-center gap-1 rounded-md bg-ai px-3 py-1.5 text-xs font-semibold text-white hover:bg-ai/90 disabled:bg-neutral-200 disabled:text-neutral-400"
+              className="btn btn-ai"
             >
               <Check size={14} aria-hidden />
               적용하기 ({summary?.toApply ?? run.proposals.length})
             </button>
-            <button
-              type="button"
-              onClick={() => ai.discard()}
-              className="inline-flex items-center gap-1 rounded-md border border-header-line px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-black/5"
-            >
+            <button type="button" onClick={() => ai.discard()} className="btn btn-outline">
               <X size={14} aria-hidden />
               버리기
             </button>
@@ -127,9 +114,7 @@ export function AiRunCard({ run }: AiRunCardProps) {
               type="button"
               aria-pressed={showOriginal}
               onClick={() => ai.showOriginal.set((v) => !v)}
-              className={`ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium ${
-                showOriginal ? "bg-header-active text-accent" : "text-neutral-600 hover:bg-black/5"
-              }`}
+              className="btn btn-ghost ml-auto"
             >
               <Eye size={14} aria-hidden />
               원래 값 보기
@@ -143,7 +128,7 @@ export function AiRunCard({ run }: AiRunCardProps) {
               type="button"
               disabled={busy}
               onClick={() => ai.retry(run.id)}
-              className="inline-flex items-center gap-1 rounded-md border border-header-line px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-black/5 disabled:opacity-40"
+              className="btn btn-outline"
             >
               <RotateCcw size={13} aria-hidden />
               다시 시도
@@ -157,8 +142,8 @@ export function AiRunCard({ run }: AiRunCardProps) {
 function StatusLine({ run }: { run: AiRun }) {
   const undoKey = isApplePlatform() ? "⌘Z" : "Ctrl+Z";
   const spinner = <Loader2 size={13} className="shrink-0 animate-spin text-ai" aria-hidden />;
-  const line = (icon: ReactNode, text: string, tone = "text-neutral-500") => (
-    <p role="status" aria-live="polite" className={`flex items-center gap-1.5 text-xs ${tone}`}>
+  const line = (icon: ReactNode, text: string, tone = "text-fg-subtle") => (
+    <p role="status" aria-live="polite" className={`status-line ${tone}`}>
       {icon}
       {text}
     </p>
@@ -170,13 +155,13 @@ function StatusLine({ run }: { run: AiRun }) {
         return line(
           spinner,
           "응답이 늦어지고 있어요. 계속 기다리거나 중단할 수 있어요.",
-          "text-amber-700",
+          "text-warn-ink",
         );
       }
       return line(spinner, run.connected ? "생각하는 중…" : "AI에 요청하는 중…");
     case "streaming":
       if (run.slow)
-        return line(spinner, "응답이 잠시 멈췄어요. 계속 기다리는 중…", "text-amber-700");
+        return line(spinner, "응답이 잠시 멈췄어요. 계속 기다리는 중…", "text-warn-ink");
       return line(
         spinner,
         run.proposals.length > 0 ? `제안을 만드는 중… ${run.proposals.length}개` : "답을 쓰는 중…",
@@ -192,9 +177,9 @@ function StatusLine({ run }: { run: AiRun }) {
         return line(null, `바꿀 셀이 없어 적용하지 않았어요${skippedText}`);
       }
       return line(
-        <Check size={13} className="text-emerald-600" aria-hidden />,
+        <Check size={13} aria-hidden />,
         `적용했어요 · ${undoKey}로 한 번에 되돌릴 수 있어요${skippedText}`,
-        "text-emerald-700",
+        "text-success",
       );
     }
     case "discarded":
@@ -205,7 +190,7 @@ function StatusLine({ run }: { run: AiRun }) {
       return line(
         <AlertTriangle size={13} className="shrink-0" aria-hidden />,
         run.error?.message ?? "오류가 발생했어요.",
-        "text-red-700",
+        "text-danger",
       );
   }
 }
@@ -229,10 +214,7 @@ function ConflictBanner({
   onRegenerate: () => void;
 }) {
   return (
-    <div
-      role="status"
-      className="rounded border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs text-amber-900"
-    >
+    <div role="status" className="notice py-2">
       <p className="flex gap-1.5">
         <GitCompareArrows size={13} className="mt-0.5 shrink-0" aria-hidden />
         <span>
@@ -245,15 +227,11 @@ function ConflictBanner({
           <button
             type="button"
             onClick={() => onOverwriteAll(skipped > 0)}
-            className="rounded border border-amber-300 bg-white px-2 py-0.5 font-medium hover:bg-amber-100"
+            className="btn btn-sm btn-warn"
           >
             {skipped > 0 ? "모두 덮어쓰기" : "모두 건너뛰기"}
           </button>
-          <button
-            type="button"
-            onClick={onRegenerate}
-            className="inline-flex items-center gap-1 rounded border border-amber-300 bg-white px-2 py-0.5 font-medium hover:bg-amber-100"
-          >
+          <button type="button" onClick={onRegenerate} className="btn btn-sm btn-warn">
             <RefreshCw size={11} aria-hidden />
             지금 값으로 다시 요청
           </button>
@@ -277,28 +255,21 @@ function ProposalRow({
   const { proposal: p, current, status, overwrite } = state;
   const conflict = status === "conflict";
   const muted = status === "same" || (conflict && !overwrite);
-  const show = (text: string, empty: string) => text || <i className="text-neutral-400">{empty}</i>;
+  const show = (text: string, empty: string) => text || <i className="text-fg-faint">{empty}</i>;
 
   return (
-    <li className={conflict ? "bg-amber-50/60" : undefined}>
-      <button
-        type="button"
-        onClick={onJump}
-        title={`${p.cell}로 이동`}
-        className="grid w-full grid-cols-[2.5rem_1fr_auto_1fr] items-center gap-1.5 px-2 py-1 text-left text-xs hover:bg-black/5"
-      >
-        <span className="font-medium text-neutral-500">{p.cell}</span>
-        <span className="truncate text-neutral-400 line-through">{show(current, "빈칸")}</span>
-        <span className="text-neutral-400">→</span>
-        <span className={`truncate font-medium ${muted ? "text-neutral-400" : "text-ai-ink"}`}>
+    <li className="diff-item" data-conflict={conflict || undefined}>
+      <button type="button" onClick={onJump} title={`${p.cell}로 이동`} className="diff-row">
+        <span className="font-medium text-fg-subtle">{p.cell}</span>
+        <span className="truncate text-fg-faint line-through">{show(current, "빈칸")}</span>
+        <span className="text-fg-faint">→</span>
+        <span className="diff-after" data-muted={muted || undefined}>
           {show(p.after, "지움")}
         </span>
       </button>
-      {status === "same" && (
-        <p className="px-2 pb-1 pl-[3.25rem] text-[11px] text-neutral-500">이미 같은 값이에요</p>
-      )}
+      {status === "same" && <p className="diff-note text-fg-subtle">이미 같은 값이에요</p>}
       {conflict && (
-        <div className="flex items-center gap-2 px-2 pb-1.5 pl-[3.25rem] text-[11px] text-amber-900">
+        <div className="diff-note flex items-center gap-2 pb-1.5 text-warn-ink">
           <span className="min-w-0 flex-1 truncate">
             요청 때 {show(p.before, "빈칸")} → 지금 {show(current, "빈칸")}
           </span>
@@ -308,7 +279,7 @@ function ProposalRow({
                 type="checkbox"
                 checked={overwrite}
                 onChange={(e) => onOverwrite(e.target.checked)}
-                className="accent-amber-600"
+                className="accent-warn-strong"
               />
               덮어쓰기
             </label>

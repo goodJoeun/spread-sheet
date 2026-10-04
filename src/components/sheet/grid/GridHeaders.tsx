@@ -7,14 +7,11 @@ interface GridHeadersProps {
   range: CellRange;
 }
 
-const headerBase =
-  "sticky flex items-center justify-center border-r border-b border-header-line text-[11px] select-none";
-
 export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps) {
   const items = [
     <div
       key="corner"
-      className={`${headerBase} top-0 left-0 bg-header`}
+      className="grid-header top-0 left-0"
       style={{ gridRow: 1, gridColumn: 1, zIndex: Layer.corner }}
     />,
   ];
@@ -23,7 +20,8 @@ export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps
     items.push(
       <div
         key={`c${col}`}
-        className={`${headerBase} top-0 ${active ? "bg-header-active font-semibold text-accent" : "bg-header text-neutral-600"}`}
+        className="grid-header top-0"
+        data-active={active || undefined}
         style={{ gridRow: 1, gridColumn: col + 2, zIndex: Layer.header }}
       >
         {colToLabel(col)}
@@ -35,7 +33,8 @@ export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps
     items.push(
       <div
         key={`r${row}`}
-        className={`${headerBase} left-0 ${active ? "bg-header-active font-semibold text-accent" : "bg-header text-neutral-600"}`}
+        className="grid-header left-0"
+        data-active={active || undefined}
         style={{ gridRow: row + 2, gridColumn: 1, zIndex: Layer.header }}
       >
         {row + 1}

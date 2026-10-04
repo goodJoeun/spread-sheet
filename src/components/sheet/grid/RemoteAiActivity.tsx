@@ -24,7 +24,7 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
     return (
       <Fragment key={clientId}>
         <div
-          className="pointer-events-none absolute border-2 border-dashed"
+          className="remote-ai-range"
           style={{
             ...rect,
             zIndex: Layer.remoteAi,
@@ -33,7 +33,7 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
           }}
         />
         <div
-          className="pointer-events-none absolute flex items-center gap-1 px-1 text-[10px] leading-4 font-medium whitespace-nowrap text-white shadow-sm"
+          className="name-tag"
           style={{
             // 같은 범위의 선택 이름표와 겹치지 않게 오른쪽 끝에 붙인다.
             right: `calc(100% - ${rect.left + rect.width}px)`,

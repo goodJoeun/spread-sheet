@@ -83,10 +83,10 @@ export function Grid() {
   const aiStates = aiRun ? ai.states(aiRun) : [];
 
   return (
-    <div ref={scrollRef} className="relative min-h-0 min-w-0 flex-1 overflow-auto bg-white">
+    <div ref={scrollRef} className="grid-viewport">
       <div
         ref={contentRef}
-        className="relative grid cursor-cell select-none"
+        className="grid-content"
         style={{
           width: CONTENT_WIDTH,
           height: CONTENT_HEIGHT,

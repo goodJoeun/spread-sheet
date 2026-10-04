@@ -5,14 +5,6 @@
 @import "../styles/grid.css";
 @import "../styles/ai.css";
 
-/* 화면 코드를 새 토큰으로 옮기는 동안 남겨 두는 이전 이름 */
-@theme inline {
-  --color-grid-line: #e2e3e3;
-  --color-header: #f8f9fa;
-  --color-header-active: #d3e3fd;
-  --color-header-line: #c7c7c7;
-}
-
 body {
   background: var(--color-surface);
   color: var(--color-fg);

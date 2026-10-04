@@ -25,11 +25,8 @@ export function CellEditor({ inputRef, handlers, editing, format, rect }: CellEd
       aria-label="셀 편집"
       autoComplete="off"
       spellCheck={false}
-      className={
-        editing
-          ? "absolute border-2 border-accent bg-white px-[3px] text-[13px] shadow-md outline-none select-text [field-sizing:content]"
-          : "absolute cursor-cell border-0 bg-transparent p-0 opacity-0 outline-none"
-      }
+      className="cell-editor"
+      data-editing={editing || undefined}
       style={{
         left: rect.left,
         top: rect.top,

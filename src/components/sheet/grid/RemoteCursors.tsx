@@ -30,7 +30,7 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
       <Fragment key={clientId}>
         {isMultiCell(safe) && (
           <div
-            className="pointer-events-none absolute border"
+            className="remote-range"
             style={{
               ...range,
               zIndex: Layer.remoteRange,
@@ -40,7 +40,7 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
           />
         )}
         <div
-          className="pointer-events-none absolute border-2"
+          className="remote-cursor"
           style={{
             ...rect,
             zIndex: Layer.remoteCursor,
@@ -49,7 +49,7 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
           }}
         />
         <div
-          className="pointer-events-none absolute flex items-center gap-1 px-1 text-[10px] leading-4 font-medium whitespace-nowrap text-white shadow-sm"
+          className="name-tag"
           style={{
             left: rect.left,
             top: labelBelow ? rect.top + rect.height : rect.top - 16,

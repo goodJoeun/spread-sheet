@@ -15,7 +15,7 @@ export function CoEditNotice({ messages, rect, below }: CoEditNoticeProps) {
   return (
     <div
       role="status"
-      className="pointer-events-none absolute rounded-t bg-amber-500 px-1.5 text-[11px] leading-[18px] font-medium whitespace-nowrap text-white shadow"
+      className="grid-label grid-label-warn"
       style={{
         left: rect.left,
         top: below ? rect.top + rect.height + 2 : rect.top - height,

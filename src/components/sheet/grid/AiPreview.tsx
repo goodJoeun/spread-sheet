@@ -29,11 +29,12 @@ export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: 
       {scope && (
         <>
           <div
-            className={`pointer-events-none absolute border-2 border-dashed border-ai ${generating ? "animate-pulse" : ""}`}
+            className="ai-scope"
+            data-generating={generating || undefined}
             style={{ ...scope, zIndex: Layer.aiPreview }}
           />
           <div
-            className="pointer-events-none absolute flex items-center gap-1 rounded-t bg-ai px-1.5 text-[11px] leading-[18px] font-medium whitespace-nowrap text-white"
+            className="grid-label grid-label-ai"
             style={{
               left: scope.left,
               top: run.scope!.start.row === 0 ? scope.top + scope.height : scope.top - 18,
@@ -42,7 +43,7 @@ export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: 
           >
             <Sparkles size={11} aria-hidden />
             {label}
-            {conflicts > 0 && <span className="text-amber-200">· 바뀐 셀 {conflicts}개</span>}
+            {conflicts > 0 && <span className="text-warn-muted">· 바뀐 셀 {conflicts}개</span>}
           </div>
         </>
       )}
@@ -60,26 +61,17 @@ export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: 
           };
           if (status === "conflict" && !overwrite) {
             // 지금 값이 그대로 남는 셀이라 값을 가리지 않는다.
-            return (
-              <div
-                key={p.cell}
-                className="pointer-events-none absolute border-2 border-amber-500 bg-amber-400/10"
-                style={box}
-              />
-            );
+            return <div key={p.cell} className="ai-conflict" style={box} />;
           }
           const cleared = p.after === "";
           return (
             <div
               key={p.cell}
-              className={`pointer-events-none absolute overflow-hidden bg-ai-soft px-1 text-[13px] leading-[23px] whitespace-pre text-ai-ink ${
-                overwrite
-                  ? "shadow-[inset_2px_0_0_var(--color-ai),inset_0_0_0_1px_#f59e0b]"
-                  : "shadow-[inset_2px_0_0_var(--color-ai)]"
-              }`}
+              className="ai-proposal"
+              data-overwrite={overwrite || undefined}
               style={{ ...box, textAlign: NUMBER_PATTERN.test(p.after) ? "right" : "left" }}
             >
-              {cleared ? <span className="text-neutral-400 line-through">{current}</span> : p.after}
+              {cleared ? <span className="text-fg-faint line-through">{current}</span> : p.after}
             </div>
           );
         })}

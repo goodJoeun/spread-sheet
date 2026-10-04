@@ -92,7 +92,7 @@ export function Toolbar() {
     <div
       role="toolbar"
       aria-label="서식 도구"
-      className="flex h-10 shrink-0 items-center gap-0.5 border-b border-header-line bg-header px-2"
+      className="toolbar"
       // 버튼을 눌러도 그리드의 포커스(편집 중인 셀 포함)를 빼앗지 않는다.
       onMouseDown={(e) => e.preventDefault()}
     >
@@ -176,9 +176,7 @@ export function Toolbar() {
         type="button"
         aria-pressed={aiOpen}
         onClick={() => aiPanel.set((open) => !open)}
-        className={`ml-auto flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors ${
-          aiOpen ? "bg-ai text-white hover:bg-ai/90" : "text-ai-ink hover:bg-ai-soft"
-        }`}
+        className="ai-toggle ml-auto"
       >
         <Sparkles size={15} aria-hidden />
         AI 편집
@@ -188,7 +186,7 @@ export function Toolbar() {
 }
 
 function Divider() {
-  return <div className="mx-1 h-5 w-px bg-header-line" aria-hidden />;
+  return <div className="toolbar-divider" aria-hidden />;
 }
 
 interface ToolbarButtonProps {
@@ -216,9 +214,7 @@ function ToolbarButton({
       aria-pressed={pressed}
       disabled={disabled}
       onClick={onClick}
-      className={`flex size-8 items-center justify-center rounded text-neutral-700 transition-colors hover:bg-black/5 disabled:text-neutral-300 disabled:hover:bg-transparent ${
-        pressed ? "bg-header-active text-accent hover:bg-header-active" : ""
-      }`}
+      className="icon-btn"
     >
       {children}
     </button>
@@ -264,25 +260,18 @@ function ColorMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={`flex size-8 flex-col items-center justify-center rounded text-neutral-700 hover:bg-black/5 ${open ? "bg-black/5" : ""}`}
+        className="icon-btn flex-col"
       >
         <Icon size={15} />
-        <span
-          className="mt-0.5 h-[3px] w-4 rounded-sm border border-black/10"
-          style={{ backgroundColor: value ?? defaultSwatch }}
-        />
+        <span className="swatch-bar" style={{ backgroundColor: value ?? defaultSwatch }} />
       </button>
       {open && (
-        <div
-          role="menu"
-          aria-label={label}
-          className="absolute top-9 left-0 z-50 w-[188px] rounded-md border border-header-line bg-white p-2 shadow-lg"
-        >
+        <div role="menu" aria-label={label} className="popover top-9 left-0 w-[188px] p-2">
           <button
             type="button"
             role="menuitem"
             onClick={() => pick(null)}
-            className="mb-2 w-full rounded px-2 py-1 text-left text-xs text-neutral-700 hover:bg-black/5"
+            className="menu-item mb-2"
           >
             {resetLabel}
           </button>
@@ -296,7 +285,7 @@ function ColorMenu({
                 aria-label={color}
                 title={color}
                 onClick={() => pick(color)}
-                className={`size-5 rounded-sm border border-black/10 hover:scale-110 ${value === color ? "ring-2 ring-accent ring-offset-1" : ""}`}
+                className="swatch"
                 style={{ backgroundColor: color }}
               />
             ))}

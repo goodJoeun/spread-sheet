@@ -54,7 +54,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   };
 
   return (
-    <div className="border-t border-header-line p-3">
+    <div className="border-t border-line p-3">
       {overlaps.length > 0 && <OverlapNotice overlaps={overlaps} />}
       <div role="radiogroup" aria-label="편집 범위" className="mb-2 flex gap-1 text-xs">
         <ScopeOption checked={mode === "selection"} onSelect={() => setChosen("selection")}>
@@ -65,7 +65,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
         </ScopeOption>
       </div>
 
-      <div className="rounded-lg border border-header-line px-2.5 pt-2 pb-1.5 focus-within:border-ai">
+      <div className="composer">
         <textarea
           ref={inputRef}
           value={draft}
@@ -79,7 +79,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
               ? "제안을 적용하거나 버리면 새 요청을 보낼 수 있어요"
               : "예: 이 범위의 숫자를 두 배로 바꿔 줘"
           }
-          className="block max-h-32 min-h-10 w-full resize-none bg-transparent text-[13px] leading-5 outline-none placeholder:text-neutral-400"
+          className="composer-input"
         />
         <div className="mt-1 flex items-center gap-2">
           {connection && <ModelSelect connection={connection} />}
@@ -89,7 +89,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
               onClick={() => ai.cancel()}
               aria-label="생성 중단 (Esc)"
               title="생성 중단 (Esc)"
-              className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-white hover:bg-neutral-700"
+              className="round-btn round-btn-dark ml-auto"
             >
               <Square size={12} fill="currentColor" aria-hidden />
             </button>
@@ -100,14 +100,14 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
               disabled={!draft.trim() || reviewing}
               aria-label="보내기 (Enter)"
               title="보내기 (Enter)"
-              className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-full bg-ai text-white hover:bg-ai/90 disabled:bg-neutral-200 disabled:text-neutral-400"
+              className="round-btn round-btn-ai ml-auto"
             >
               <ArrowUp size={16} aria-hidden />
             </button>
           )}
         </div>
       </div>
-      <p className="mt-1.5 text-[11px] text-neutral-400">
+      <p className="mt-1.5 text-caption text-fg-faint">
         Enter로 보내기 · Shift+Enter 줄바꿈 · AI 결과는 적용하기 전까지 시트에 쓰이지 않아요
       </p>
     </div>
@@ -123,7 +123,7 @@ function ModelSelect({ connection }: { connection: AiConnectionInfo }) {
       onChange={(e) => chooseModel(ai, e.target.value)}
       aria-label="AI 모델"
       title="다음 요청에 쓸 모델"
-      className="min-w-0 truncate rounded-md bg-transparent py-1 pr-1 pl-1.5 text-xs text-neutral-600 outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-ai/40"
+      className="select-inline"
     >
       {connection.models.map((m) => (
         <option key={m.id} value={m.id}>
@@ -144,17 +144,7 @@ function ScopeOption({
   children: ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={checked}
-      onClick={onSelect}
-      className={`rounded-full border px-2.5 py-1 ${
-        checked
-          ? "border-ai bg-ai-soft text-ai-ink"
-          : "border-header-line text-neutral-600 hover:bg-black/5"
-      }`}
-    >
+    <button type="button" role="radio" aria-checked={checked} onClick={onSelect} className="chip">
       {children}
     </button>
   );
@@ -164,10 +154,7 @@ function OverlapNotice({ overlaps }: { overlaps: AiOverlap[] }) {
   const names = overlaps.map((o) => o.participant.user.name).join(", ");
   const reviewing = overlaps.every((o) => o.activity.status === "reviewing");
   return (
-    <p
-      role="status"
-      className="mb-2 flex gap-1.5 rounded border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900"
-    >
+    <p role="status" className="notice mb-2 flex gap-1.5">
       <Sparkles size={13} className="mt-0.5 shrink-0" aria-hidden />
       <span>
         {names}님이 이 범위를 AI로 {reviewing ? "검토" : "편집"} 중이에요. 요청할 수는 있지만, 먼저

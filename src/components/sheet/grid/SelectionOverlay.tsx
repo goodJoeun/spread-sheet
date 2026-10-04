@@ -14,12 +14,12 @@ export function SelectionOverlay({ selection, activeCoord }: SelectionOverlayPro
     <>
       {isMultiCell(selection) && (
         <div
-          className="pointer-events-none absolute border border-accent bg-accent/10"
+          className="selection-range"
           style={{ ...outsetRect(rangeRect(selectionRange(selection))), zIndex: Layer.selection }}
         />
       )}
       <div
-        className="pointer-events-none absolute border-2 border-accent"
+        className="selection-cursor"
         style={{ ...outsetRect(cellRect(activeCoord)), zIndex: Layer.selection }}
       />
     </>
