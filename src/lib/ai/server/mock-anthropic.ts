@@ -8,7 +8,7 @@ import {
   type CellCoord,
   type CellRange,
 } from "@/lib/sheet/address";
-import { strings } from "@/resources/strings";
+import { MOCK_SCENARIO_TAGS, type MockScenario } from "../mock-scenarios";
 import type { AiCell } from "../protocol";
 import { EDIT_TOOL_NAME, parseUserMessage } from "./prompt";
 
@@ -22,10 +22,9 @@ interface MockOptions {
   delayScale?: number;
 }
 
-type Scenario =
-  "normal" | "slow" | "rate_limited" | "auth" | "overloaded" | "refusal" | "truncated";
+type Scenario = MockScenario;
 
-const SCENARIO_TAGS = Object.entries(strings.ai.mockTags).map(
+const SCENARIO_TAGS = Object.entries(MOCK_SCENARIO_TAGS).map(
   ([scenario, tag]) => [tag, scenario as Scenario] as const,
 );
 

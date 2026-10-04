@@ -8,7 +8,6 @@ import {
 import { AiProviderError, streamClaudeEdits } from "@/lib/ai/server/claude";
 import { getClaudeSetup } from "@/lib/ai/server/setup";
 import { parseEditRequest } from "@/lib/ai/server/validate";
-import { strings } from "@/resources/strings";
 
 /** API 키는 이 서버 코드에서만 읽고 브라우저로 보내지 않는다. */
 
@@ -38,7 +37,7 @@ export async function POST(request: Request): Promise<Response> {
   const setup = getClaudeSetup();
   // 고를 수 있게 한 모델만 받는다. 브라우저가 임의의 모델로 비용을 쓰지 못하게.
   if (editRequest.model && !setup.models.some((m) => m.id === editRequest.model)) {
-    return errorResponse(aiError("bad_request", strings.ai.errors.modelNotOffered));
+    return errorResponse(aiError("bad_request", "model_not_offered"));
   }
 
   // 브라우저가 요청을 취소하면(중단 버튼, 탭 닫기) request.signal이 끊기고 모델 호출도 멈춘다.

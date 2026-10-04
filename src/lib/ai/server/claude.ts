@@ -7,7 +7,6 @@ import {
   type AiModelOption,
   type AiStreamEvent,
 } from "../protocol";
-import { strings } from "@/resources/strings";
 import { createEditStreamParser } from "./edit-stream-parser";
 import { EDIT_TOOL, EDIT_TOOL_NAME, SYSTEM_PROMPT, buildMessages } from "./prompt";
 
@@ -25,7 +24,7 @@ export interface ClaudeSetup {
 /** 스트림을 시작하기 전에 실패했다. 라우트가 HTTP 오류로 바꿔 돌려준다. */
 export class AiProviderError extends Error {
   constructor(readonly info: AiErrorInfo) {
-    super(info.message);
+    super(`AI provider failed: ${info.reason ?? info.code}`);
   }
 }
 
@@ -116,13 +115,10 @@ export async function* streamClaudeEdits(
       return;
     }
     if (message.stop_reason === "max_tokens") {
-      yield {
-        type: "warning",
-        message: strings.ai.warnings.truncated,
-      };
+      yield { type: "warning", warning: { code: "truncated" } };
     }
     if (invalid > 0) {
-      yield { type: "warning", message: strings.ai.warnings.invalidEdits(invalid) };
+      yield { type: "warning", warning: { code: "invalid_edits", count: invalid } };
     }
     yield { type: "done" };
   } catch (error) {
@@ -131,10 +127,7 @@ export async function* streamClaudeEdits(
       // 도구 입력 JSON을 끝내 해석하지 못한 경우(SDK가 블록이 닫힐 때 던진다).
       // 그 전까지 완성된 제안은 이미 보냈으므로 경고와 함께 마친다.
       if (started) {
-        yield {
-          type: "warning",
-          message: strings.ai.warnings.unparsable,
-        };
+        yield { type: "warning", warning: { code: "unparsable" } };
         yield { type: "done" };
         return;
       }
@@ -166,7 +159,7 @@ export function toAiError(error: InstanceType<typeof Anthropic.APIError>): AiErr
   }
   if (error instanceof Anthropic.NotFoundError) {
     // 모델 이름이 틀렸거나 이 계정에서 쓸 수 없는 모델이다.
-    return aiError("bad_request", strings.ai.errors.modelUnavailable);
+    return aiError("bad_request", "model_unavailable");
   }
 
   const body = error.error as ErrorBody | undefined;

@@ -7,11 +7,10 @@ import {
   type AiErrorInfo,
   type AiStreamEvent,
 } from "./protocol";
-import { strings } from "@/resources/strings";
 
 export class AiRequestError extends Error {
   constructor(readonly info: AiErrorInfo) {
-    super(info.message);
+    super(`AI request failed: ${info.reason ?? info.code}`);
   }
 }
 
@@ -80,6 +79,6 @@ export const fetchAiTransport: AiTransport = async (request, { signal, onEvent }
     splitter.flush().forEach(handle);
   } catch (error) {
     if (signal.aborted) throw error;
-    throw new AiRequestError(aiError("network", strings.ai.errors.connectionLost));
+    throw new AiRequestError(aiError("network", "connection_lost"));
   }
 };

@@ -2,6 +2,7 @@
 
 import { Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { MOCK_SCENARIO_TAGS } from "@/lib/ai/mock-scenarios";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { useStore } from "@/hooks/useStore";
 import { useSheet } from "../SheetContext";
@@ -12,8 +13,7 @@ import { Notice } from "@/components/ui/Notice";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
 
-/** 가짜 응답 모드에서 지연·실패를 재현하는 표시(서버의 mock-anthropic.ts가 같은 목록을 쓴다) */
-const MOCK_TAGS = Object.values(strings.ai.mockTags).join(" ");
+const MOCK_TAGS = Object.values(MOCK_SCENARIO_TAGS).join(" ");
 
 export function AiPanel() {
   const { ai, aiPanel, controller } = useSheet();

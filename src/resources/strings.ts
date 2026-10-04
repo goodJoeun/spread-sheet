@@ -151,25 +151,17 @@ export const strings = {
       same: "이미 같은 값이에요",
     },
 
-    /** 모델 고르기 목록의 설명 */
+    /** 모델 고르기 목록의 설명(모델 id별) */
     models: {
-      opus: "가장 정확",
-      sonnet: "속도·정확도 균형",
-      haiku: "가장 빠르고 저렴",
+      descriptions: {
+        "claude-opus-5-5": "가장 정확",
+        "claude-sonnet-5-5": "속도·정확도 균형",
+        "claude-haiku-4-5": "가장 빠르고 저렴",
+      },
       serverDefault: "서버 기본 모델",
     },
 
-    /** 가짜 응답 모드에서 지시문에 넣으면 지연·실패 상황을 재현하는 표시 */
-    mockTags: {
-      slow: "[느림]",
-      rate_limited: "[한도]",
-      auth: "[키]",
-      overloaded: "[과부하]",
-      refusal: "[거절]",
-      truncated: "[잘림]",
-    },
-
-    /** 오류 종류별 안내. 서버가 만들어 브라우저로 보낸다. */
+    /** 오류 안내. 서버는 코드(code, reason)만 보내고 브라우저가 여기서 문구를 고른다. */
     errors: {
       bad_request: "요청 형식이 올바르지 않아요.",
       auth: "AI 서비스 인증에 실패했어요. 서버의 API 키 설정을 확인해 주세요.",
@@ -180,10 +172,10 @@ export const strings = {
       timeout: "AI 응답이 너무 오래 걸려 중단했어요.",
       network: "AI 서버에 연결하지 못했어요. 네트워크를 확인해 주세요.",
       unknown: "알 수 없는 오류가 발생했어요.",
-      modelNotOffered: "고른 모델을 쓸 수 없어요. 다른 모델을 골라 주세요.",
-      modelUnavailable: "이 모델을 쓸 수 없어요. 다른 모델을 골라 주세요.",
-      streamDropped: "응답이 중간에 끊겼어요. 다시 시도해 주세요.",
-      connectionLost: "응답을 받는 중에 연결이 끊겼어요.",
+      model_not_offered: "고른 모델을 쓸 수 없어요. 다른 모델을 골라 주세요.",
+      model_unavailable: "이 모델을 쓸 수 없어요. 다른 모델을 골라 주세요.",
+      stream_dropped: "응답이 중간에 끊겼어요. 다시 시도해 주세요.",
+      connection_lost: "응답을 받는 중에 연결이 끊겼어요.",
     },
 
     warnings: {

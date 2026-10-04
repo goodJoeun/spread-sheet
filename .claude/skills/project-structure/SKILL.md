@@ -77,7 +77,6 @@ ai/run-card/
 
 ## 알려진 예외 (고치면 이 목록에서 지운다)
 
-- `lib/ai/protocol.ts`, `lib/ai/server/claude.ts`가 `strings`의 화면 문구를 보낸다. `strings.ai.mockTags`가 가짜 서버의 동작 키로 쓰인다.
 - `components/sheet/ai/AiComposer.tsx`의 `ModelSelect`가 하위 컴포넌트인데 `useSheet()`를 직접 읽는다 → 분리 대상.
 - `components/sheet/ai/AiRunCard.tsx`(약 300줄) → `run-card/` 폴더 대상.
 - 이름표 위치 계산(`-16`/`-18`)이 오버레이 컴포넌트마다 다르다.

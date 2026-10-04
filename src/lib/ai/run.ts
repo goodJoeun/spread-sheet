@@ -1,5 +1,5 @@
 import type { CellCoord, CellRange } from "@/lib/sheet/address";
-import type { AiErrorInfo } from "./protocol";
+import type { AiErrorInfo, AiWarning } from "./protocol";
 
 /** AI 요청 한 번(실행)의 상태. 컨트롤러·충돌 판단·화면이 함께 쓴다. */
 
@@ -35,7 +35,7 @@ export interface AiRun {
   proposals: AiProposal[];
   /** 범위 밖 등으로 뺀 제안 수 */
   skipped: number;
-  warnings: string[];
+  warnings: AiWarning[];
   error: AiErrorInfo | null;
   /** 요청 시점의 셀 값(비어 있지 않은 셀) */
   base: ReadonlyMap<string, string>;

@@ -3,6 +3,7 @@
 import { ArrowUp, Sparkles, Square } from "lucide-react";
 import { useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { overlappingAi, type AiOverlap } from "@/lib/ai/coedit";
+import { modelDescription } from "@/lib/ai/messages";
 import { AI_LIMITS, type AiConnectionInfo } from "@/lib/ai/protocol";
 import { isRunning } from "@/lib/ai/run";
 import { rangeToA1 } from "@/lib/sheet/address";
@@ -132,7 +133,7 @@ function ModelSelect({ connection }: { connection: AiConnectionInfo }) {
     >
       {connection.models.map((m) => (
         <option key={m.id} value={m.id}>
-          {m.label} · {m.description}
+          {m.label} · {modelDescription(m.id)}
         </option>
       ))}
     </select>

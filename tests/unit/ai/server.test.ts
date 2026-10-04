@@ -113,8 +113,11 @@ describe("models", () => {
       undefined,
       new Headers(),
     );
-    expect(toAiError(error)).toMatchObject({ code: "bad_request", retryable: false });
-    expect(toAiError(error).message).toContain("다른 모델");
+    expect(toAiError(error)).toEqual({
+      code: "bad_request",
+      reason: "model_unavailable",
+      retryable: false,
+    });
   });
 });
 
@@ -283,7 +286,7 @@ describe("streamClaudeEdits (real SDK against the mock API)", () => {
         new AbortController().signal,
       ),
     );
-    expect(events.some((e) => e.type === "warning")).toBe(true);
+    expect(events).toContainEqual({ type: "warning", warning: { code: "truncated" } });
     expect(events.at(-1)).toEqual({ type: "done" });
     const received = edits(events);
     expect(received.length).toBeGreaterThan(0);

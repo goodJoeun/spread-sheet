@@ -13,7 +13,6 @@ import { EditOrigin, valuesOf, writeValues } from "@/lib/sheet/document";
 import { SHEET_RANGE, isInSheet } from "@/lib/sheet/schema";
 import type { Selection } from "@/lib/sheet/selection";
 import { createStore } from "@/lib/store";
-import { strings } from "@/resources/strings";
 import {
   activityRange,
   boundingRange,
@@ -184,7 +183,7 @@ export class AiController {
     })
       .then(() => {
         if (!finished && this.inflight?.runId === run.id) {
-          this.fail(run.id, aiError("network", strings.ai.errors.streamDropped));
+          this.fail(run.id, aiError("network", "stream_dropped"));
         }
       })
       .catch((error: unknown) => {
@@ -292,7 +291,7 @@ export class AiController {
         return false;
       }
       case "warning":
-        this.update(runId, (r) => ({ ...r, warnings: [...r.warnings, event.message] }));
+        this.update(runId, (r) => ({ ...r, warnings: [...r.warnings, event.warning] }));
         return false;
       case "done":
         this.finish(runId);

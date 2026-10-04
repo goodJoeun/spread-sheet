@@ -14,6 +14,7 @@ import {
 import type { ReactNode } from "react";
 import { isRunning, type AiProposal, type AiRun } from "@/lib/ai/run";
 import { summarize, type ProposalState } from "@/lib/ai/coedit";
+import { aiErrorMessage, aiWarningMessage } from "@/lib/ai/messages";
 import { modelLabel } from "@/lib/ai/protocol";
 import { isApplePlatform } from "@/lib/platform";
 import { rangeToA1 } from "@/lib/sheet/address";
@@ -72,8 +73,8 @@ export function AiRunCard({ run }: AiRunCardProps) {
         )}
 
         {run.warnings.map((warning) => (
-          <Notice key={warning} variant="inline" icon={AlertTriangle}>
-            {warning}
+          <Notice key={warning.code} variant="inline" icon={AlertTriangle}>
+            {aiWarningMessage(warning)}
           </Notice>
         ))}
         {run.skipped > 0 && <p className="text-label text-fg-subtle">{S.skipped(run.skipped)}</p>}
@@ -195,7 +196,7 @@ function StatusLine({ run }: { run: AiRun }) {
     case "error":
       return line(
         <AlertTriangle size={ICON.sm} className="shrink-0" aria-hidden />,
-        run.error?.message ?? S.status.error,
+        run.error ? aiErrorMessage(run.error) : S.status.error,
         "text-danger",
       );
   }
