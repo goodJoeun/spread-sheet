@@ -3,14 +3,7 @@ import { AI_MODELS, type AiModelOption } from "../protocol";
 import type { ClaudeSetup } from "./claude";
 import { createMockAnthropicFetch } from "./mock-anthropic";
 
-/**
- * 환경 변수로 Claude 연결을 정한다(서버에서만 읽는다).
- *   ANTHROPIC_API_KEY  있으면 실제 API, 없으면 가짜 API(같은 SDK 경로)
- *   ANTHROPIC_MODEL    기본 모델(화면에서 고르지 않았을 때). 기본 claude-opus-5-5
- *   ANTHROPIC_EFFORT   low | medium | high, 기본 low (빨리 답하도록)
- *   AI_MOCK=1          키가 있어도 가짜로 돌린다
- *   AI_MOCK_DELAY_SCALE 가짜 응답의 지연 배율(테스트에서 0)
- */
+/** 환경 변수는 .env.example 참고. API 키가 없거나 AI_MOCK=1이면 같은 SDK 경로로 가짜 API를 쓴다. */
 
 const DEFAULT_MODEL = "claude-opus-5-5";
 const EFFORTS = ["low", "medium", "high"] as const;
@@ -51,7 +44,6 @@ export function getClaudeSetup(): ClaudeSetup {
   return cached;
 }
 
-/** 고를 수 있는 모델. 기본 모델이 목록에 없는 모델이면 맨 앞에 더한다. */
 function offeredModels(defaultModel: string): AiModelOption[] {
   if (AI_MODELS.some((m) => m.id === defaultModel)) return [...AI_MODELS];
   return [{ id: defaultModel, label: defaultModel, description: "서버 기본 모델" }, ...AI_MODELS];

@@ -18,7 +18,6 @@ const EXAMPLES = [
 /** 가짜 응답 모드에서 실패 상황을 재현하는 표시(서버의 mock-anthropic.ts 참고) */
 const MOCK_TAGS = ["[느림]", "[한도]", "[키]", "[과부하]", "[거절]", "[잘림]"];
 
-/** 오른쪽 AI 편집 패널: 대화, 진행 상태, 제안 검토, 요청 입력. */
 export function AiPanel() {
   const { ai, aiPanel, controller } = useSheet();
   const messages = useStore(ai.messages);
@@ -27,7 +26,6 @@ export function AiPanel() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // 패널을 열면 바로 입력할 수 있게 한다.
   useEffect(() => inputRef.current?.focus(), []);
 
   // 새 내용이 오면 맨 아래를 보여 준다(첫 안내 화면은 위에서부터).

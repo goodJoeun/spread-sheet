@@ -9,7 +9,7 @@ import {
 import type { PointerTargetKind } from "@/lib/controller/sheet-controller";
 import { clampCoord } from "@/lib/sheet/selection";
 
-/** 그리드 스크롤 영역에 대한 DOM 계산. 고정 머리글에 가리는 부분을 빼고 계산한다. */
+/** 고정 머리글에 가리는 부분은 빼고 계산한다. */
 
 export function revealCell(scroller: HTMLElement | null, coord: CellCoord): void {
   if (!scroller) return;
@@ -31,10 +31,7 @@ export function visibleRowCount(scroller: HTMLElement | null): number {
   return Math.max(1, Math.floor((scroller.clientHeight - COL_HEADER_HEIGHT) / ROW_HEIGHT) - 1);
 }
 
-/**
- * 화면 좌표가 가리키는 셀과 영역(셀·행 머리글·열 머리글·모서리).
- * 머리글은 화면에 고정돼 있으므로 스크롤 영역 기준으로, 셀 좌표는 콘텐츠 기준으로 계산한다.
- */
+/** 머리글은 화면에 고정돼 있어 스크롤 영역 기준으로, 셀은 콘텐츠 기준으로 계산한다. */
 export function hitTest(
   scroller: HTMLElement,
   content: HTMLElement,

@@ -11,7 +11,6 @@ export type GridAction =
   | { type: "move"; dRow: number; dCol: number }
   | { type: "extend"; dRow: number; dCol: number }
   | { type: "jump"; dRow: number; dCol: number; extend: boolean }
-  /** Enter/Tab: 범위가 선택돼 있으면 범위 안에서, 아니면 한 칸 이동 */
   | { type: "advance"; dRow: number; dCol: number }
   | { type: "page"; direction: 1 | -1; extend: boolean }
   | { type: "rowStart" }
@@ -49,17 +48,13 @@ const FORMAT_SHORTCUTS: Record<string, FormatKey> = {
   "5": "strike", // 엑셀 Ctrl+5
 };
 
-/** 구글시트와 같은 정렬 단축키(Ctrl+Shift+L/E/R) */
 const ALIGN_SHORTCUTS: Record<string, Alignment> = {
   l: "left",
   e: "center",
   r: "right",
 };
 
-/**
- * 키 입력을 그리드 동작으로 바꾼다. null이면 브라우저 기본 동작(글자 입력, 커서 이동 등)에 맡긴다.
- * macOS에서는 Ctrl 대신 Cmd를 단축키 수식키로 쓴다.
- */
+/** null이면 브라우저 기본 동작(글자 입력, 커서 이동 등)에 맡긴다. */
 export function resolveGridKey(
   e: KeyInput,
   editMode: EditMode | null,

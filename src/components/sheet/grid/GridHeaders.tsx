@@ -10,7 +10,6 @@ interface GridHeadersProps {
 const headerBase =
   "sticky flex items-center justify-center border-r border-b border-header-line text-[11px] select-none";
 
-/** 열·행 머리글. 선택 범위에 걸친 머리글은 강조한다. */
 export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps) {
   const items = [
     <div

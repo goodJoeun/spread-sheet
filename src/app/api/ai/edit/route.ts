@@ -9,10 +9,7 @@ import { AiProviderError, streamClaudeEdits } from "@/lib/ai/server/claude";
 import { getClaudeSetup } from "@/lib/ai/server/setup";
 import { parseEditRequest } from "@/lib/ai/server/validate";
 
-/**
- * POST /api/ai/edit — 시트 편집 제안을 NDJSON 스트림으로 돌려준다.
- * API 키는 이 서버 코드에서만 읽고 브라우저로 보내지 않는다.
- */
+/** API 키는 이 서버 코드에서만 읽고 브라우저로 보내지 않는다. */
 
 const encoder = new TextEncoder();
 const line = (event: AiStreamEvent) => encoder.encode(`${JSON.stringify(event)}\n`);
@@ -21,7 +18,6 @@ function errorResponse(error: AiErrorInfo): Response {
   return Response.json({ error }, { status: AI_ERRORS[error.code].status });
 }
 
-/** GET /api/ai/edit — 연결 상태(실제 Claude인지 가짜인지)와 고를 수 있는 모델. */
 export async function GET(): Promise<Response> {
   const { provider, defaultModel, models } = getClaudeSetup();
   const info: AiConnectionInfo = { provider, defaultModel, models };

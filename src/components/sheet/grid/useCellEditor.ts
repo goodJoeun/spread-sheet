@@ -4,13 +4,9 @@ import { isApplePlatform } from "@/lib/platform";
 import { resolveGridKey } from "@/lib/sheet/keymap";
 
 /**
- * 셀 편집칸(입력 요소)과 키보드·IME 처리.
- *
- * 편집칸은 항상 DOM에 남아 포커스를 쥐고 있다. 셀을 선택한 채 타이핑하거나 한글 조합을 시작하면
- * 이미 포커스가 있는 이 칸에 글자가 들어가므로 첫 글자(첫 자모)를 잃지 않는다.
- * 값은 비제어(uncontrolled)로 다룬다. React가 조합 중인 값을 덮어쓰면 한글 입력이 깨지기 때문이다.
- *
- * inputRef는 호출하는 쪽이 만들어 편집칸에 직접 붙인다(ref를 객체에 담아 넘기면 렌더링 중 ref 접근으로 판단된다).
+ * 편집칸은 항상 DOM에 남아 포커스를 쥔다. 셀을 선택한 채 타이핑하거나 한글 조합을 시작해도 첫 글자(첫 자모)를 잃지 않게.
+ * 값은 비제어로 다룬다. React가 조합 중인 값을 덮어쓰면 한글 입력이 깨진다.
+ * inputRef를 객체에 담아 받지 않는 이유: 렌더링 중 ref 접근으로 판단된다.
  */
 export function useCellEditor(
   controller: SheetController,
@@ -31,7 +27,7 @@ export function useCellEditor(
         el.setSelectionRange(text.length, text.length);
       },
 
-      /** 마우스로 다른 곳을 누르기 전에 편집을 끝낸다. IME 조합 중이면 blur로 조합을 먼저 확정시킨다. */
+      /** IME 조합 중이면 blur로 조합을 먼저 확정시킨다. */
       finishBeforePointer: () => {
         const el = input();
         if (!controller.isEditing() || !el) return;
@@ -52,7 +48,6 @@ export function useCellEditor(
           e.preventDefault();
           controller.runAction(action);
         },
-        /** 셀을 선택한 채 타이핑하면 그 글자로 편집을 시작한다. */
         onInput: () => {
           if (!controller.isEditing() && !composingRef.current)
             controller.startEdit("enter", false);

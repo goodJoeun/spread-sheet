@@ -1,9 +1,6 @@
 import { rangeContains, type CellCoord, type CellRange } from "./address";
 
-/**
- * 시트의 형태(크기)와 서식 종류. 저장 방식(Yjs)과 무관한 정의만 둔다.
- * 선택·키 매핑·좌표 계산 같은 순수 로직이 Yjs를 끌어오지 않고 이 파일만 보면 되게 하기 위해서다.
- */
+/** 순수 로직(선택·키 매핑·좌표)이 Yjs를 끌어오지 않도록 document.ts와 나눠 둔다. */
 
 export const ROW_COUNT = 100;
 export const COL_COUNT = 26;

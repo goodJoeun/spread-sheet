@@ -25,11 +25,8 @@ import {
 import { createStore, type Store } from "@/lib/store";
 
 /**
- * 시트 화면의 상태(선택, 편집)와 명령을 한곳에 모은다.
- *
- * 키보드, 마우스, 툴바, 참여자 목록, AI 패널이 모두 같은 명령을 호출하므로
- * "편집 중이면 먼저 확정한다", "실행 취소하면 그 위치로 선택을 돌린다" 같은 규칙이 한 번만 구현된다.
- * DOM에 닿아야 하는 일(스크롤, 포커스, 편집칸의 글자)은 그리드가 붙여 주는 SheetView에 맡긴다.
+ * 키보드·마우스·툴바·AI 패널이 같은 명령을 부르므로 "편집 중이면 먼저 확정" 같은 규칙이 한 곳에만 있다.
+ * DOM이 필요한 일(스크롤, 포커스, 편집칸 글자)은 그리드가 붙여 주는 SheetView에 맡긴다.
  */
 
 export interface EditState {
@@ -37,21 +34,15 @@ export interface EditState {
   coord: CellCoord;
 }
 
-/** 컨트롤러가 화면에 요청하는 것. 그리드가 붙기 전이나 테스트에서는 DOM 없는 기본 구현을 쓴다. */
 export interface SheetView {
-  /** 셀이 보이도록 스크롤한다. */
   reveal(coord: CellCoord): void;
-  /** 키보드 입력을 그리드로 돌린다. */
   focus(): void;
-  /** 화면에 보이는 행 수(PageUp/PageDown 간격) */
   visibleRowCount(): number;
-  /** 편집칸에 입력된 글자 */
   readDraft(): string;
   /** 편집칸의 글자를 바꾸고 커서를 끝으로 옮긴다. */
   writeDraft(text: string): void;
 }
 
-/** 컨트롤러가 쓰는 세션의 일부. 테스트에서는 이 모양만 맞춰 주면 된다. */
 export interface ControllerSession {
   doc: Y.Doc;
   undoManager: Y.UndoManager;
@@ -93,10 +84,7 @@ export class SheetController {
     this.selection = createStore(initialSelection);
   }
 
-  /**
-   * 참여자 정보 발행과 실행 취소 위치 복원을 시작한다. 정리 함수를 돌려준다.
-   * 생성자에서 하지 않는 이유: React가 개발 모드에서 객체를 두 번 만들 때 구독이 새지 않게 하려고.
-   */
+  /** 생성자에서 구독하지 않는다. React 개발 모드가 객체를 두 번 만들 때 구독이 새지 않게. */
   connect(): () => void {
     const { presence, undoManager } = this.session;
     const publishSelection = () => presence.setSelection(this.selection.get());
@@ -132,7 +120,6 @@ export class SheetController {
     };
   }
 
-  /** 그리드가 화면 조작을 붙인다. 떼어 낼 함수를 돌려준다. */
   attachView(view: SheetView): () => void {
     this.view = view;
     return () => {
@@ -144,12 +131,9 @@ export class SheetController {
     this.view.focus();
   }
 
-  /** 선택은 그대로 두고 그 셀이 보이도록 스크롤한다. */
   reveal(coord: CellCoord): void {
     this.view.reveal(coord);
   }
-
-  /* ───────────── 편집 ───────────── */
 
   isEditing(): boolean {
     return this.edit.get() !== null;
@@ -180,14 +164,11 @@ export class SheetController {
     if (current) this.edit.set({ ...current, mode: current.mode === "enter" ? "edit" : "enter" });
   }
 
-  /* ───────────── 선택 ───────────── */
-
   select(next: Selection, reveal: CellCoord | null = next.active): void {
     this.selection.set(next);
     if (reveal) this.view.reveal(reveal);
   }
 
-  /** 그 셀로 이동한다(참여자 위치로 가기 등). */
   jumpTo(coord: CellCoord): void {
     this.commitEdit();
     this.tabReturnCol = null;
@@ -209,7 +190,6 @@ export class SheetController {
     this.select(result.selection, result.reveal);
   }
 
-  /** 마우스를 눌렀을 때. 셀·행 머리글·열 머리글·모서리에 따라 선택하고, Shift면 넓힌다. */
   pointerSelect(kind: PointerTargetKind, coord: CellCoord, extend: boolean): void {
     this.commitEdit();
     this.tabReturnCol = null;
@@ -230,7 +210,6 @@ export class SheetController {
     }
   }
 
-  /** 누른 채로 끌 때. 셀을 끌면 가장자리 밖으로 나간 만큼 스크롤된다. */
   pointerDrag(kind: Exclude<PointerTargetKind, "corner">, coord: CellCoord): void {
     const sel = this.selection.get();
     if (kind === "cell") {
@@ -241,8 +220,6 @@ export class SheetController {
       this.select(selectColumns(sel.anchor.col, coord.col), null);
     }
   }
-
-  /* ───────────── 명령 (현재 선택 범위 대상) ───────────── */
 
   private get range() {
     return selectionRange(this.selection.get());
@@ -265,7 +242,7 @@ export class SheetController {
     clearValues(this.session.doc, this.range, EditOrigin.User);
   }
 
-  /** 편집 중이면 입력을 먼저 확정한다. 그래서 툴바의 실행 취소는 "입력 취소"처럼 동작하고, 다시 실행으로 되살릴 수 있다. */
+  /** 편집 중이면 먼저 확정한다. 그래서 실행 취소가 "입력 취소"처럼 동작하고 다시 실행으로 되살릴 수 있다. */
   undo(): void {
     this.commitEdit();
     this.session.undoManager.undo();
@@ -276,7 +253,6 @@ export class SheetController {
     this.session.undoManager.redo();
   }
 
-  /** 키보드 동작을 실행한다. */
   runAction(action: GridAction): void {
     if (isNavigationAction(action)) {
       this.navigate(action);

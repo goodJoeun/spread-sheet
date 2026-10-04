@@ -31,10 +31,6 @@ import { revealCell, visibleRowCount } from "./viewport";
 const CONTENT_WIDTH = ROW_HEADER_WIDTH + COL_COUNT * COL_WIDTH;
 const CONTENT_HEIGHT = COL_HEADER_HEIGHT + ROW_COUNT * ROW_HEIGHT;
 
-/**
- * 스프레드시트 그리드. 레이어를 쌓아 그리고, 입력(키보드·IME·마우스)을 컨트롤러로 보낸다.
- * 규칙(이동, 편집 확정, 명령)은 SheetController에, DOM 계산은 viewport.ts에 있다.
- */
 export function Grid() {
   const { session, controller, ai } = useSheet();
   const version = useDocVersion(session.doc);
@@ -43,7 +39,7 @@ export function Grid() {
   const participants = useParticipants(session.presence);
   const aiRun = useStore(ai.active);
   const showOriginal = useStore(ai.showOriginal);
-  useStore(ai.overwrites);
+  useStore(ai.overwrites); // 덮어쓰기를 고르면 미리보기를 다시 그린다.
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -51,7 +47,6 @@ export function Grid() {
   const editor = useCellEditor(controller, inputRef);
   const pointer = useGridPointer({ controller, editor, inputRef, scrollRef, contentRef });
 
-  // 컨트롤러가 스크롤·포커스·편집칸 글자를 다룰 수 있게 화면을 붙인다.
   useEffect(
     () =>
       controller.attachView({

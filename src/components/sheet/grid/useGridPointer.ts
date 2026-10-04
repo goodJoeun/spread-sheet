@@ -11,7 +11,6 @@ interface GridPointerOptions {
   contentRef: RefObject<HTMLDivElement | null>;
 }
 
-/** 그리드의 마우스 처리: 클릭·Shift+클릭·드래그 선택, 머리글 선택, 더블클릭 편집. */
 export function useGridPointer({
   controller,
   editor,

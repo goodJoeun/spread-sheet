@@ -8,7 +8,6 @@ import {
   type AiStreamEvent,
 } from "./protocol";
 
-/** 요청이 실패했다(HTTP 오류, 연결 실패). 사용자에게 보여 줄 오류 정보를 담는다. */
 export class AiRequestError extends Error {
   constructor(readonly info: AiErrorInfo) {
     super(info.message);
@@ -23,7 +22,6 @@ export interface AiTransportOptions {
 /** 요청을 보내고 이벤트를 하나씩 넘긴다. 스트림이 끝나면 resolve, 실패하면 AiRequestError로 reject. */
 export type AiTransport = (request: AiEditRequest, options: AiTransportOptions) => Promise<void>;
 
-/** 조각난 텍스트를 줄 단위로 나눈다. 줄이 조각 경계에서 잘려도 다음 조각과 이어 붙인다. */
 export function createLineSplitter() {
   let rest = "";
   return {

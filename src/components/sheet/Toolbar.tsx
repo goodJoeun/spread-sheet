@@ -83,7 +83,6 @@ export function Toolbar() {
   const { canUndo, canRedo } = useUndoState(undoManager);
   const mod = isApplePlatform() ? "⌘" : "Ctrl+";
 
-  /** 명령을 실행하고 키보드 입력을 그리드로 돌려준다. */
   const run = (command: () => void) => {
     command();
     controller.focus();
@@ -230,7 +229,6 @@ interface ColorMenuProps {
   label: string;
   icon: LucideIcon;
   colors: string[];
-  /** 선택 범위의 공통 색. 섞여 있거나 기본값이면 null */
   value: string | null;
   defaultSwatch: string;
   resetLabel: string;

@@ -17,14 +17,9 @@ interface AiComposerProps {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   draft: string;
   onDraftChange: (text: string) => void;
-  /** 서버 연결 정보. 불러오기 전(또는 실패)이면 null이고 모델을 고를 수 없다. */
   connection: AiConnectionInfo | null;
 }
 
-/**
- * 요청 입력칸. 편집 범위(선택 범위 / 시트 전체)와 모델을 고르고 보낸다.
- * 생성 중에는 중단 버튼이 된다.
- */
 export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiComposerProps) {
   const { ai, session } = useSheet();
   const selection = useSelection();
@@ -37,7 +32,6 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   const [chosen, setChosen] = useState<ScopeMode | null>(null);
   const mode: ScopeMode = chosen ?? (isMultiCell(selection) ? "selection" : "sheet");
   const range = selectionRange(selection);
-  // 보내기 전에 알린다. 겹쳐도 막지 않고, 먼저 적용된 셀은 내 결과에서 충돌로 표시된다.
   const overlaps = active ? [] : overlappingAi(participants, mode === "selection" ? range : null);
 
   const send = () => {
@@ -120,7 +114,6 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   );
 }
 
-/** 다음 요청에 쓸 모델. 생성 중에 바꾸면 다음 요청부터 적용된다. */
 function ModelSelect({ connection }: { connection: AiConnectionInfo }) {
   const { ai } = useSheet();
   const model = useStore(ai.model) ?? connection.defaultModel;
@@ -167,7 +160,6 @@ function ScopeOption({
   );
 }
 
-/** 다른 참여자가 AI로 편집 중인 범위와 겹칠 때의 안내 */
 function OverlapNotice({ overlaps }: { overlaps: AiOverlap[] }) {
   const names = overlaps.map((o) => o.participant.user.name).join(", ");
   const reviewing = overlaps.every((o) => o.activity.status === "reviewing");

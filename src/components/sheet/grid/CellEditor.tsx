@@ -9,16 +9,11 @@ interface CellEditorProps {
   inputRef: RefObject<HTMLInputElement | null>;
   handlers: CellEditorBinding["handlers"];
   editing: boolean;
-  /** 편집 중인 셀의 서식. 편집칸도 셀과 같은 모양으로 보이게 한다. */
   format: CellFormat;
-  /** active 셀 위치(outsetRect) */
   rect: Rect;
 }
 
-/**
- * 셀 편집칸. 편집 중이 아닐 때도 투명하게 active 셀 위에 남아 포커스를 유지한다.
- * 그래야 IME 후보창도 셀 위치에 뜬다.
- */
+/** 편집 중이 아닐 때도 투명하게 active 셀 위에 남아 포커스를 쥔다. 그래야 IME 후보창도 셀 위치에 뜬다. */
 export function CellEditor({ inputRef, handlers, editing, format, rect }: CellEditorProps) {
   const decoration = [format.underline && "underline", format.strike && "line-through"]
     .filter(Boolean)

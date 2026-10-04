@@ -1,18 +1,11 @@
 /**
- * 브라우저와 AI 서버(/api/ai/edit) 사이의 약속.
- *
- * 응답은 NDJSON 스트림이다(한 줄에 이벤트 하나). 가짜 서버와 실제 LLM 서버가 같은 형식을 쓰므로,
- * 화면은 어느 쪽이 답하는지 몰라도 된다.
- *   {"type":"meta","provider":"mock","model":"mock"}
- *   {"type":"text","delta":"B열 숫자를 "}
- *   {"type":"edit","cell":"B2","value":"240"}
- *   {"type":"done"}
- * 스트림을 시작하기 전에 실패하면(키 오류, 요청 한도 등) HTTP 오류 상태와 { error: AiErrorInfo } JSON을 돌려준다.
+ * 브라우저와 /api/ai/edit 사이의 형식. 응답은 NDJSON(한 줄에 AiStreamEvent 하나)이고,
+ * 스트림을 시작하기 전에 실패하면 HTTP 오류 상태와 { error: AiErrorInfo }를 돌려준다.
  */
 
 export const AI_ENDPOINT = "/api/ai/edit";
 
-/** 요청 크기 상한. 시트가 100×26이라 셀은 최대 2,600개다. */
+/** 요청 크기 상한. cells는 시트 전체(100×26) */
 export const AI_LIMITS = {
   instruction: 2000,
   cellValue: 1000,
@@ -36,11 +29,10 @@ export interface AiEditRequest {
   instruction: string;
   /** 편집을 허용할 범위(A1:C5). null이면 시트 전체 */
   range: string | null;
-  /** 시트의 비어 있지 않은 셀 전부(AI가 참고할 내용) */
+  /** 시트의 비어 있지 않은 셀 */
   cells: AiCell[];
-  /** 이전 대화(최근 것만) */
   history: AiHistoryItem[];
-  /** 쓸 모델 id. 없으면 서버 기본 모델. 서버가 고를 수 있게 한 모델만 받는다. */
+  /** 없으면 서버 기본 모델 */
   model?: string;
 }
 
@@ -57,14 +49,13 @@ export const AI_MODELS: readonly AiModelOption[] = [
   { id: "claude-haiku-4-5", label: "Haiku 4.5", description: "가장 빠르고 저렴" },
 ];
 
-/** 화면에 보여 줄 모델 이름. 응답의 모델 id는 날짜가 붙어 올 수 있다(claude-haiku-4-5-20251001). */
+/** 응답의 모델 id에는 날짜가 붙을 수 있다(claude-haiku-4-5-20251001). */
 export function modelLabel(id: string, options: readonly AiModelOption[] = AI_MODELS): string {
   return options.find((m) => id === m.id || id.startsWith(`${m.id}-`))?.label ?? id;
 }
 
-/** GET /api/ai/edit 응답: 연결 상태와 고를 수 있는 모델 */
+/** GET /api/ai/edit 응답 */
 export interface AiConnectionInfo {
-  /** 실제 Claude API면 "anthropic", API 키가 없어 가짜로 동작하면 "mock" */
   provider: "anthropic" | "mock";
   defaultModel: string;
   models: AiModelOption[];
@@ -84,7 +75,6 @@ export type AiErrorCode =
 export interface AiErrorInfo {
   code: AiErrorCode;
   message: string;
-  /** 같은 요청을 다시 보내면 성공할 수 있는지 */
   retryable: boolean;
 }
 
@@ -97,7 +87,6 @@ export type AiStreamEvent =
   | { type: "done" }
   | { type: "error"; error: AiErrorInfo };
 
-/** 오류 종류별 사용자 안내와 HTTP 상태. 서버·브라우저가 같은 문구를 쓴다. */
 export const AI_ERRORS: Record<
   AiErrorCode,
   { status: number; message: string; retryable: boolean }
@@ -154,7 +143,6 @@ function isErrorInfo(value: unknown): value is AiErrorInfo {
   return ERROR_CODES.has(code) && typeof message === "string" && typeof retryable === "boolean";
 }
 
-/** 서버에서 온 이벤트는 형식을 확인한 뒤에만 쓴다. 모르는 형식이면 null. */
 export function parseStreamEvent(value: unknown): AiStreamEvent | null {
   if (typeof value !== "object" || value === null) return null;
   const event = value as Record<string, unknown>;
@@ -180,7 +168,6 @@ export function parseStreamEvent(value: unknown): AiStreamEvent | null {
   }
 }
 
-/** HTTP 오류 응답을 AiErrorInfo로 바꾼다. 본문에 형식이 맞는 error가 없으면 상태 코드로 짐작한다. */
 export function errorFromResponse(status: number, body: unknown): AiErrorInfo {
   const embedded = (body as { error?: unknown } | null)?.error;
   if (isErrorInfo(embedded)) return embedded;

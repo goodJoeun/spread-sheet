@@ -9,17 +9,11 @@ const NUMBER_PATTERN = /^[-+]?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?%?$/;
 
 interface AiPreviewProps {
   run: AiRun | null;
-  /** 제안마다 지금 시트 값과 비교한 상태 */
   states: ProposalState[];
-  /** 켜면 제안을 걷어 내고 원래 값을 보여 준다(비교용). */
   showOriginal: boolean;
 }
 
-/**
- * AI 제안 미리보기. 문서에는 아직 쓰지 않았고, 셀 위에 제안 값을 덮어 그리기만 한다.
- * 편집 범위는 점선으로, 제안된 셀은 보라색 칸으로 보여 준다.
- * 요청 뒤 다른 값으로 바뀐 셀(충돌)은 지금 값을 가리지 않고 주황 테두리만 두른다. 적용하면 건너뛰는 셀이다.
- */
+/** 문서에는 쓰지 않고 셀 위에 제안 값을 덮어 그리기만 한다. */
 export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: AiPreviewProps) {
   if (!run) return null;
   const generating = run.status === "waiting" || run.status === "streaming";

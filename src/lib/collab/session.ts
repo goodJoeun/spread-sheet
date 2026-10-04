@@ -5,11 +5,6 @@ import { BroadcastChannelProvider } from "./broadcast-provider";
 import { Presence, randomUser, type UserInfo } from "./presence";
 import { createUndoManager } from "./undo";
 
-/**
- * 한 탭에서 시트 하나를 여는 데 필요한 것들을 묶는다.
- *   Y.Doc ── IndexedDB (영구 저장)
- *         └─ BroadcastChannel (다른 탭과 동기화 + awareness → 참여자 표시)
- */
 export interface SheetSession {
   readonly sheetId: string;
   readonly doc: Y.Doc;
@@ -17,16 +12,14 @@ export interface SheetSession {
   readonly presence: Presence;
   readonly undoManager: Y.UndoManager;
   /**
-   * 시트를 보여 줘도 될 때 resolve된다. 그 전까지는 로딩 화면을 보여 준다.
-   * - "ready": 저장된 내용을 다 불러왔다.
-   * - "unavailable": 저장소를 열 수 없다(차단·용량 초과 등). 탭 간 동기화는 되지만 새로고침하면 사라질 수 있다.
+   * "ready": 저장된 내용을 다 불러왔다.
+   * "unavailable": 저장소를 열 수 없다(차단·용량 초과 등). 탭 간 동기화는 되지만 새로고침하면 사라질 수 있다.
    */
   readonly whenLoaded: Promise<StorageStatus>;
   /** 저장소가 늦게라도 준비되면 resolve된다("unavailable"이었다가 회복되는 경우). */
   readonly whenPersisted: Promise<void>;
-  /** 탭을 떠날 때(pagehide) 참여자 목록에서 바로 빠진다. */
   leave(): void;
-  /** bfcache에서 복원됐을 때 다시 동기화하고 참여자로 돌아온다. */
+  /** bfcache에서 복원됐을 때 */
   rejoin(): void;
   destroy(): Promise<void>;
 }
@@ -37,9 +30,7 @@ export type StorageStatus = "ready" | "unavailable";
 export const STORAGE_TIMEOUT_MS = 5000;
 
 export interface SheetSessionOptions {
-  /** 이 탭의 이름과 색. 없으면 무작위로 정한다. */
   user?: UserInfo;
-  /** 이름·색이 바뀌면(겹쳐서 다시 고름, 이름 변경) 호출된다. 탭별 저장에 쓴다. */
   onUserChange?: (user: UserInfo) => void;
 }
 

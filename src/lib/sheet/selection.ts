@@ -2,10 +2,8 @@ import { normalizeRange, type CellCoord, type CellRange } from "./address";
 import { COL_COUNT, ROW_COUNT } from "./schema";
 
 /**
- * 선택 상태.
- * - anchor: 범위 선택을 시작한 고정 꼭짓점
- * - focus: Shift+방향키·드래그로 움직이는 반대쪽 꼭짓점
- * - active: 입력이 들어가는 셀. 보통 anchor와 같고, 범위 안에서 Enter/Tab으로 옮겨 다닌다.
+ * anchor: 범위 선택을 시작한 고정 꼭짓점, focus: Shift+방향키·드래그로 움직이는 꼭짓점,
+ * active: 입력이 들어가는 셀(범위 안에서 Enter/Tab으로 옮겨 다닌다)
  */
 export interface Selection {
   anchor: CellCoord;
@@ -44,7 +42,6 @@ export function moveSelection(selection: Selection, dRow: number, dCol: number):
   return collapsedSelection({ row: active.row + dRow, col: active.col + dCol });
 }
 
-/** anchor는 고정하고 focus만 움직여 범위를 넓히거나 줄인다. */
 export function extendSelection(selection: Selection, dRow: number, dCol: number): Selection {
   const { focus } = selection;
   return { ...selection, focus: clampCoord({ row: focus.row + dRow, col: focus.col + dCol }) };
@@ -54,10 +51,7 @@ export function extendSelectionTo(selection: Selection, focus: CellCoord): Selec
   return { ...selection, focus: clampCoord(focus) };
 }
 
-/**
- * 범위 안에서 Enter/Tab으로 active 셀을 옮긴다(엑셀·구글시트와 같은 동작).
- * Enter(세로)는 열 단위로, Tab(가로)은 행 단위로 순회하고 끝에 닿으면 처음으로 돌아간다.
- */
+/** 범위 안에서 active를 옮긴다. Enter는 열 단위, Tab은 행 단위로 돌고 끝에서 처음으로 돌아간다(엑셀과 같음). */
 export function advanceWithinRange(selection: Selection, dRow: number, dCol: number): Selection {
   const { start, end } = selectionRange(selection);
   const rows = end.row - start.row + 1;

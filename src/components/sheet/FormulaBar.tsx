@@ -6,7 +6,6 @@ import { selectionRange } from "@/lib/sheet/selection";
 import { useSelection, useSheet } from "./SheetContext";
 import { useDocVersion } from "./useSheetSession";
 
-/** 선택 범위 주소와 active 셀의 전체 내용을 보여 준다. 셀 너비보다 긴 값을 확인할 때 쓴다. */
 export function FormulaBar() {
   const { session } = useSheet();
   useDocVersion(session.doc);

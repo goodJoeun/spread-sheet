@@ -10,11 +10,7 @@ interface RemoteAiActivityProps {
   participants: Participant[];
 }
 
-/**
- * 다른 참여자가 AI로 편집하는 범위를 그 사람의 색 점선과 이름표로 보여 준다.
- * 제안 값은 보이지 않는다. 확정되지 않은 값이 실제 데이터처럼 보이면 혼란스럽기 때문이다.
- * 그 범위를 편집하는 것은 막지 않는다(입력하면 편집칸 위에 안내만 뜬다).
- */
+/** 제안 값은 보여 주지 않는다. 확정되지 않은 값이 실제 데이터처럼 보이면 혼란스럽다. */
 export const RemoteAiActivity = memo(function RemoteAiActivity({
   participants,
 }: RemoteAiActivityProps) {

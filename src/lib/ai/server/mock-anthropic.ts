@@ -11,18 +11,12 @@ import type { AiCell } from "../protocol";
 import { EDIT_TOOL_NAME, parseUserMessage } from "./prompt";
 
 /**
- * 가짜 Claude API. Anthropic SDK의 fetch 자리에 넣으면 실제 Messages API와 같은 형식으로 답한다.
- * - 정상: SSE 스트림(message_start → thinking → text → tool_use 입력 조각 → message_delta → message_stop)
- * - 실패: 실제와 같은 오류 JSON과 상태 코드
- * SDK가 응답을 해석하는 과정까지 실제와 같으므로, 이걸로 개발한 코드는 API 키만 넣으면 실제 모델에서 돈다.
- *
- * 지시문에 아래 표시를 넣으면 실패·지연 상황을 재현한다(개발·시연용).
- *   [느림] 첫 응답 8초 지연   [한도] 429 요청 한도   [키] 401 인증 실패
- *   [과부하] 생성 도중 과부하 오류   [거절] 모델 거절   [잘림] 최대 길이에서 끊김
+ * 가짜 Claude API. SDK의 fetch 자리에 넣으면 실제 Messages API와 같은 SSE·오류 형식으로 답한다.
+ * 지시문에 표시를 넣으면 실패·지연을 재현한다: [느림] 8초 지연, [한도] 429, [키] 401,
+ * [과부하] 생성 도중 과부하, [거절] 모델 거절, [잘림] 최대 길이에서 끊김
  */
 
 interface MockOptions {
-  /** 지연 배율. 테스트에서는 0으로 기다림 없이 돌린다. */
   delayScale?: number;
 }
 
@@ -216,8 +210,6 @@ function chunk(text: string, size: number): string[] {
   for (let i = 0; i < chars.length; i += size) pieces.push(chars.slice(i, i + size).join(""));
   return pieces;
 }
-
-/* ───────────── 가짜 답 만들기 ───────────── */
 
 interface Plan {
   text: string;

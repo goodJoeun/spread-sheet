@@ -9,11 +9,7 @@ interface LoadedSession {
   storage: StorageStatus;
 }
 
-/**
- * 시트 세션을 열고, 저장된 내용을 다 불러온 뒤에 돌려준다.
- * 불러오기 전에 빈 시트가 잠깐 보였다가 내용이 채워지는 깜빡임을 막기 위해서다.
- * 저장소를 쓸 수 없으면 storage가 "unavailable"인 채로 연다(로딩 화면에서 멈추지 않게).
- */
+/** 저장된 내용을 다 불러온 뒤에 돌려준다. 빈 시트가 잠깐 보였다가 채워지는 깜빡임을 막는다. */
 export function useSheetSession(sheetId: string): LoadedSession | null {
   const [loaded, setLoaded] = useState<LoadedSession | null>(null);
 
@@ -92,7 +88,6 @@ function docVersionStore(doc: Y.Doc): VersionStore {
   return store;
 }
 
-/** 문서가 바뀔 때마다 증가하는 번호. 셀·툴바를 다시 그리게 하는 데 쓴다. */
 export function useDocVersion(doc: Y.Doc): number {
   const store = docVersionStore(doc);
   return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);

@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { AI_LIMITS, type AiEditRequest } from "../protocol";
 
-/** 브라우저에서 온 요청은 크기와 형식을 확인한 뒤에만 모델에 보낸다. */
-
 const CELL = /^[A-Z]{1,2}[1-9]\d{0,2}$/;
 const RANGE = /^[A-Z]{1,2}[1-9]\d{0,2}(:[A-Z]{1,2}[1-9]\d{0,2})?$/;
 

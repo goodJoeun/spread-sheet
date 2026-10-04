@@ -13,14 +13,9 @@ import {
 } from "./schema";
 
 /**
- * 시트 문서(Y.Doc) 읽기·쓰기.
- *
- * 셀마다 중첩 Y.Map을 두지 않고, 최상위 Map 두 개에 속성 단위의 평평한 키로 저장한다.
- *   values:  "B2"      → "100"
- *   formats: "B2.bold" → true, "B2.color" → "#cc0000"
- * 빈 셀에 두 탭이 동시에 처음 쓰는 경우(한쪽은 값, 한쪽은 서식), 중첩 Map이면 각자 새 Map을 만들어
- * 한쪽이 통째로 사라진다. 평평한 키는 서로 다른 키이므로 두 변경이 모두 살아남는다.
- * 시트 크기와 서식 종류는 schema.ts에 있다.
+ * 셀마다 중첩 Y.Map을 두지 않고 평평한 키로 저장한다(values "B2" → "100", formats "B2.bold" → true).
+ * 빈 셀에 두 탭이 동시에 처음 쓰면 중첩 Map은 각자 새 Map을 만들어 한쪽이 통째로 사라지지만,
+ * 평평한 키는 서로 다른 키라 두 변경이 모두 남는다.
  */
 
 /**
@@ -70,10 +65,8 @@ export interface CellWrite {
 }
 
 /**
- * 여러 셀 값을 하나의 트랜잭션으로 쓴다(= 실행 취소 한 단계).
- * 빈 문자열은 키를 지우고, 현재 값과 같은 셀과 시트 밖 좌표는 건너뛴다.
- * 변경 없는 쓰기가 실행 취소 기록에 빈 단계로 남지 않게 하기 위해서다.
- * @returns 실제로 바뀐 셀 수
+ * 한 트랜잭션(= 실행 취소 한 단계)으로 쓰고 바뀐 셀 수를 돌려준다. 빈 문자열은 키를 지운다.
+ * 값이 같은 셀은 건너뛰어 실행 취소 기록에 빈 단계가 남지 않게 한다.
  */
 export function writeValues(doc: Y.Doc, writes: readonly CellWrite[], origin: EditOrigin): number {
   const values = valuesOf(doc);
@@ -95,7 +88,7 @@ export function setValue(doc: Y.Doc, coord: CellCoord, value: string, origin: Ed
   return writeValues(doc, [{ coord, value }], origin) > 0;
 }
 
-/** 범위의 값만 지운다. 서식은 유지한다(엑셀·구글시트의 Delete 키와 같은 동작). */
+/** 값만 지우고 서식은 둔다(엑셀·구글시트의 Delete 키와 같음). */
 export function clearValues(doc: Y.Doc, range: CellRange, origin: EditOrigin): number {
   const clipped = intersectRanges(range, SHEET_RANGE);
   if (!clipped) return 0;
@@ -104,7 +97,6 @@ export function clearValues(doc: Y.Doc, range: CellRange, origin: EditOrigin): n
   return writeValues(doc, writes, origin);
 }
 
-/** 범위의 모든 셀에 서식이 켜져 있는지. 툴바 활성 표시와 토글 방향 결정에 쓴다. */
 export function hasFormatEverywhere(doc: Y.Doc, range: CellRange, key: FormatKey): boolean {
   const clipped = intersectRanges(range, SHEET_RANGE);
   if (!clipped) return false;
@@ -137,10 +129,7 @@ export function setFormat(
   }, origin);
 }
 
-/**
- * 구글시트와 같은 토글 규칙: 범위 전체에 이미 켜져 있으면 끄고, 하나라도 꺼져 있으면 모두 켠다.
- * @returns 적용 후 상태
- */
+/** 범위 전체에 켜져 있으면 끄고, 하나라도 꺼져 있으면 모두 켠다(구글시트와 같음). */
 export function toggleFormat(
   doc: Y.Doc,
   range: CellRange,
@@ -152,7 +141,7 @@ export function toggleFormat(
   return enabled;
 }
 
-/** 범위에 값 서식(글자색·채우기·정렬)을 적용한다. null이면 기본값으로 되돌린다. 잘못된 값은 무시한다. */
+/** null이면 기본값으로 되돌린다. 잘못된 값은 무시한다. */
 export function setStyle(
   doc: Y.Doc,
   range: CellRange,
@@ -175,7 +164,7 @@ export function setStyle(
   }, origin);
 }
 
-/** 범위 전체가 같은 값을 가지면 그 값, 섞여 있거나 기본값이면 null. 툴바 표시에 쓴다. */
+/** 범위 전체가 같은 값이면 그 값, 섞여 있거나 기본값이면 null */
 export function commonStyle(doc: Y.Doc, range: CellRange, key: StyleKey): string | null {
   const clipped = intersectRanges(range, SHEET_RANGE);
   if (!clipped) return null;
@@ -190,7 +179,6 @@ export function commonStyle(doc: Y.Doc, range: CellRange, key: StyleKey): string
   return common ?? null;
 }
 
-/** 범위의 서식을 모두 지운다. 값은 그대로 둔다. */
 export function clearFormats(doc: Y.Doc, range: CellRange, origin: EditOrigin): void {
   const clipped = intersectRanges(range, SHEET_RANGE);
   if (!clipped) return;

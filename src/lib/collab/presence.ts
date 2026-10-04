@@ -3,17 +3,10 @@ import type { CellCoord, CellRange } from "@/lib/sheet/address";
 import type { Selection } from "@/lib/sheet/selection";
 
 /**
- * 참여자 표시(presence).
- *
- * awareness에 { user, selection, editing, ai }를 싣고, 다른 탭의 상태를 참여자 목록으로 만든다.
- *
- * 탭이 살아 있는지는 타이머가 아니라 Web Locks로 판단한다.
- * - 각 탭은 자기 clientID 이름의 잠금을 쥔 다음에 awareness를 공개한다.
- * - 다른 탭은 그 잠금을 요청해 두고 기다린다. 탭이 닫히거나 죽으면 브라우저가 잠금을 풀고,
- *   기다리던 탭에 잠금이 넘어오는 순간 그 참여자를 지운다.
- * y-protocols의 기본 방식(15초마다 갱신, 30초 무소식이면 삭제)은 크롬이 5분 넘게 가려진 탭의
- * 타이머를 1분에 한 번으로 늦추기 때문에, 열려 있는 탭이 목록에서 사라졌다 나타나는 문제가 있다.
- * Web Locks를 쓸 수 없는 환경에서는 기본 방식을 그대로 쓴다.
+ * 탭이 살아 있는지는 타이머 대신 Web Locks로 판단한다. 각 탭이 자기 clientID 이름의 잠금을 쥐고,
+ * 다른 탭은 그 잠금을 기다리다 넘어오면(탭이 닫힘) 그 참여자를 지운다.
+ * y-protocols 기본 방식(30초 무소식이면 삭제)은 크롬이 가려진 탭의 타이머를 늦춰서 열린 탭이 사라졌다 나타난다.
+ * Web Locks가 없으면 기본 방식을 쓴다.
  */
 
 export interface UserInfo {
@@ -21,10 +14,7 @@ export interface UserInfo {
   color: string;
 }
 
-/**
- * 내 AI 편집이 어디까지 왔는지. 다른 참여자에게 "○○님이 이 범위를 AI로 편집 중"으로 보인다.
- * 제안 값 자체는 싣지 않는다(확정되지 않은 값이 실제 데이터처럼 보이지 않게, 토큰마다 방송하지 않게).
- */
+/** 제안 값은 싣지 않는다. 확정되지 않은 값이 실제 데이터처럼 보이지 않고, 토큰마다 방송하지 않게. */
 export interface AiActivity {
   status: "generating" | "reviewing";
   /** 편집 범위. 시트 전체 요청이라 아직 제안이 없으면 null */
@@ -34,9 +24,7 @@ export interface AiActivity {
 export interface PresenceState {
   user: UserInfo;
   selection: Selection | null;
-  /** 지금 입력 중인 셀 */
   editing: CellCoord | null;
-  /** 진행 중인 AI 편집 */
   ai: AiActivity | null;
 }
 
@@ -106,7 +94,6 @@ export function randomName(random: () => number = Math.random): string {
   return `${pick(ADJECTIVES, random)} ${pick(ANIMALS, random)}`;
 }
 
-/** 다른 참여자가 쓰지 않는 색을 고른다. 모두 쓰였으면 아무 색이나. */
 export function pickColor(taken: Set<string>, random: () => number = Math.random): string {
   const free = PARTICIPANT_COLORS.filter((color) => !taken.has(color));
   return pick(free.length > 0 ? free : PARTICIPANT_COLORS, random);
@@ -116,7 +103,6 @@ export function randomUser(random: () => number = Math.random): UserInfo {
   return { name: randomName(random), color: pickColor(new Set(), random) };
 }
 
-/** 이름 앞뒤 공백을 없애고 길이를 제한한다. 비면 null. */
 export function normalizeName(name: string): string | null {
   const trimmed = name.trim().replace(/\s+/g, " ").slice(0, MAX_NAME_LENGTH);
   return trimmed.length > 0 ? trimmed : null;
@@ -147,7 +133,7 @@ const isAiActivity = (value: unknown): value is AiActivity =>
   ((value as AiActivity).status === "generating" || (value as AiActivity).status === "reviewing") &&
   ((value as AiActivity).range === null || isRange((value as AiActivity).range));
 
-/** 다른 탭에서 온 상태는 형식을 확인한 뒤에만 쓴다. ai가 없으면(이전 버전 탭) 진행 중인 AI 편집이 없는 것으로 본다. */
+/** ai가 없는 상태(이전 버전 탭)는 AI 편집이 없는 것으로 본다. */
 export function isPresenceState(value: unknown): value is PresenceState {
   if (typeof value !== "object" || value === null) return false;
   const { user, selection, editing, ai } = value as PresenceState;
@@ -217,7 +203,6 @@ export class Presence {
     this.publish();
   }
 
-  /** 탭을 떠날 때(pagehide) 내 상태를 지워 다른 탭에서 바로 사라지게 한다. */
   leave(): void {
     if (!this.joined) return;
     this.joined = false;
@@ -239,7 +224,6 @@ export class Presence {
     this.publish();
   }
 
-  /** @returns 바뀌었으면 true */
   rename(name: string): boolean {
     const normalized = normalizeName(name);
     if (!normalized || normalized === this.local.user.name) return false;
@@ -284,7 +268,6 @@ export class Presence {
     return others;
   }
 
-  /** 합류할 때 이미 쓰이는 이름·색을 피한다. */
   private avoidTaken(user: UserInfo): UserInfo {
     const others = this.otherStates().map(([, state]) => state.user);
     const colors = new Set(others.map((u) => u.color));
@@ -296,10 +279,7 @@ export class Presence {
     return next;
   }
 
-  /**
-   * 동시에 합류해 이름·색이 겹치면(탭 복제 포함) clientID가 큰 쪽이 양보한다.
-   * 두 탭이 같은 규칙을 따르므로 한쪽만 바꾸게 된다.
-   */
+  /** 이름·색이 겹치면 clientID가 큰 쪽이 양보한다. 양쪽이 같은 규칙을 따르므로 한쪽만 바뀐다. */
   private resolveConflicts(): void {
     if (!this.joined) return;
     const senior = this.otherStates().filter(([clientId]) => clientId < this.clientId);

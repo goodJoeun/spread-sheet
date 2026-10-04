@@ -1,4 +1,4 @@
-/** 0부터 시작하는 행/열 좌표. 화면 표기(A1)와 내부 좌표를 오가는 유틸을 모아 둔다. */
+/** 0부터 시작하는 행/열 */
 export interface CellCoord {
   row: number;
   col: number;
@@ -35,7 +35,6 @@ export function labelToCol(label: string): number | null {
   return n - 1;
 }
 
-/** { row: 0, col: 0 } → "A1" */
 export function toA1({ row, col }: CellCoord): string {
   return `${colToLabel(col)}${row + 1}`;
 }
@@ -50,7 +49,6 @@ export function parseA1(input: string): CellCoord | null {
   return { row: rowNumber - 1, col };
 }
 
-/** 두 꼭짓점으로 정규화된 범위를 만든다. 드래그 방향과 무관하게 start가 좌상단이 된다. */
 export function normalizeRange(a: CellCoord, b: CellCoord): CellRange {
   return {
     start: { row: Math.min(a.row, b.row), col: Math.min(a.col, b.col) },
@@ -88,7 +86,6 @@ export function forEachCell({ start, end }: CellRange, fn: (coord: CellCoord) =>
   }
 }
 
-/** 두 범위의 겹치는 부분. 겹치지 않으면 null. */
 export function intersectRanges(a: CellRange, b: CellRange): CellRange | null {
   const start = {
     row: Math.max(a.start.row, b.start.row),

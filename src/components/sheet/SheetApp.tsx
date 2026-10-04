@@ -40,7 +40,6 @@ export function SheetApp({ sheetId }: SheetAppProps) {
   );
 }
 
-/** 그리드와, 열려 있으면 오른쪽 AI 패널 */
 function Workspace() {
   const { aiPanel } = useSheet();
   const aiOpen = useStore(aiPanel);

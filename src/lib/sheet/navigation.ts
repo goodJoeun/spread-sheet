@@ -12,11 +12,6 @@ import {
   type Selection,
 } from "./selection";
 
-/**
- * 키보드 이동 규칙. 선택 상태와 동작을 받아 다음 선택 상태를 돌려주는 순수 함수다.
- * 화면(스크롤·포커스)과 문서 쓰기는 호출하는 쪽(SheetController)이 맡는다.
- */
-
 const NAVIGATION_TYPES = [
   "move",
   "extend",
@@ -36,22 +31,17 @@ export function isNavigationAction(action: GridAction): action is NavigationActi
 
 export interface NavigationState {
   selection: Selection;
-  /**
-   * Tab으로 오른쪽으로 입력해 나가기 시작한 열. 이어서 Enter를 누르면 이 열의 다음 행으로 돌아간다
-   * (엑셀·구글시트 동작). Tab/Enter 외의 이동을 하면 잊는다.
-   */
+  /** Tab으로 입력해 나가기 시작한 열. Enter를 누르면 이 열의 다음 행으로 돌아간다(엑셀과 같음). */
   tabReturnCol: number | null;
 }
 
 export interface NavigationContext {
-  /** PageUp/PageDown 한 번에 움직일 행 수(화면에 보이는 행 수) */
   pageRows: number;
-  /** Ctrl+방향키에서 데이터 블록의 끝을 찾을 때 쓴다. */
   isFilled: (coord: CellCoord) => boolean;
 }
 
 export interface NavigationResult extends NavigationState {
-  /** 화면에 보이게 스크롤할 셀. 전체 선택처럼 스크롤이 필요 없으면 null */
+  /** null이면 스크롤하지 않는다 */
   reveal: CellCoord | null;
 }
 

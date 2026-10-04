@@ -25,7 +25,6 @@ interface AiRunCardProps {
   run: AiRun;
 }
 
-/** AI 응답 하나: 진행 상태, 설명, 원래 값 → 제안 목록, 적용·버리기·다시 시도. */
 export function AiRunCard({ run }: AiRunCardProps) {
   const { ai, controller, session } = useSheet();
   const showOriginal = useStore(ai.showOriginal);
@@ -216,7 +215,6 @@ function plainState(proposal: AiProposal): ProposalState {
   return { proposal, current: proposal.before, status: "clean", overwrite: false };
 }
 
-/** 요청 뒤에 바뀐 셀이 있을 때: 기본은 건너뛰기, 모두 덮어쓰기, 지금 값으로 다시 요청 */
 function ConflictBanner({
   conflicts,
   skipped,
@@ -265,7 +263,6 @@ function ConflictBanner({
   );
 }
 
-/** 제안 하나: 지금 값 → 제안. 충돌한 셀은 요청 때 값과 지금 값, 덮어쓰기 선택을 함께 보여 준다. */
 function ProposalRow({
   state,
   reviewing,

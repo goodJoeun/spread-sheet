@@ -9,19 +9,14 @@ import {
 import { createEditStreamParser } from "./edit-stream-parser";
 import { EDIT_TOOL, EDIT_TOOL_NAME, SYSTEM_PROMPT, buildMessages } from "./prompt";
 
-/**
- * Claude로 셀 편집 제안을 받아 AiStreamEvent로 바꾼다.
- * 실제 API든 가짜 fetch든 같은 SDK 경로를 지나므로, 가짜로 개발한 코드가 그대로 실제 모델에서 돈다.
- */
+/** 실제 API와 가짜 fetch가 같은 SDK 경로를 지나므로, 가짜로 검증한 코드가 실제 모델에서도 그대로 돈다. */
 
 export interface ClaudeSetup {
   client: Anthropic;
-  /** 요청에 모델이 없을 때 쓴다 */
   defaultModel: string;
-  /** 화면에서 고를 수 있는 모델. 이 밖의 모델로 온 요청은 받지 않는다. */
+  /** 이 밖의 모델로 온 요청은 받지 않는다 */
   models: AiModelOption[];
   effort: "low" | "medium" | "high";
-  /** 화면에 보여 줄 공급자 이름. 가짜면 "mock" */
   provider: "anthropic" | "mock";
 }
 
@@ -32,16 +27,15 @@ export class AiProviderError extends Error {
   }
 }
 
-/** beta stream()이 받는 요청 형식 */
+/** SDK가 이 타입을 내보내지 않아 stream()에서 꺼낸다. */
 type StreamParams = Parameters<Anthropic["beta"]["messages"]["stream"]>[0];
 
 /** 응답 길이 상한. 셀 하나에 20~30토큰이라 1,000셀 안팎을 한 번에 제안할 수 있다. */
 const MAX_TOKENS = 32000;
 
 /**
- * 모델별로 지원하는 옵션. 모르는 모델이면 둘 다 쓰지 않는다(지원하지 않는 옵션은 400이 난다).
- * - effort: 생각하는 정도. 낮을수록 빨리 답한다.
- * - fallbacks: 안전 분류기가 거절하면 같은 요청을 다른 모델로 이어서 처리한다(서버 측 기능).
+ * 지원하지 않는 옵션을 보내면 400이 나므로 모르는 모델에는 둘 다 쓰지 않는다.
+ * fallbacks: 안전 분류기가 거절하면 서버가 다른 모델로 이어서 처리한다.
  */
 const MODEL_FEATURES: Record<string, { effort: boolean; fallbacks: boolean }> = {
   "claude-opus-5-5": { effort: true, fallbacks: true },
@@ -158,7 +152,7 @@ interface ErrorBody {
   error?: { type?: string; message?: string; details?: { error_code?: string } };
 }
 
-/** SDK의 오류 종류를 화면 안내용 오류로 바꾼다. 구체적인 것부터 확인한다. */
+/** 하위 클래스가 먼저 걸리도록 구체적인 오류부터 확인한다. */
 export function toAiError(error: InstanceType<typeof Anthropic.APIError>): AiErrorInfo {
   if (error instanceof Anthropic.APIConnectionTimeoutError) return aiError("timeout");
   if (error instanceof Anthropic.APIConnectionError) return aiError("network");

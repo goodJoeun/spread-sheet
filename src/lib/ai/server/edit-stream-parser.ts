@@ -6,11 +6,8 @@ export interface ParsedEdit {
 }
 
 /**
- * propose_edits 도구 입력({"edits":[{...},{...}]})이 조각조각 도착할 때,
- * 완성된 edits 원소를 하나씩 꺼낸다.
- *
- * SDK도 부분 JSON을 관대하게 해석하지만, 잘린 문자열을 조용히 받아들일 수 있다.
- * 여기서는 원소 하나가 닫는 괄호까지 다 도착했을 때만 JSON.parse로 엄격하게 읽고 형식을 확인한다.
+ * 조각조각 도착하는 도구 입력({"edits":[...]})에서 완성된 원소를 하나씩 꺼낸다.
+ * SDK의 부분 JSON 해석은 잘린 문자열을 조용히 받아들일 수 있어, 원소가 닫힐 때만 JSON.parse로 엄격하게 읽는다.
  */
 export function createEditStreamParser() {
   let buffer = "";
@@ -37,7 +34,6 @@ export function createEditStreamParser() {
   }
 
   return {
-    /** 새 조각을 넣고, 이번에 완성된 원소들을 돌려준다. 형식이 틀린 원소는 invalid로 센다. */
     push(chunk: string): { edits: ParsedEdit[]; invalid: number } {
       buffer += chunk;
       const edits: ParsedEdit[] = [];

@@ -11,7 +11,6 @@ import { useParticipants } from "./useSheetSession";
 
 const MAX_AVATARS = 4;
 
-/** 헤더의 참여자 아바타. 누르면 목록이 열리고, 다른 사람을 누르면 그 위치로 이동한다. */
 export function ParticipantList() {
   const { session, controller } = useSheet();
   const { presence } = session;

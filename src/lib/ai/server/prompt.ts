@@ -2,11 +2,8 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { AiCell, AiEditRequest } from "../protocol";
 
 /**
- * Claude에 보내는 요청 내용.
- *
  * 편집 결과는 propose_edits 도구 호출로 받는다. 도구 입력을 스트리밍(eager_input_streaming)하면
- * edits 배열의 원소가 생성되는 대로 도착하므로, 셀 제안을 하나씩 화면에 보여 줄 수 있다.
- * 도구를 실제로 실행해 대화를 이어 가지는 않는다. 도구 호출 자체가 결과다.
+ * edits 원소가 생성되는 대로 도착해 셀 제안을 하나씩 보여 줄 수 있다. 도구를 실행해 대화를 잇지는 않는다.
  */
 
 export const EDIT_TOOL_NAME = "propose_edits";
@@ -55,7 +52,7 @@ Rules for edits:
 - Use an empty string to clear a cell. Leave out cells that do not change.
 - Keep the existing style of the data (number formats, units, capitalization) unless asked to change it.`;
 
-/** 시트 내용을 한 줄에 한 셀씩 적는다. 값은 JSON 문자열이라 줄바꿈·따옴표가 있어도 모호하지 않다. */
+/** 값은 JSON 문자열로 적어 줄바꿈·따옴표가 있어도 모호하지 않게 한다. */
 export function formatSheet(cells: readonly AiCell[]): string {
   if (cells.length === 0) return "(the sheet is empty)";
   return cells.map(({ cell, value }) => `${cell} = ${JSON.stringify(value)}`).join("\n");
@@ -89,10 +86,7 @@ export function buildMessages(request: AiEditRequest): Anthropic.Beta.BetaMessag
   return [...history, { role: "user", content: buildUserMessage(request) }];
 }
 
-/**
- * buildUserMessage로 만든 글을 다시 읽는다. 가짜 Claude가 실제 요청 본문만 보고 답을 만들 때 쓴다.
- * (실제 모델 경로에서는 쓰지 않는다.)
- */
+/** 가짜 Claude가 요청 본문만 보고 답을 만들 때 쓴다. */
 export function parseUserMessage(text: string): {
   cells: AiCell[];
   range: string | null;

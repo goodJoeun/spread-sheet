@@ -1,9 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-/**
- * 아주 작은 외부 저장소. 이벤트 핸들러에서 항상 최신 값을 동기적으로 읽어야 하는 상태
- * (선택 영역, 편집 상태 등)에 쓴다. React state + ref 동기화보다 값이 어긋날 틈이 없다.
- */
+/** 이벤트 핸들러에서 항상 최신 값을 동기적으로 읽어야 하는 상태(선택, 편집)에 쓴다. state + ref 동기화보다 어긋날 틈이 없다. */
 export interface Store<T> {
   get(): T;
   set(next: T | ((prev: T) => T)): void;

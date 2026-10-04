@@ -4,13 +4,10 @@ import { useEffect, useState } from "react";
 import type { AiController } from "@/lib/ai/ai-controller";
 import { AI_ENDPOINT, type AiConnectionInfo } from "@/lib/ai/protocol";
 
-/** 이 브라우저에서 마지막으로 고른 모델(보는 사람마다 따로라 localStorage에 둔다) */
+/** 보는 사람마다 따로라 localStorage에 둔다 */
 const MODEL_KEY = "spread-sheet:ai-model";
 
-/**
- * AI 서버의 연결 상태(실제 Claude인지 가짜인지)와 고를 수 있는 모델을 불러온다.
- * 마지막으로 고른 모델을 되살리되, 서버가 더 이상 허용하지 않는 모델이면 서버 기본 모델로 돌아간다.
- */
+/** 마지막으로 고른 모델을 되살리되, 서버가 더 이상 허용하지 않으면 서버 기본 모델로 돌아간다. */
 export function useAiConnection(ai: AiController): AiConnectionInfo | null {
   const [connection, setConnection] = useState<AiConnectionInfo | null>(null);
 

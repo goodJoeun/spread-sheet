@@ -5,16 +5,9 @@ import * as syncProtocol from "y-protocols/sync";
 import * as Y from "yjs";
 
 /**
- * BroadcastChannel로 같은 출처(origin)의 탭끼리 Y.Doc과 awareness를 동기화한다.
- *
- * 메시지 형식은 y-websocket과 같은 y-protocols 인코딩을 쓴다. 그래서 네트워크 동기화로 옮길 때
- * 이 클래스를 WebsocketProvider로 바꾸기만 하면 되고, 나머지 코드는 그대로 둘 수 있다.
- *
- * 합류 절차
- *  1. 새 탭이 SyncStep1(내 state vector)과 SyncStep2(내 전체 상태)를 방송한다.
- *  2. 기존 탭은 SyncStep1에 대한 답으로 새 탭에 없는 변경(SyncStep2)을 방송한다.
- *  3. 이후 각 탭은 자기 로컬 변경을 Update 메시지로 방송한다.
- * BroadcastChannel은 1:N 방송이라 답장도 모두에게 가지만, Yjs 업데이트는 멱등이라 안전하다.
+ * BroadcastChannel로 같은 출처의 탭끼리 Y.Doc과 awareness를 동기화한다.
+ * 메시지는 y-websocket과 같은 y-protocols 인코딩이라, 네트워크로 옮길 때 이 클래스만 WebsocketProvider로 바꾸면 된다.
+ * 1:N 방송이라 SyncStep2 답장도 모든 탭에 가지만 Yjs 업데이트는 멱등이라 안전하다.
  */
 
 const MESSAGE_SYNC = 0;
@@ -52,15 +45,11 @@ export class BroadcastChannelProvider {
     this.announce();
   }
 
-  /**
-   * 다시 동기화한다. 뒤로/앞으로 캐시(bfcache)에서 복원된 탭은 멈춰 있던 동안의 메시지를 받지 못했으므로
-   * 합류할 때와 같은 절차로 빠진 변경과 참여자 정보를 다시 받는다.
-   */
+  /** bfcache에서 복원된 탭은 멈춰 있던 동안의 메시지를 놓쳤으므로 합류 절차를 다시 밟는다. */
   resync(): void {
     this.announce();
   }
 
-  /** 합류 알림: 동기화를 시작하고, 다른 탭의 awareness를 요청하고, 내 awareness를 알린다. */
   private announce(): void {
     const step1 = encoding.createEncoder();
     encoding.writeVarUint(step1, MESSAGE_SYNC);
@@ -148,7 +137,6 @@ export class BroadcastChannelProvider {
     if (!this.destroyed) this.channel.postMessage(message);
   }
 
-  /** 탭을 떠날 때 호출한다. 내 awareness를 지워 다른 탭의 참여자 목록에서 바로 사라지게 한다. */
   destroy(): void {
     if (this.destroyed) return;
     // destroyed 표시 전에 지워야 제거 메시지가 방송된다.

@@ -9,10 +9,7 @@ interface RemoteCursorsProps {
   participants: Participant[];
 }
 
-/**
- * 다른 참여자의 선택 범위, active 셀, 입력 중인 셀을 그 사람의 색으로 그린다.
- * 내 선택보다 아래 레이어에 두어 내 커서가 가려지지 않게 하고, 이름표만 위로 올린다.
- */
+/** 내 선택보다 아래 레이어에 두어 내 커서가 가려지지 않게 하고, 이름표만 위로 올린다. */
 export const RemoteCursors = memo(function RemoteCursors({ participants }: RemoteCursorsProps) {
   return participants.map((participant) => {
     const { selection, editing, user, clientId, isSelf } = participant;
