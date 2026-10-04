@@ -10,6 +10,7 @@ import {
   PaintBucket,
   Redo2,
   RemoveFormatting,
+  Sparkles,
   Strikethrough,
   Underline,
   Undo2,
@@ -21,6 +22,7 @@ import { isApplePlatform } from "@/lib/platform";
 import { commonStyle, hasFormatEverywhere } from "@/lib/sheet/document";
 import type { Alignment, FormatKey } from "@/lib/sheet/schema";
 import { selectionRange } from "@/lib/sheet/selection";
+import { useStore } from "@/lib/store";
 import { useSelection, useSheet } from "./SheetContext";
 import { useUndoState } from "./useUndoState";
 import { useDocVersion } from "./useSheetSession";
@@ -73,7 +75,8 @@ const ALIGN_BUTTONS: { value: Alignment; label: string; icon: LucideIcon; shortc
 ];
 
 export function Toolbar() {
-  const { session, controller } = useSheet();
+  const { session, controller, aiPanel } = useSheet();
+  const aiOpen = useStore(aiPanel);
   const { doc, undoManager } = session;
   useDocVersion(doc);
   const range = selectionRange(useSelection());
@@ -169,6 +172,18 @@ export function Toolbar() {
       >
         <RemoveFormatting size={16} />
       </ToolbarButton>
+
+      <button
+        type="button"
+        aria-pressed={aiOpen}
+        onClick={() => aiPanel.set((open) => !open)}
+        className={`ml-auto flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors ${
+          aiOpen ? "bg-ai text-white hover:bg-ai/90" : "text-ai-ink hover:bg-ai-soft"
+        }`}
+      >
+        <Sparkles size={15} aria-hidden />
+        AI 편집
+      </button>
     </div>
   );
 }

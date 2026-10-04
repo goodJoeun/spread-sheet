@@ -2,10 +2,12 @@
 
 import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
+import { useStore } from "@/lib/store";
+import { AiPanel } from "./ai/AiPanel";
 import { FormulaBar } from "./FormulaBar";
 import { Grid } from "./grid/Grid";
 import { ParticipantList } from "./ParticipantList";
-import { SheetProvider } from "./SheetContext";
+import { SheetProvider, useSheet } from "./SheetContext";
 import { Toolbar } from "./Toolbar";
 import { useSheetSession } from "./useSheetSession";
 
@@ -32,9 +34,21 @@ export function SheetApp({ sheetId }: SheetAppProps) {
         {loaded.storage === "unavailable" && <StorageNotice />}
         <Toolbar />
         <FormulaBar />
-        <Grid />
+        <Workspace />
       </Shell>
     </SheetProvider>
+  );
+}
+
+/** 그리드와, 열려 있으면 오른쪽 AI 패널 */
+function Workspace() {
+  const { aiPanel } = useSheet();
+  const aiOpen = useStore(aiPanel);
+  return (
+    <div className="flex min-h-0 flex-1">
+      <Grid />
+      {aiOpen && <AiPanel />}
+    </div>
   );
 }
 
