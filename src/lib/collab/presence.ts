@@ -1,109 +1,17 @@
 import { removeAwarenessStates, type Awareness } from "y-protocols/awareness";
-import type { CellCoord, CellRange } from "@/lib/sheet/address";
+import type { CellCoord } from "@/lib/sheet/address";
 import type { Selection } from "@/lib/sheet/selection";
-import { PARTICIPANT_COLORS } from "@/resources/colors";
-import { NAME_ADJECTIVES, NAME_ANIMALS } from "@/resources/names";
+import { normalizeName, pickColor, randomName } from "./identity";
+import { TabLiveness, webLocks } from "./liveness";
+import {
+  isPresenceState,
+  type AiActivity,
+  type Participant,
+  type PresenceState,
+  type UserInfo,
+} from "./presence-state";
 
-/**
- * 탭이 살아 있는지는 타이머 대신 Web Locks로 판단한다. 각 탭이 자기 clientID 이름의 잠금을 쥐고,
- * 다른 탭은 그 잠금을 기다리다 넘어오면(탭이 닫힘) 그 참여자를 지운다.
- * y-protocols 기본 방식(30초 무소식이면 삭제)은 크롬이 가려진 탭의 타이머를 늦춰서 열린 탭이 사라졌다 나타난다.
- * Web Locks가 없으면 기본 방식을 쓴다.
- */
-
-export interface UserInfo {
-  name: string;
-  color: string;
-}
-
-/** 제안 값은 싣지 않는다. 확정되지 않은 값이 실제 데이터처럼 보이지 않고, 토큰마다 방송하지 않게. */
-export interface AiActivity {
-  status: "generating" | "reviewing";
-  /** 편집 범위. 시트 전체 요청이라 아직 제안이 없으면 null */
-  range: CellRange | null;
-}
-
-export interface PresenceState {
-  user: UserInfo;
-  selection: Selection | null;
-  editing: CellCoord | null;
-  ai: AiActivity | null;
-}
-
-export interface Participant extends PresenceState {
-  clientId: number;
-  isSelf: boolean;
-}
-
-export const MAX_NAME_LENGTH = 20;
-
-const pick = <T>(items: readonly T[], random: () => number): T =>
-  items[Math.floor(random() * items.length)];
-
-export function randomName(random: () => number = Math.random): string {
-  return `${pick(NAME_ADJECTIVES, random)} ${pick(NAME_ANIMALS, random)}`;
-}
-
-export function pickColor(taken: Set<string>, random: () => number = Math.random): string {
-  const free = PARTICIPANT_COLORS.filter((color) => !taken.has(color));
-  return pick(free.length > 0 ? free : PARTICIPANT_COLORS, random);
-}
-
-export function randomUser(random: () => number = Math.random): UserInfo {
-  return { name: randomName(random), color: pickColor(new Set(), random) };
-}
-
-export function normalizeName(name: string): string | null {
-  const trimmed = name.trim().replace(/\s+/g, " ").slice(0, MAX_NAME_LENGTH);
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-const isCoord = (value: unknown): value is CellCoord =>
-  typeof value === "object" &&
-  value !== null &&
-  Number.isInteger((value as CellCoord).row) &&
-  Number.isInteger((value as CellCoord).col);
-
-const isSelection = (value: unknown): value is Selection =>
-  typeof value === "object" &&
-  value !== null &&
-  isCoord((value as Selection).anchor) &&
-  isCoord((value as Selection).focus) &&
-  isCoord((value as Selection).active);
-
-const isRange = (value: unknown): value is CellRange =>
-  typeof value === "object" &&
-  value !== null &&
-  isCoord((value as CellRange).start) &&
-  isCoord((value as CellRange).end);
-
-const isAiActivity = (value: unknown): value is AiActivity =>
-  typeof value === "object" &&
-  value !== null &&
-  ((value as AiActivity).status === "generating" || (value as AiActivity).status === "reviewing") &&
-  ((value as AiActivity).range === null || isRange((value as AiActivity).range));
-
-/** ai가 없는 상태(이전 버전 탭)는 AI 편집이 없는 것으로 본다. */
-export function isPresenceState(value: unknown): value is PresenceState {
-  if (typeof value !== "object" || value === null) return false;
-  const { user, selection, editing, ai } = value as PresenceState;
-  return (
-    typeof user === "object" &&
-    user !== null &&
-    typeof user.name === "string" &&
-    typeof user.color === "string" &&
-    (selection === null || isSelection(selection)) &&
-    (editing === null || isCoord(editing)) &&
-    (ai === undefined || ai === null || isAiActivity(ai))
-  );
-}
-
-const LOCK_PREFIX = "spread-sheet:presence:";
-const lockName = (clientId: number) => `${LOCK_PREFIX}${clientId}`;
-
-function webLocks(): LockManager | null {
-  return typeof navigator !== "undefined" && navigator.locks ? navigator.locks : null;
-}
+/** 내 상태를 다른 탭에 알리고, 다른 탭의 상태를 참여자 목록으로 모은다. */
 
 interface AwarenessChanges {
   added: number[];
@@ -117,9 +25,7 @@ export class Presence {
   private destroyed = false;
   private snapshot: Participant[] = [];
   private readonly listeners = new Set<() => void>();
-  private readonly watchers = new Map<number, AbortController>();
-  private releaseOwnLock: (() => void) | null = null;
-  private readonly locks = webLocks();
+  private readonly liveness: TabLiveness | null;
 
   constructor(
     private readonly awareness: Awareness,
@@ -127,7 +33,9 @@ export class Presence {
     private readonly onUserChange?: (user: UserInfo) => void,
   ) {
     this.local = { user, selection: null, editing: null, ai: null };
-    if (this.locks) {
+    const locks = webLocks();
+    this.liveness = locks ? new TabLiveness(locks, this.handleGone) : null;
+    if (this.liveness) {
       // 생존 확인을 잠금으로 하므로, 시간이 지나면 다른 탭의 상태를 지우는 기본 타이머는 끈다.
       clearInterval(awareness._checkInterval);
     }
@@ -146,7 +54,7 @@ export class Presence {
   /** 잠금을 쥔 뒤 내 상태를 공개한다. 잠금 없이 공개하면 다른 탭이 나를 이미 떠난 것으로 볼 수 있다. */
   async join(): Promise<void> {
     if (this.destroyed) return;
-    if (this.locks && !this.releaseOwnLock) await this.acquireOwnLock(this.locks);
+    await this.liveness?.hold(this.clientId);
     if (this.destroyed) return;
     this.joined = true;
     this.local = { ...this.local, user: this.avoidTaken(this.local.user) };
@@ -192,10 +100,7 @@ export class Presence {
     if (this.destroyed) return;
     this.destroyed = true;
     this.awareness.off("change", this.handleChange);
-    this.watchers.forEach((controller) => controller.abort());
-    this.watchers.clear();
-    this.releaseOwnLock?.();
-    this.releaseOwnLock = null;
+    this.liveness?.destroy();
     this.listeners.clear();
   }
 
@@ -224,7 +129,7 @@ export class Presence {
     const names = new Set(others.map((u) => u.name));
     let next = user;
     if (colors.has(next.color)) next = { ...next, color: pickColor(colors) };
-    if (names.has(next.name)) next = { ...next, name: this.freeName(names) };
+    if (names.has(next.name)) next = { ...next, name: freeName(names) };
     if (next !== user) this.onUserChange?.(next);
     return next;
   }
@@ -244,25 +149,24 @@ export class Presence {
     if (senior.some(([, s]) => s.user.name === user.name)) {
       next = {
         ...next,
-        name: this.freeName(new Set(this.otherStates().map(([, s]) => s.user.name))),
+        name: freeName(new Set(this.otherStates().map(([, s]) => s.user.name))),
       };
     }
     if (next !== user) this.updateUser(next);
   }
 
-  private freeName(taken: Set<string>): string {
-    for (let i = 0; i < 20; i++) {
-      const candidate = randomName();
-      if (!taken.has(candidate)) return candidate;
-    }
-    return `${randomName()} ${Math.floor(Math.random() * 90) + 10}`;
-  }
-
   private handleChange = ({ added, removed }: AwarenessChanges): void => {
-    for (const clientId of added) if (clientId !== this.clientId) this.watch(clientId);
-    for (const clientId of removed) this.unwatch(clientId);
+    for (const clientId of added) if (clientId !== this.clientId) this.liveness?.watch(clientId);
+    for (const clientId of removed) this.liveness?.unwatch(clientId);
     this.resolveConflicts();
     this.recompute();
+  };
+
+  /** 다른 탭이 닫혔다(그 탭의 잠금이 풀림). */
+  private handleGone = (clientId: number): void => {
+    if (!this.destroyed && this.awareness.getStates().has(clientId)) {
+      removeAwarenessStates(this.awareness, [clientId], "lock-released");
+    }
   };
 
   private recompute(): void {
@@ -282,39 +186,12 @@ export class Presence {
     this.snapshot = participants;
     this.listeners.forEach((listener) => listener());
   }
+}
 
-  private acquireOwnLock(locks: LockManager): Promise<void> {
-    return new Promise((acquired) => {
-      void locks.request(
-        lockName(this.clientId),
-        () =>
-          new Promise<void>((release) => {
-            this.releaseOwnLock = release;
-            acquired();
-          }),
-      );
-    });
+function freeName(taken: Set<string>): string {
+  for (let i = 0; i < 20; i++) {
+    const candidate = randomName();
+    if (!taken.has(candidate)) return candidate;
   }
-
-  /** 다른 탭의 잠금을 기다린다. 잠금이 넘어오면 그 탭은 닫힌 것이다. */
-  private watch(clientId: number): void {
-    if (!this.locks || this.watchers.has(clientId)) return;
-    const controller = new AbortController();
-    this.watchers.set(clientId, controller);
-    this.locks
-      .request(lockName(clientId), { signal: controller.signal }, () => {
-        this.watchers.delete(clientId);
-        if (!this.destroyed && this.awareness.getStates().has(clientId)) {
-          removeAwarenessStates(this.awareness, [clientId], "lock-released");
-        }
-      })
-      .catch(() => {
-        // 참여자가 정상적으로 떠나 기다림을 취소한 경우(AbortError)
-      });
-  }
-
-  private unwatch(clientId: number): void {
-    this.watchers.get(clientId)?.abort();
-    this.watchers.delete(clientId);
-  }
+  return `${randomName()} ${Math.floor(Math.random() * 90) + 10}`;
 }

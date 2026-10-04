@@ -1,11 +1,35 @@
 import { PARTICIPANT_COLORS } from "@/resources/colors";
-import { normalizeName, randomUser, type UserInfo } from "./presence";
+import { NAME_ADJECTIVES, NAME_ANIMALS } from "@/resources/names";
+import type { UserInfo } from "./presence-state";
 
 /**
  * 탭별 신원(이름·색). sessionStorage는 탭마다 따로라서 새 탭은 새 참여자가 되고,
  * 같은 탭을 새로고침하면 같은 이름으로 돌아온다.
  */
 const STORAGE_KEY = "spread-sheet:user";
+
+export const MAX_NAME_LENGTH = 20;
+
+const pick = <T>(items: readonly T[], random: () => number): T =>
+  items[Math.floor(random() * items.length)];
+
+export function randomName(random: () => number = Math.random): string {
+  return `${pick(NAME_ADJECTIVES, random)} ${pick(NAME_ANIMALS, random)}`;
+}
+
+export function pickColor(taken: Set<string>, random: () => number = Math.random): string {
+  const free = PARTICIPANT_COLORS.filter((color) => !taken.has(color));
+  return pick(free.length > 0 ? free : PARTICIPANT_COLORS, random);
+}
+
+export function randomUser(random: () => number = Math.random): UserInfo {
+  return { name: randomName(random), color: pickColor(new Set(), random) };
+}
+
+export function normalizeName(name: string): string | null {
+  const trimmed = name.trim().replace(/\s+/g, " ").slice(0, MAX_NAME_LENGTH);
+  return trimmed.length > 0 ? trimmed : null;
+}
 
 export function loadTabUser(): UserInfo {
   try {

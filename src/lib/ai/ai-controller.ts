@@ -1,20 +1,12 @@
 import type * as Y from "yjs";
-import type { AiActivity } from "@/lib/collab/presence";
-import {
-  intersectRanges,
-  parseA1,
-  rangeContains,
-  rangeToA1,
-  toA1,
-  type CellCoord,
-  type CellRange,
-} from "@/lib/sheet/address";
+import type { AiActivity } from "@/lib/collab/presence-state";
+import { intersectRanges, rangeToA1, type CellCoord, type CellRange } from "@/lib/sheet/address";
 import { EditOrigin, valuesOf, writeValues } from "@/lib/sheet/document";
-import { SHEET_RANGE, isInSheet } from "@/lib/sheet/schema";
+import { SHEET_RANGE } from "@/lib/sheet/schema";
 import type { Selection } from "@/lib/sheet/selection";
 import { createStore } from "@/lib/store";
 import {
-  activityRange,
+  aiActivityOf,
   boundingRange,
   evaluateProposals,
   summarize,
@@ -24,13 +16,12 @@ import {
 import {
   AI_LIMITS,
   aiError,
-  type AiCell,
   type AiEditRequest,
   type AiErrorInfo,
-  type AiHistoryItem,
   type AiStreamEvent,
 } from "./protocol";
-import { isRunning, type AiMessage, type AiProposal, type AiRun } from "./run";
+import { conversationHistory, snapshotCells } from "./request";
+import { applyProgress, createRun, finishRun, isRunning, type AiMessage, type AiRun } from "./run";
 import { AiRequestError, type AiTransport } from "./transport";
 
 /**
@@ -131,34 +122,23 @@ export class AiController {
     if (!text || this.isBusy()) return false;
 
     const range = scope ? intersectRanges(scope, SHEET_RANGE) : null;
-    const cells = this.sheetCells();
+    const cells = snapshotCells(this.doc);
     const model = this.model.get();
     const request: AiEditRequest = {
       instruction: text,
       range: range ? rangeToA1(range) : null,
       cells,
-      history: this.history(),
+      history: conversationHistory(this.messages.get()),
       ...(model ? { model } : {}),
     };
-    const run: AiRun = {
-      id: 0,
+    const userId = this.nextId++;
+    const run = createRun({
+      id: this.nextId++,
       instruction: text,
       scope: range,
-      status: "waiting",
-      connected: false,
-      slow: false,
-      provider: null,
       model,
-      text: "",
-      proposals: [],
-      skipped: 0,
-      warnings: [],
-      error: null,
       base: new Map(cells.map((c) => [c.cell, c.value])),
-      result: null,
-    };
-    const userId = this.nextId++;
-    run.id = this.nextId++;
+    });
     this.messages.set((list) => [
       ...list,
       { id: userId, role: "user", text, scope: range },
@@ -263,52 +243,25 @@ export class AiController {
 
   /** @returns 실행이 끝났으면 true */
   private handleEvent(runId: number, event: AiStreamEvent): boolean {
-    switch (event.type) {
-      case "meta":
-        this.update(runId, (r) => ({
-          ...r,
-          connected: true,
-          slow: false,
-          provider: event.provider,
-          model: event.model,
-        }));
-        return false;
-      case "text":
-        this.update(runId, (r) => ({
-          ...r,
-          connected: true,
-          slow: false,
-          status: "streaming",
-          text: r.text + event.delta,
-        }));
-        return false;
-      case "edit": {
-        const hadProposals = (this.findRun(runId)?.proposals.length ?? 0) > 0;
-        this.update(runId, (r) => addProposal(r, event.cell, event.value));
-        // 첫 제안이 오면 그 셀을 화면에 보여 준다. 다른 곳을 보고 있어도 생성 과정을 볼 수 있게.
-        const first = this.findRun(runId)?.proposals[0];
-        if (!hadProposals && first) this.sheet.reveal(first.coord);
-        return false;
-      }
-      case "warning":
-        this.update(runId, (r) => ({ ...r, warnings: [...r.warnings, event.warning] }));
-        return false;
-      case "done":
-        this.finish(runId);
-        return true;
-      case "error":
-        this.fail(runId, event.error);
-        return true;
+    if (event.type === "done") {
+      this.finish(runId);
+      return true;
     }
+    if (event.type === "error") {
+      this.fail(runId, event.error);
+      return true;
+    }
+    const hadProposals = (this.findRun(runId)?.proposals.length ?? 0) > 0;
+    this.update(runId, (r) => applyProgress(r, event));
+    // 첫 제안이 오면 그 셀을 화면에 보여 준다. 다른 곳을 보고 있어도 생성 과정을 볼 수 있게.
+    const first = this.findRun(runId)?.proposals[0];
+    if (!hadProposals && first) this.sheet.reveal(first.coord);
+    return false;
   }
 
   private finish(runId: number): void {
     this.settle();
-    this.update(runId, (r) => ({
-      ...r,
-      slow: false,
-      status: r.proposals.length > 0 ? "review" : "answered",
-    }));
+    this.update(runId, finishRun);
     const run = this.findRun(runId);
     this.active.set(run?.status === "review" ? run : null);
   }
@@ -338,14 +291,7 @@ export class AiController {
 
   /** 상태나 범위가 바뀔 때만 알린다. 글자가 들어올 때마다 다른 탭에 보내지 않도록. */
   private publishActivity(): void {
-    const run = this.active.get();
-    let activity: AiActivity | null = null;
-    if (run && (isRunning(run) || run.status === "review")) {
-      activity = {
-        status: run.status === "review" ? "reviewing" : "generating",
-        range: activityRange(run.scope, run.proposals),
-      };
-    }
+    const activity = aiActivityOf(this.active.get());
     const key = activity
       ? `${activity.status}:${activity.range ? rangeToA1(activity.range) : "*"}`
       : "";
@@ -384,48 +330,4 @@ export class AiController {
     const updated = this.findRun(runId);
     if (updated && active?.id === runId && isRunning(active)) this.active.set(updated);
   }
-
-  private sheetCells(): AiCell[] {
-    const cells: Array<AiCell & { coord: CellCoord }> = [];
-    valuesOf(this.doc).forEach((value, key) => {
-      const coord = parseA1(key);
-      if (coord && value !== "") cells.push({ coord, cell: key, value });
-    });
-    cells.sort((a, b) => a.coord.row - b.coord.row || a.coord.col - b.coord.col);
-    return cells
-      .slice(0, AI_LIMITS.cells)
-      .map(({ cell, value }) => ({ cell, value: value.slice(0, AI_LIMITS.cellValue) }));
-  }
-
-  private history(): AiHistoryItem[] {
-    const items: AiHistoryItem[] = [];
-    for (const m of this.messages.get()) {
-      if (m.role === "user") items.push({ role: "user", text: m.text });
-      else if (m.run.text) items.push({ role: "assistant", text: m.run.text });
-    }
-    return items
-      .slice(-AI_LIMITS.history)
-      .map((item) => ({ ...item, text: item.text.slice(0, AI_LIMITS.historyText) }));
-  }
-}
-
-function addProposal(run: AiRun, cell: string, value: string): AiRun {
-  const coord = parseA1(cell);
-  const base = { ...run, connected: true, slow: false, status: "streaming" as const };
-  if (!coord || !isInSheet(coord) || (run.scope && !rangeContains(run.scope, coord))) {
-    return { ...base, skipped: run.skipped + 1 };
-  }
-  const key = toA1(coord);
-  const before = run.base.get(key) ?? "";
-  const after = value.slice(0, AI_LIMITS.cellValue);
-  const existing = run.proposals.findIndex((p) => p.cell === key);
-  if (after === before) {
-    return { ...base, proposals: run.proposals.filter((p) => p.cell !== key) };
-  }
-  const proposal: AiProposal = { coord, cell: key, before, after };
-  const proposals =
-    existing >= 0
-      ? run.proposals.map((p, i) => (i === existing ? proposal : p))
-      : [...run.proposals, proposal];
-  return { ...base, proposals };
 }

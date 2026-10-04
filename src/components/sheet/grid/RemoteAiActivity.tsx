@@ -1,6 +1,6 @@
 import { Sparkles } from "lucide-react";
 import { Fragment, memo } from "react";
-import type { Participant } from "@/lib/collab/presence";
+import type { Participant } from "@/lib/collab/presence-state";
 import { intersectRanges } from "@/lib/sheet/address";
 import { outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { SHEET_RANGE } from "@/lib/sheet/schema";

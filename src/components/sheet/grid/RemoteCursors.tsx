@@ -1,6 +1,6 @@
 import { Pencil } from "lucide-react";
 import { Fragment, memo } from "react";
-import type { Participant } from "@/lib/collab/presence";
+import type { Participant } from "@/lib/collab/presence-state";
 import { cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { clampCoord, isMultiCell, selectionRange } from "@/lib/sheet/selection";
 import { ICON } from "@/styles/icon";

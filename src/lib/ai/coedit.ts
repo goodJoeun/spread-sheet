@@ -5,8 +5,8 @@ import {
   type CellRange,
 } from "@/lib/sheet/address";
 import { SHEET_RANGE } from "@/lib/sheet/schema";
-import type { AiActivity, Participant } from "@/lib/collab/presence";
-import type { AiProposal } from "./run";
+import type { AiActivity, Participant } from "@/lib/collab/presence-state";
+import { isRunning, type AiProposal, type AiRun } from "./run";
 
 /**
  * 요청 시점 값(base)에서 바뀐 셀은 충돌로 보고 기본으로 건너뛴다.
@@ -88,6 +88,15 @@ export function activityRange(
   proposals: ReadonlyArray<{ coord: CellCoord }>,
 ): CellRange | null {
   return scope ?? boundingRange(proposals);
+}
+
+/** 다른 참여자에게 알릴 내 AI 편집 상태. 제안 값은 싣지 않는다. */
+export function aiActivityOf(run: AiRun | null): AiActivity | null {
+  if (!run || !(isRunning(run) || run.status === "review")) return null;
+  return {
+    status: run.status === "review" ? "reviewing" : "generating",
+    range: activityRange(run.scope, run.proposals),
+  };
 }
 
 function effectiveRange(range: CellRange | null): CellRange | null {

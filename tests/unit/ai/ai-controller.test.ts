@@ -21,7 +21,7 @@ import { SheetController } from "@/lib/controller/sheet-controller";
 import { parseA1, parseRangeA1, rangeToA1 } from "@/lib/sheet/address";
 import { EditOrigin, getValue, setValue } from "@/lib/sheet/document";
 import { collapsedSelection, selectionRange } from "@/lib/sheet/selection";
-import type { AiActivity } from "@/lib/collab/presence";
+import type { AiActivity } from "@/lib/collab/presence-state";
 
 const at = (a1: string) => parseA1(a1)!;
 const range = (a1: string) => parseRangeA1(a1)!;

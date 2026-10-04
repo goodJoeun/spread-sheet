@@ -1,5 +1,6 @@
-import type { CellCoord, CellRange } from "@/lib/sheet/address";
-import type { AiErrorInfo, AiWarning } from "./protocol";
+import { parseA1, rangeContains, toA1, type CellCoord, type CellRange } from "@/lib/sheet/address";
+import { isInSheet } from "@/lib/sheet/schema";
+import { AI_LIMITS, type AiErrorInfo, type AiStreamEvent, type AiWarning } from "./protocol";
 
 /** AI 요청 한 번(실행)의 상태. 컨트롤러·충돌 판단·화면이 함께 쓴다. */
 
@@ -50,4 +51,81 @@ export type AiMessage =
 /** 응답을 기다리거나 받는 중 */
 export function isRunning(run: Pick<AiRun, "status"> | null | undefined): boolean {
   return run?.status === "waiting" || run?.status === "streaming";
+}
+
+export function createRun(init: {
+  id: number;
+  instruction: string;
+  scope: CellRange | null;
+  model: string | null;
+  base: ReadonlyMap<string, string>;
+}): AiRun {
+  return {
+    ...init,
+    status: "waiting",
+    connected: false,
+    slow: false,
+    provider: null,
+    text: "",
+    proposals: [],
+    skipped: 0,
+    warnings: [],
+    error: null,
+    result: null,
+  };
+}
+
+/** 실행을 끝내지 않는 스트림 이벤트. done·error는 컨트롤러가 요청을 정리하면서 처리한다. */
+export type AiProgressEvent = Exclude<AiStreamEvent, { type: "done" } | { type: "error" }>;
+
+export function applyProgress(run: AiRun, event: AiProgressEvent): AiRun {
+  switch (event.type) {
+    case "meta":
+      return {
+        ...run,
+        connected: true,
+        slow: false,
+        provider: event.provider,
+        model: event.model,
+      };
+    case "text":
+      return {
+        ...run,
+        connected: true,
+        slow: false,
+        status: "streaming",
+        text: run.text + event.delta,
+      };
+    case "edit":
+      return addProposal(run, event.cell, event.value);
+    case "warning":
+      return { ...run, warnings: [...run.warnings, event.warning] };
+  }
+}
+
+/** 제안이 있으면 검토로, 없으면 답만 한 것으로 끝낸다. */
+export function finishRun(run: AiRun): AiRun {
+  return { ...run, slow: false, status: run.proposals.length > 0 ? "review" : "answered" };
+}
+
+/** 범위 밖이거나 주소가 잘못된 제안은 세기만 하고, 요청 때 값과 같아진 셀은 제안에서 뺀다. */
+function addProposal(run: AiRun, cell: string, value: string): AiRun {
+  const coord = parseA1(cell);
+  const base = { ...run, connected: true, slow: false, status: "streaming" as const };
+  if (!coord || !isInSheet(coord) || (run.scope && !rangeContains(run.scope, coord))) {
+    return { ...base, skipped: run.skipped + 1 };
+  }
+  const key = toA1(coord);
+  const before = run.base.get(key) ?? "";
+  const after = value.slice(0, AI_LIMITS.cellValue);
+  const existing = run.proposals.findIndex((p) => p.cell === key);
+  if (after === before) {
+    return { ...base, proposals: run.proposals.filter((p) => p.cell !== key) };
+  }
+  const proposal: AiProposal = { coord, cell: key, before, after };
+  const proposals =
+    existing >= 0
+      ? run.proposals.map((p, i) => (i === existing ? proposal : p))
+      : [...run.proposals, proposal];
+  return { ...base, proposals };
 }

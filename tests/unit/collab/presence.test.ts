@@ -4,7 +4,9 @@ import * as Y from "yjs";
 import { collapsedSelection } from "@/lib/sheet/selection";
 import { BroadcastChannelProvider } from "@/lib/collab/broadcast-provider";
 import { PARTICIPANT_COLORS } from "@/resources/colors";
-import { Presence, normalizeName, pickColor, type UserInfo } from "@/lib/collab/presence";
+import { normalizeName, pickColor } from "@/lib/collab/identity";
+import { Presence } from "@/lib/collab/presence";
+import type { UserInfo } from "@/lib/collab/presence-state";
 
 // 탭 하나 = Y.Doc + Awareness + BroadcastChannelProvider + Presence.
 // Node 24에는 BroadcastChannel과 Web Locks(navigator.locks)가 있어 브라우저와 같은 경로로 동작한다.

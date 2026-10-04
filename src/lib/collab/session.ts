@@ -2,7 +2,9 @@ import { IndexeddbPersistence } from "y-indexeddb";
 import { Awareness } from "y-protocols/awareness";
 import * as Y from "yjs";
 import { BroadcastChannelProvider } from "./broadcast-provider";
-import { Presence, randomUser, type UserInfo } from "./presence";
+import { randomUser } from "./identity";
+import { Presence } from "./presence";
+import type { UserInfo } from "./presence-state";
 import { createUndoManager } from "./undo";
 
 export interface SheetSession {

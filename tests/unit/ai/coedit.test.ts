@@ -8,7 +8,7 @@ import {
   overlappingAi,
   summarize,
 } from "@/lib/ai/coedit";
-import type { AiActivity, Participant } from "@/lib/collab/presence";
+import type { AiActivity, Participant } from "@/lib/collab/presence-state";
 import { parseA1, parseRangeA1, rangeToA1, type CellRange } from "@/lib/sheet/address";
 
 const at = (a1: string) => parseA1(a1)!;
