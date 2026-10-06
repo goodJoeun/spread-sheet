@@ -45,12 +45,25 @@ describe("finishRun / isRunning / aiActivityOf", () => {
   it("생성·검토 중일 때만 다른 참여자에게 알린다", () => {
     const r = run();
     expect(isRunning(r)).toBe(true);
-    expect(aiActivityOf(r)).toEqual({ status: "generating", range: r.scope });
+    expect(aiActivityOf(r)).toEqual({ status: "generating", range: r.scope, locked: false });
     const reviewing = finishRun(applyProgress(r, { type: "edit", cell: "B1", value: "x" }));
     expect(isRunning(reviewing)).toBe(false);
     expect(aiActivityOf(reviewing)).toMatchObject({ status: "reviewing" });
     expect(aiActivityOf(finishRun(r))).toBeNull();
     expect(aiActivityOf(null)).toBeNull();
+  });
+
+  it("잠근 실행은 제안과 상관없이 요청한 범위를 그대로 잠근다", () => {
+    const r = createRun({
+      id: 1,
+      instruction: "x",
+      scope: null,
+      model: null,
+      base: new Map(),
+      locked: true,
+    });
+    const withEdit = applyProgress(r, { type: "edit", cell: "C3", value: "x" });
+    expect(aiActivityOf(withEdit)).toEqual({ status: "generating", range: null, locked: true });
   });
 });
 

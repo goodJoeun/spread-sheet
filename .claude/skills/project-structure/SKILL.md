@@ -52,15 +52,15 @@ ai/run-card/
 
 ## 3. 디렉터리와 import 방향
 
-| 위치 | 책임 | import해도 되는 것 |
-|---|---|---|
-| `src/app/` | 라우팅만. `route.ts`는 `lib/ai/server`를 부르는 얇은 어댑터 | 모두 |
-| `src/components/` | 화면. `ui/`는 도메인을 모르는 공통 부품 | hooks, lib, resources, styles |
-| `src/hooks/` | React와 lib를 잇는 hook. 파일 하나에 hook 하나, 파일 이름 = hook 이름 | lib, resources |
-| `src/lib/` | React 없는 로직. controller, 순수 함수, Yjs 모델, AI 프로토콜 | lib 안에서만, resources |
-| `src/lib/ai/server/` | 서버 전용(API 키·`process.env`). 파일 맨 위에 `import "server-only"` | lib |
-| `src/resources/` | 문구·색·이름 같은 정적 데이터 | 없음 |
-| `src/styles/` | 디자인 토큰과 공통 클래스 | 없음 |
+| 위치                 | 책임                                                                  | import해도 되는 것            |
+| -------------------- | --------------------------------------------------------------------- | ----------------------------- |
+| `src/app/`           | 라우팅만. `route.ts`는 `lib/ai/server`를 부르는 얇은 어댑터           | 모두                          |
+| `src/components/`    | 화면. `ui/`는 도메인을 모르는 공통 부품                               | hooks, lib, resources, styles |
+| `src/hooks/`         | React와 lib를 잇는 hook. 파일 하나에 hook 하나, 파일 이름 = hook 이름 | lib, resources                |
+| `src/lib/`           | React 없는 로직. controller, 순수 함수, Yjs 모델, AI 프로토콜         | lib 안에서만, resources       |
+| `src/lib/ai/server/` | 서버 전용(API 키·`process.env`). 파일 맨 위에 `import "server-only"`  | lib                           |
+| `src/resources/`     | 문구·색·이름 같은 정적 데이터                                         | 없음                          |
+| `src/styles/`        | 디자인 토큰과 공통 클래스                                             | 없음                          |
 
 - 아래 방향으로만 import한다: `app → components → hooks → lib`. **hooks가 components를, lib가 hooks·components를 import하지 않는다.**
 - `lib/sheet`는 `lib/collab`·`lib/ai`·`lib/controller`를 모른다. `lib/collab`은 `lib/ai`를 모른다.
@@ -78,4 +78,4 @@ ai/run-card/
 
 ## 알려진 예외 (고치면 이 목록에서 지운다)
 
-- `components/sheet/Toolbar.tsx`(약 280줄)의 `ColorMenu` → `toolbar/` 폴더 대상.
+- 없음.

@@ -10,7 +10,7 @@ import { FormulaBar } from "./FormulaBar";
 import { Grid } from "./grid/Grid";
 import { ParticipantList } from "./ParticipantList";
 import { SheetProvider, useSheet } from "./SheetContext";
-import { Toolbar } from "./Toolbar";
+import { Toolbar } from "./toolbar";
 import { useSheetSession } from "@/hooks/sheet/useSheetSession";
 
 interface SheetAppProps {

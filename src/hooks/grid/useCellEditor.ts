@@ -58,6 +58,8 @@ export function useCellEditor(
         },
         onCompositionEnd: () => {
           composingRef.current = false;
+          // 잠긴 셀이라 편집을 시작하지 못했으면 조합한 글자가 편집칸에 남지 않게 지운다.
+          if (!controller.isEditing()) controller.cancelEdit();
         },
         onBlur: () => {
           // 다른 창·탭으로 전환한 경우에는 편집을 유지한다(돌아오면 이어서 입력).

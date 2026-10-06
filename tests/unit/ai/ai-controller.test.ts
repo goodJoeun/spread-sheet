@@ -21,7 +21,7 @@ import { SheetController } from "@/lib/controller/sheet-controller";
 import { parseA1, parseRangeA1, rangeToA1 } from "@/lib/sheet/address";
 import { EditOrigin, getValue, setValue } from "@/lib/sheet/document";
 import { collapsedSelection, selectionRange } from "@/lib/sheet/selection";
-import type { AiActivity } from "@/lib/collab/presence-state";
+import type { AiActivity, Participant } from "@/lib/collab/presence-state";
 
 const at = (a1: string) => parseA1(a1)!;
 const range = (a1: string) => parseRangeA1(a1)!;
@@ -472,8 +472,8 @@ describe("AiController: co-editing", () => {
     ai.discard();
 
     expect(published).toEqual([
-      { status: "generating", range: range("B2:B3") },
-      { status: "reviewing", range: range("B2:B3") },
+      { status: "generating", range: range("B2:B3"), locked: false },
+      { status: "reviewing", range: range("B2:B3"), locked: false },
       null,
     ]);
   });
@@ -514,5 +514,55 @@ describe("AiController: co-editing", () => {
     expect(published.at(-1)).toMatchObject({ status: "generating" });
     calls[1].emit({ type: "edit", cell: "B2", value: "1" }, { type: "done" });
     expect(published.at(-1)).toMatchObject({ status: "reviewing" });
+  });
+});
+
+describe("cell lock", () => {
+  const other = (ai: AiActivity): Participant => ({
+    clientId: 2,
+    isSelf: false,
+    user: { name: "다른 사람", color: "#e8710a" },
+    selection: null,
+    editing: null,
+    ai,
+  });
+
+  it("shares the requested range as locked until the run ends", () => {
+    const published: Array<AiActivity | null> = [];
+    const { transport, calls } = scriptedTransport();
+    const { ai } = setup(transport, { setAi: (a) => published.push(a) });
+
+    ai.lockCells.set(true);
+    ai.send("채워 줘", null);
+    calls[0].emit({ type: "edit", cell: "C3", value: "a" }, { type: "done" });
+    ai.discard();
+
+    expect(published).toEqual([
+      { status: "generating", range: null, locked: true },
+      { status: "reviewing", range: null, locked: true },
+      null,
+    ]);
+  });
+
+  it("refuses a request into a range another participant locked", () => {
+    const people = [other({ status: "generating", range: range("B2:B3"), locked: true })];
+    const { transport, calls } = scriptedTransport();
+    const { ai } = setup(transport, { setAi() {}, getParticipants: () => people });
+
+    expect(ai.send("두 배로", range("A1:B2"))).toBe(false);
+    expect(ai.send("두 배로", null)).toBe(false);
+    expect(ai.send("두 배로", range("D1:D2"))).toBe(true);
+    expect(calls).toHaveLength(1);
+  });
+
+  it("refuses to lock a range another participant's AI is already editing", () => {
+    const people = [other({ status: "reviewing", range: range("B2:B3"), locked: false })];
+    const { transport } = scriptedTransport();
+    const { ai } = setup(transport, { setAi() {}, getParticipants: () => people });
+
+    ai.lockCells.set(true);
+    expect(ai.send("두 배로", range("B3:B4"))).toBe(false);
+    ai.lockCells.set(false);
+    expect(ai.send("두 배로", range("B3:B4"))).toBe(true);
   });
 });

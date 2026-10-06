@@ -13,6 +13,8 @@ export interface AiActivity {
   status: "generating" | "reviewing";
   /** 편집 범위. 시트 전체 요청이라 아직 제안이 없으면 null */
   range: CellRange | null;
+  /** 요청한 사람이 셀 잠금을 켰다. 끝날 때까지 다른 참여자는 range(null이면 시트 전체)를 바꿀 수 없다. */
+  locked: boolean;
 }
 
 export interface PresenceState {
@@ -50,9 +52,10 @@ const isAiActivity = (value: unknown): value is AiActivity =>
   typeof value === "object" &&
   value !== null &&
   ((value as AiActivity).status === "generating" || (value as AiActivity).status === "reviewing") &&
-  ((value as AiActivity).range === null || isRange((value as AiActivity).range));
+  ((value as AiActivity).range === null || isRange((value as AiActivity).range)) &&
+  ((value as AiActivity).locked === undefined || typeof (value as AiActivity).locked === "boolean");
 
-/** ai가 없는 상태(이전 버전 탭)는 AI 편집이 없는 것으로 본다. */
+/** ai가 없는 상태(이전 버전 탭)는 AI 편집이 없는 것으로, locked가 없으면 잠그지 않은 것으로 본다. */
 export function isPresenceState(value: unknown): value is PresenceState {
   if (typeof value !== "object" || value === null) return false;
   const { user, selection, editing, ai } = value as PresenceState;

@@ -27,6 +27,8 @@ export interface AiRun {
   instruction: string;
   /** 편집을 허용한 범위. null이면 시트 전체 */
   scope: CellRange | null;
+  /** 끝날 때까지 scope를 다른 참여자가 바꾸지 못하게 잠갔다. 요청할 때 정해지고 바뀌지 않는다. */
+  locked: boolean;
   status: AiRunStatus;
   connected: boolean;
   slow: boolean;
@@ -59,9 +61,11 @@ export function createRun(init: {
   scope: CellRange | null;
   model: string | null;
   base: ReadonlyMap<string, string>;
+  locked?: boolean;
 }): AiRun {
   return {
     ...init,
+    locked: init.locked ?? false,
     status: "waiting",
     connected: false,
     slow: false,

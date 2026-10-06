@@ -7,6 +7,8 @@ import {
   Baseline,
   Bold,
   Italic,
+  Lock,
+  LockOpen,
   PaintBucket,
   Redo2,
   RemoveFormatting,
@@ -17,7 +19,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { Popover } from "@/components/ui/Popover";
 import { CELL_FILL_COLORS, CELL_TEXT_COLORS } from "@/resources/colors";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
@@ -26,9 +27,10 @@ import { commonStyle, hasFormatEverywhere } from "@/lib/sheet/document";
 import type { Alignment, FormatKey } from "@/lib/sheet/schema";
 import { selectionRange } from "@/lib/sheet/selection";
 import { useStore } from "@/hooks/useStore";
-import { useSelection, useSheet } from "./SheetContext";
+import { useSelection, useSheet } from "../SheetContext";
 import { useUndoState } from "@/hooks/sheet/useUndoState";
 import { useDocVersion } from "@/hooks/sheet/useDocVersion";
+import { ColorMenu } from "./ColorMenu";
 
 const FORMAT_BUTTONS: { key: FormatKey; label: string; icon: LucideIcon; shortcut: string }[] = [
   { key: "bold", label: strings.toolbar.bold, icon: Bold, shortcut: "B" },
@@ -45,18 +47,20 @@ const ALIGN_BUTTONS: { value: Alignment; label: string; icon: LucideIcon; shortc
 
 /** 툴바 오른쪽 끝의 AI 편집 버튼. 패널이 열려 있으면 aria-pressed */
 const AI_TOGGLE =
-  "ml-auto flex h-8 items-center gap-sm rounded-full px-lg text-body font-medium transition-colors " +
+  "flex h-8 items-center gap-sm rounded-full px-lg text-body font-medium transition-colors " +
   "text-ai-ink hover:bg-ai-soft " +
   "aria-pressed:bg-ai aria-pressed:text-fg-inverse aria-pressed:hover:bg-ai/90";
 
-/** 고른 색은 aria-checked */
-const SWATCH =
-  "size-5 rounded-sm border border-outline hover:scale-110 " +
-  "aria-checked:ring-2 aria-checked:ring-accent aria-checked:ring-offset-1";
+/** AI 편집 버튼 왼쪽의 셀 잠금 스위치. 켜져 있으면 aria-pressed */
+const AI_LOCK_TOGGLE =
+  "flex h-8 items-center gap-xs rounded-full border border-line px-md text-label text-fg-muted " +
+  "transition-colors hover:bg-hover " +
+  "aria-pressed:border-ai aria-pressed:bg-ai-soft aria-pressed:text-ai-ink aria-pressed:hover:bg-ai-soft";
 
 export function Toolbar() {
-  const { session, controller, aiPanel } = useSheet();
+  const { session, controller, ai, aiPanel } = useSheet();
   const aiOpen = useStore(aiPanel);
+  const lockCells = useStore(ai.lockCells);
   const { doc, undoManager } = session;
   useDocVersion(doc);
   const range = selectionRange(useSelection());
@@ -152,15 +156,31 @@ export function Toolbar() {
         <RemoveFormatting size={ICON.md} />
       </ToolbarButton>
 
-      <button
-        type="button"
-        aria-pressed={aiOpen}
-        onClick={() => aiPanel.set((open) => !open)}
-        className={AI_TOGGLE}
-      >
-        <Sparkles size={ICON.md} aria-hidden />
-        {strings.toolbar.ai}
-      </button>
+      <div className="ml-auto flex items-center gap-sm">
+        <button
+          type="button"
+          aria-pressed={lockCells}
+          title={strings.toolbar.aiLockTitle}
+          onClick={() => ai.lockCells.set((on) => !on)}
+          className={AI_LOCK_TOGGLE}
+        >
+          {lockCells ? (
+            <Lock size={ICON.sm} aria-hidden />
+          ) : (
+            <LockOpen size={ICON.sm} aria-hidden />
+          )}
+          {strings.toolbar.aiLock}
+        </button>
+        <button
+          type="button"
+          aria-pressed={aiOpen}
+          onClick={() => aiPanel.set((open) => !open)}
+          className={AI_TOGGLE}
+        >
+          <Sparkles size={ICON.md} aria-hidden />
+          {strings.toolbar.ai}
+        </button>
+      </div>
     </div>
   );
 }
@@ -198,79 +218,5 @@ function ToolbarButton({
     >
       {children}
     </button>
-  );
-}
-
-interface ColorMenuProps {
-  label: string;
-  icon: LucideIcon;
-  colors: string[];
-  value: string | null;
-  defaultSwatch: string;
-  resetLabel: string;
-  onPick: (color: string | null) => void;
-}
-
-function ColorMenu({
-  label,
-  icon: Icon,
-  colors,
-  value,
-  defaultSwatch,
-  resetLabel,
-  onPick,
-}: ColorMenuProps) {
-  return (
-    <Popover
-      role="menu"
-      label={label}
-      triggerLabel={label}
-      triggerTitle={label}
-      triggerClassName="icon-btn flex-col"
-      trigger={
-        <>
-          <Icon size={ICON.md} />
-          <span
-            className="mt-2xs h-[3px] w-4 rounded-sm border border-outline"
-            style={{ backgroundColor: value ?? defaultSwatch }}
-          />
-        </>
-      }
-      panelClassName="top-9 left-0 w-[188px] p-md"
-    >
-      {(close) => {
-        const pick = (color: string | null) => {
-          close();
-          onPick(color);
-        };
-        return (
-          <>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => pick(null)}
-              className="mb-md w-full rounded-sm px-md py-xs text-left text-label text-fg-secondary hover:bg-hover"
-            >
-              {resetLabel}
-            </button>
-            <div className="grid grid-cols-8 gap-xs">
-              {colors.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={value === color}
-                  aria-label={color}
-                  title={color}
-                  onClick={() => pick(color)}
-                  className={SWATCH}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-          </>
-        );
-      }}
-    </Popover>
   );
 }

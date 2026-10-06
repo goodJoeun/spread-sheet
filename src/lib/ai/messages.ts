@@ -2,7 +2,7 @@ import type { Participant } from "@/lib/collab/presence-state";
 import type { CellCoord } from "@/lib/sheet/address";
 import { sameCoord } from "@/lib/sheet/selection";
 import { strings } from "@/resources/strings";
-import { aiActivitiesAt } from "./coedit";
+import { aiActivitiesAt, blockingOverlaps, type AiOverlap } from "./coedit";
 import type { AiErrorInfo, AiWarning } from "./protocol";
 import type { AiRun } from "./run";
 
@@ -71,6 +71,32 @@ export function runStatusLine(run: AiRun, undoKey: string): StatusLine | null {
     case "error":
       return line(run.error ? aiErrorMessage(run.error) : S.error, "alert", "danger");
   }
+}
+
+export interface OverlapNotice {
+  text: string;
+  /** 이 범위에는 지금 요청할 수 없다 */
+  blocking: boolean;
+}
+
+/** AI 요청창 위 안내. 다른 참여자의 AI 편집과 범위가 겹칠 때만 있다. lock: 내 셀 잠금이 켜져 있다. */
+export function overlapNotice(overlaps: readonly AiOverlap[], lock: boolean): OverlapNotice | null {
+  const C = strings.ai.composer;
+  const describe = (list: readonly AiOverlap[]) => ({
+    names: list.map((o) => o.participant.user.name).join(", "),
+    reviewing: list.every((o) => o.activity.status === "reviewing"),
+  });
+  const lockedByOthers = overlaps.filter((o) => o.activity.locked);
+  if (lockedByOthers.length > 0) {
+    const { names, reviewing } = describe(lockedByOthers);
+    return { text: C.lockedByOther(names, reviewing), blocking: true };
+  }
+  if (overlaps.length === 0) return null;
+  const { names, reviewing } = describe(overlaps);
+  if (blockingOverlaps(overlaps, lock).length > 0) {
+    return { text: C.cannotLock(names, reviewing), blocking: true };
+  }
+  return { text: C.overlap(names, reviewing), blocking: false };
 }
 
 /**

@@ -2,8 +2,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import * as Y from "yjs";
 import { createUndoManager } from "@/lib/collab/undo";
 import { SheetController, type SheetView } from "@/lib/controller/sheet-controller";
-import { parseA1, toA1, type CellCoord } from "@/lib/sheet/address";
-import { getFormat, getValue } from "@/lib/sheet/document";
+import type { Participant } from "@/lib/collab/presence-state";
+import { parseA1, parseRangeA1, toA1, type CellCoord } from "@/lib/sheet/address";
+import { EditOrigin, getFormat, getValue, setValue } from "@/lib/sheet/document";
 import { collapsedSelection, type Selection } from "@/lib/sheet/selection";
 
 const at = (a1: string): CellCoord => parseA1(a1)!;
@@ -32,13 +33,14 @@ function fakeView() {
   return { view, calls, draft: () => draft };
 }
 
-function setup(start = "A1") {
+function setup(start = "A1", participants: Participant[] = []) {
   const doc = new Y.Doc();
   const undoManager = createUndoManager(doc);
   const published = { selection: [] as Selection[], editing: [] as Array<CellCoord | null> };
   const presence = {
     setSelection: (s: Selection) => published.selection.push(s),
     setEditing: (c: CellCoord | null) => published.editing.push(c),
+    getParticipants: () => participants,
   };
   const controller = new SheetController(
     { doc, undoManager, presence },
@@ -155,5 +157,54 @@ describe("presence", () => {
     expect(published.editing.at(-1)).toEqual(at("B2"));
     controller.cancelEdit();
     expect(published.editing.at(-1)).toBeNull();
+  });
+});
+
+describe("AI cell lock", () => {
+  const lockedBy = (range: string, isSelf = false): Participant => ({
+    clientId: isSelf ? 1 : 2,
+    isSelf,
+    user: { name: "다른 사람", color: "#e8710a" },
+    selection: null,
+    editing: null,
+    ai: { status: "generating", range: parseRangeA1(range)!, locked: true },
+  });
+
+  it("refuses to start editing a locked cell and drops the typed text", () => {
+    const { controller, draft, typeInto } = setup("B2", [lockedBy("B2:C3")]);
+    typeInto("x");
+    expect(controller.isEditing()).toBe(false);
+    expect(draft()).toBe("");
+    expect(controller.lockNotice.get()).toEqual(at("B2"));
+
+    controller.startEdit("edit", true);
+    expect(controller.isEditing()).toBe(false);
+  });
+
+  it("refuses value and format changes that touch a locked cell", () => {
+    const { doc, controller } = setup("A1", [lockedBy("B2:C3")]);
+    setValue(doc, at("B2"), "1", EditOrigin.User);
+    controller.select({ anchor: at("A1"), focus: at("B2"), active: at("A1") });
+    controller.clearValues();
+    controller.toggleFormat("bold");
+    expect(getValue(doc, at("B2"))).toBe("1");
+    expect(getFormat(doc, at("A1")).bold).toBeFalsy();
+  });
+
+  it("clears the notice when the selection moves", () => {
+    const { controller, typeInto } = setup("B2", [lockedBy("B2:C3")]);
+    typeInto("x");
+    controller.jumpTo(at("B4"));
+    expect(controller.lockNotice.get()).toBeNull();
+  });
+
+  it("lets an edit begun before the lock commit, and ignores my own lock", () => {
+    const participants: Participant[] = [lockedBy("B2:B2", true)];
+    const { doc, controller, typeInto } = setup("B2", participants);
+    typeInto("mine");
+    expect(controller.isEditing()).toBe(true);
+    participants.push(lockedBy("B2:B2"));
+    controller.commitEdit();
+    expect(getValue(doc, at("B2"))).toBe("mine");
   });
 });

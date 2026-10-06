@@ -175,7 +175,7 @@ export class Presence {
       if (!isPresenceState(state)) return;
       participants.push({
         ...state,
-        ai: state.ai ?? null,
+        ai: state.ai ? { ...state.ai, locked: state.ai.locked === true } : null,
         clientId,
         isSelf: clientId === this.clientId,
       });

@@ -41,10 +41,15 @@ export function createSheetSession(
   options: SheetSessionOptions = {},
 ): SheetSession {
   const doc = new Y.Doc();
+  // 커서·선택 영역처럼 저장하지 않는 임시 상태. 탭마다 자기 상태를 하나씩 가진다.
   const awareness = new Awareness(doc);
+  // doc의 변경을 IndexedDB에 저장하고, 열 때 저장된 내용을 doc에 불러온다.
   const persistence = new IndexeddbPersistence(`spread-sheet:${sheetId}`, doc);
+  // 같은 브라우저의 다른 탭과 doc·awareness 변경을 주고받는다.
   const provider = new BroadcastChannelProvider(sheetId, doc, { awareness });
+  // awareness 위에서 내 이름·색·선택 영역을 알리고, 다른 탭들을 참여자 목록으로 모은다.
   const presence = new Presence(awareness, options.user ?? randomUser(), options.onUserChange);
+  // 이 탭에서 한 편집만 실행 취소·다시 실행한다.
   const undoManager = createUndoManager(doc);
   void presence.join();
 

@@ -17,6 +17,7 @@ import { useEditState, useSelection, useSheet } from "../SheetContext";
 import { useDocVersion } from "@/hooks/sheet/useDocVersion";
 import { useParticipants } from "@/hooks/sheet/useParticipants";
 import { editorNotices } from "@/lib/ai/messages";
+import { lockedCellNotices } from "@/lib/collab/messages";
 import { AiPreview } from "./AiPreview";
 import { CellEditor } from "./CellEditor";
 import { CoEditNotice } from "./CoEditNotice";
@@ -41,6 +42,7 @@ export function Grid() {
   const aiRun = useStore(ai.active);
   const showOriginal = useStore(ai.showOriginal);
   useStore(ai.overwrites); // 덮어쓰기를 고르면 미리보기를 다시 그린다.
+  const blockedAt = useStore(controller.lockNotice);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -65,7 +67,11 @@ export function Grid() {
 
   const activeCoord = edit?.coord ?? selection.active;
   const activeRect = outsetRect(cellRect(activeCoord));
-  const notices = edit ? editorNotices(participants, edit.coord) : [];
+  const notices = edit
+    ? editorNotices(participants, edit.coord)
+    : blockedAt
+      ? lockedCellNotices(participants, blockedAt)
+      : [];
   // 문서가 바뀌면(version) 다시 그려지므로, 다른 참여자의 변경으로 생긴 충돌도 바로 반영된다.
   const aiStates = aiRun ? ai.states(aiRun) : [];
 

@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Lock, Sparkles } from "lucide-react";
 import { Fragment, memo } from "react";
 import type { Participant } from "@/lib/collab/presence-state";
 import { intersectRanges } from "@/lib/sheet/address";
@@ -44,8 +44,12 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
           className="name-tag"
           color={user.color}
         >
-          <Sparkles size={ICON.xs} strokeWidth={2.5} aria-hidden />
-          {user.name} · {strings.grid.remoteAi(ai.status === "reviewing")}
+          {ai.locked ? (
+            <Lock size={ICON.xs} strokeWidth={2.5} aria-hidden />
+          ) : (
+            <Sparkles size={ICON.xs} strokeWidth={2.5} aria-hidden />
+          )}
+          {user.name} · {strings.grid.remoteAi(ai.status === "reviewing", ai.locked)}
         </AnchoredLabel>
       </Fragment>
     );

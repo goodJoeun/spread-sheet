@@ -1,5 +1,5 @@
 import type * as Y from "yjs";
-import type { AiActivity } from "@/lib/collab/presence-state";
+import type { AiActivity, Participant } from "@/lib/collab/presence-state";
 import { intersectRanges, rangeToA1, type CellCoord, type CellRange } from "@/lib/sheet/address";
 import { EditOrigin, valuesOf, writeValues } from "@/lib/sheet/document";
 import { SHEET_RANGE } from "@/lib/sheet/schema";
@@ -7,8 +7,10 @@ import type { Selection } from "@/lib/sheet/selection";
 import { createStore } from "@/lib/store";
 import {
   aiActivityOf,
+  blockingOverlaps,
   boundingRange,
   evaluateProposals,
+  overlappingAi,
   summarize,
   writable,
   type ProposalState,
@@ -41,6 +43,8 @@ export interface AiSheetBinding {
 
 export interface AiPresenceBinding {
   setAi(activity: AiActivity | null): void;
+  /** 없으면 다른 참여자가 없는 것으로 본다. */
+  getParticipants?(): readonly Participant[];
 }
 
 export class AiController {
@@ -52,6 +56,8 @@ export class AiController {
   readonly model = createStore<string | null>(null);
   /** 충돌한 셀 중 덮어쓰기로 고른 것: 셀 → 고를 때 본 값 */
   readonly overwrites = createStore<ReadonlyMap<string, string>>(new Map());
+  /** 셀 잠금. 켜 두면 다음 요청부터 그 범위를 끝날 때까지 다른 참여자가 바꿀 수 없다. */
+  readonly lockCells = createStore(false);
 
   private nextId = 1;
   private inflight: { runId: number; abort: AbortController } | null = null;
@@ -122,6 +128,10 @@ export class AiController {
     if (!text || this.isBusy()) return false;
 
     const range = scope ? intersectRanges(scope, SHEET_RANGE) : null;
+    const locked = this.lockCells.get();
+    const overlaps = overlappingAi(this.presence.getParticipants?.() ?? [], range);
+    if (blockingOverlaps(overlaps, locked).length > 0) return false;
+
     const cells = snapshotCells(this.doc);
     const model = this.model.get();
     const request: AiEditRequest = {
@@ -138,6 +148,7 @@ export class AiController {
       scope: range,
       model,
       base: new Map(cells.map((c) => [c.cell, c.value])),
+      locked,
     });
     this.messages.set((list) => [
       ...list,
@@ -293,7 +304,7 @@ export class AiController {
   private publishActivity(): void {
     const activity = aiActivityOf(this.active.get());
     const key = activity
-      ? `${activity.status}:${activity.range ? rangeToA1(activity.range) : "*"}`
+      ? `${activity.status}:${activity.range ? rangeToA1(activity.range) : "*"}:${activity.locked}`
       : "";
     if (key === this.publishedActivity) return;
     this.publishedActivity = key;

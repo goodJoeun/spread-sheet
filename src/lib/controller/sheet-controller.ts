@@ -1,5 +1,7 @@
 import type * as Y from "yjs";
-import type { CellCoord } from "@/lib/sheet/address";
+import { lockHolder } from "@/lib/collab/locks";
+import type { Participant } from "@/lib/collab/presence-state";
+import type { CellCoord, CellRange } from "@/lib/sheet/address";
 import {
   EditOrigin,
   clearFormats,
@@ -50,6 +52,8 @@ export interface ControllerSession {
   presence: {
     setSelection(selection: Selection): void;
     setEditing(coord: CellCoord | null): void;
+    /** 없으면 다른 참여자가 없는(잠금이 없는) 것으로 본다. */
+    getParticipants?(): readonly Participant[];
   };
 }
 
@@ -73,6 +77,8 @@ interface StackItemEvent {
 export class SheetController {
   readonly selection: Store<Selection>;
   readonly edit: Store<EditState | null> = createStore<EditState | null>(null);
+  /** 다른 참여자가 잠근 셀을 바꾸려다 막힌 위치. 선택을 옮기면 지운다. */
+  readonly lockNotice: Store<CellCoord | null> = createStore<CellCoord | null>(null);
   private view: SheetView = detachedView();
   private tabReturnCol: number | null = null;
 
@@ -141,6 +147,11 @@ export class SheetController {
   /** keepContent: F2·더블클릭처럼 기존 값을 고칠 때 true, 바로 타이핑해 바꿀 때 false */
   startEdit(mode: EditMode, keepContent: boolean): void {
     const coord = this.selection.get().active;
+    if (this.refuseLocked({ start: coord, end: coord })) {
+      // 바로 타이핑해 시작한 경우 편집칸에 이미 들어간 글자를 지운다.
+      this.view.writeDraft("");
+      return;
+    }
     if (keepContent) this.view.writeDraft(getValue(this.session.doc, coord));
     this.edit.set({ mode, coord });
   }
@@ -165,6 +176,7 @@ export class SheetController {
 
   select(next: Selection, reveal: CellCoord | null = next.active): void {
     this.selection.set(next);
+    this.lockNotice.set(null);
     if (reveal) this.view.reveal(reveal);
   }
 
@@ -224,20 +236,35 @@ export class SheetController {
     return selectionRange(this.selection.get());
   }
 
+  /**
+   * 다른 참여자가 AI 편집을 위해 잠근 셀이 range에 있으면 막고 안내를 띄운다.
+   * 잠금 전에 시작한 입력은 확정할 수 있다. 입력한 글자를 버리지 않고, 그 셀은 AI 결과에서 충돌로 표시된다.
+   */
+  private refuseLocked(range: CellRange): boolean {
+    const participants = this.session.presence.getParticipants?.() ?? [];
+    if (!lockHolder(participants, range)) return false;
+    this.lockNotice.set(this.selection.get().active);
+    return true;
+  }
+
   /** 편집 중에도 편집을 유지한 채 적용한다(구글시트와 같음). */
   toggleFormat(key: FormatKey): void {
+    if (this.refuseLocked(this.range)) return;
     toggleFormat(this.session.doc, this.range, key, EditOrigin.User);
   }
 
   setStyle(key: StyleKey, value: string | null): void {
+    if (this.refuseLocked(this.range)) return;
     setStyle(this.session.doc, this.range, key, value, EditOrigin.User);
   }
 
   clearFormats(): void {
+    if (this.refuseLocked(this.range)) return;
     clearFormats(this.session.doc, this.range, EditOrigin.User);
   }
 
   clearValues(): void {
+    if (this.refuseLocked(this.range)) return;
     clearValues(this.session.doc, this.range, EditOrigin.User);
   }
 

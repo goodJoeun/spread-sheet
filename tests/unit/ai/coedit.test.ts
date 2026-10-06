@@ -3,6 +3,7 @@ import type { AiProposal } from "@/lib/ai/run";
 import {
   activityRange,
   aiActivitiesAt,
+  blockingOverlaps,
   classifyCell,
   evaluateProposals,
   overlappingAi,
@@ -98,7 +99,11 @@ describe("activityRange", () => {
 });
 
 describe("overlappingAi", () => {
-  const reviewing = (r: CellRange | null): AiActivity => ({ status: "reviewing", range: r });
+  const reviewing = (r: CellRange | null): AiActivity => ({
+    status: "reviewing",
+    range: r,
+    locked: false,
+  });
 
   it("finds other participants whose AI range overlaps mine", () => {
     const people = [
@@ -119,5 +124,24 @@ describe("overlappingAi", () => {
     const people = [participant(2, reviewing(null)), participant(3, reviewing(range("B2:B4")))];
     expect(aiActivitiesAt(people, at("B3")).map((o) => o.participant.clientId)).toEqual([3]);
     expect(aiActivitiesAt(people, at("Z1"))).toEqual([]);
+  });
+});
+
+describe("blockingOverlaps", () => {
+  const generating = (locked: boolean): AiActivity => ({
+    status: "generating",
+    range: range("B2:C3"),
+    locked,
+  });
+
+  it("blocks only where another participant locked, or every overlap when I want to lock", () => {
+    const overlaps = overlappingAi(
+      [participant(2, generating(false)), participant(3, generating(true))],
+      range("A1:B2"),
+    );
+    const ids = (lock: boolean) =>
+      blockingOverlaps(overlaps, lock).map((o) => o.participant.clientId);
+    expect(ids(false)).toEqual([3]);
+    expect(ids(true)).toEqual([2, 3]);
   });
 });

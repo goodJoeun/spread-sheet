@@ -4,7 +4,7 @@ import {
   type CellCoord,
   type CellRange,
 } from "@/lib/sheet/address";
-import { SHEET_RANGE } from "@/lib/sheet/schema";
+import { aiArea } from "@/lib/collab/locks";
 import type { AiActivity, Participant } from "@/lib/collab/presence-state";
 import { isRunning, type AiProposal, type AiRun } from "./run";
 
@@ -90,17 +90,17 @@ export function activityRange(
   return scope ?? boundingRange(proposals);
 }
 
-/** 다른 참여자에게 알릴 내 AI 편집 상태. 제안 값은 싣지 않는다. */
+/**
+ * 다른 참여자에게 알릴 내 AI 편집 상태. 제안 값은 싣지 않는다.
+ * 잠근 실행은 요청한 범위를 그대로 알린다. 제안이 오면서 범위가 줄거나 늘면 잠긴 셀이 예측할 수 없게 바뀌어서.
+ */
 export function aiActivityOf(run: AiRun | null): AiActivity | null {
   if (!run || !(isRunning(run) || run.status === "review")) return null;
   return {
     status: run.status === "review" ? "reviewing" : "generating",
-    range: activityRange(run.scope, run.proposals),
+    range: run.locked ? run.scope : activityRange(run.scope, run.proposals),
+    locked: run.locked,
   };
-}
-
-function effectiveRange(range: CellRange | null): CellRange | null {
-  return range ? intersectRanges(range, SHEET_RANGE) : SHEET_RANGE;
 }
 
 export interface AiOverlap {
@@ -108,21 +108,29 @@ export interface AiOverlap {
   activity: AiActivity;
 }
 
-/** 겹쳐도 요청을 막지 않는다(잠금 없음). 먼저 적용된 셀은 나중 결과에서 충돌로 표시된다. */
+/** 잠그지 않은 AI 편집끼리는 겹쳐도 요청을 막지 않는다. 먼저 적용된 셀은 나중 결과에서 충돌로 표시된다. */
 export function overlappingAi(
   participants: readonly Participant[],
   range: CellRange | null,
 ): AiOverlap[] {
-  const mine = effectiveRange(range);
+  const mine = aiArea(range);
   if (!mine) return [];
   const overlaps: AiOverlap[] = [];
   for (const participant of participants) {
     const activity = participant.ai;
     if (participant.isSelf || !activity) continue;
-    const theirs = effectiveRange(activity.range);
+    const theirs = aiArea(activity.range);
     if (theirs && intersectRanges(mine, theirs)) overlaps.push({ participant, activity });
   }
   return overlaps;
+}
+
+/**
+ * 요청을 막는 겹침. 남이 잠근 범위에는 요청할 수 없고, 내가 잠그려면 겹치는 AI 편집이 없어야 한다.
+ * 그래서 잠긴 범위에는 언제나 AI 실행이 하나뿐이다.
+ */
+export function blockingOverlaps(overlaps: readonly AiOverlap[], lock: boolean): AiOverlap[] {
+  return lock ? [...overlaps] : overlaps.filter((o) => o.activity.locked);
 }
 
 /** 범위를 아직 모르는 시트 전체 요청은 빼서, 모든 셀에 안내가 뜨지 않게 한다. */

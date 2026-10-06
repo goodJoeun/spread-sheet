@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowUp, Sparkles, Square } from "lucide-react";
+import { ArrowUp, Lock, Sparkles, Square } from "lucide-react";
 import { useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
-import { overlappingAi, type AiOverlap } from "@/lib/ai/coedit";
+import { overlappingAi } from "@/lib/ai/coedit";
+import { overlapNotice } from "@/lib/ai/messages";
 import { AI_LIMITS, type AiConnectionInfo } from "@/lib/ai/protocol";
 import { isRunning } from "@/lib/ai/run";
 import { rangeToA1 } from "@/lib/sheet/address";
@@ -29,6 +30,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   const selection = useSelection();
   const participants = useParticipants(session.presence);
   const active = useStore(ai.active);
+  const lockCells = useStore(ai.lockCells);
   const running = isRunning(active);
   const reviewing = active?.status === "review";
 
@@ -36,10 +38,12 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   const [chosen, setChosen] = useState<ScopeMode | null>(null);
   const mode: ScopeMode = chosen ?? (isMultiCell(selection) ? "selection" : "sheet");
   const range = selectionRange(selection);
-  const overlaps = active ? [] : overlappingAi(participants, mode === "selection" ? range : null);
+  const scope = mode === "selection" ? range : null;
+  const notice = active ? null : overlapNotice(overlappingAi(participants, scope), lockCells);
+  const blocked = notice?.blocking ?? false;
 
   const send = () => {
-    if (ai.send(draft, mode === "selection" ? range : null)) {
+    if (ai.send(draft, scope)) {
       onDraftChange("");
       setChosen(null);
     }
@@ -59,7 +63,11 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
 
   return (
     <div className="border-t border-line p-lg">
-      {overlaps.length > 0 && <OverlapNotice overlaps={overlaps} />}
+      {notice && (
+        <Notice role="status" icon={notice.blocking ? Lock : Sparkles} className="mb-md">
+          <p>{notice.text}</p>
+        </Notice>
+      )}
       <div role="radiogroup" aria-label={strings.ai.composer.scope} className="mb-md flex gap-xs">
         <ScopeOption checked={mode === "selection"} onSelect={() => setChosen("selection")}>
           {strings.ai.composer.scopeSelection}{" "}
@@ -100,7 +108,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
             <button
               type="button"
               onClick={send}
-              disabled={!draft.trim() || reviewing}
+              disabled={!draft.trim() || reviewing || blocked}
               aria-label={strings.ai.composer.send}
               title={strings.ai.composer.send}
               className="round-btn round-btn-ai ml-auto"
@@ -128,15 +136,5 @@ function ScopeOption({
     <button type="button" role="radio" aria-checked={checked} onClick={onSelect} className="chip">
       {children}
     </button>
-  );
-}
-
-function OverlapNotice({ overlaps }: { overlaps: AiOverlap[] }) {
-  const names = overlaps.map((o) => o.participant.user.name).join(", ");
-  const reviewing = overlaps.every((o) => o.activity.status === "reviewing");
-  return (
-    <Notice role="status" icon={Sparkles} className="mb-md">
-      <p>{strings.ai.composer.overlap(names, reviewing)}</p>
-    </Notice>
   );
 }

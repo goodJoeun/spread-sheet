@@ -33,6 +33,9 @@ export const strings = {
     alignRight: "오른쪽 정렬",
     clearFormat: "서식 지우기",
     ai: "AI 편집",
+    aiLock: "AI 편집 시 셀 잠금",
+    aiLockTitle:
+      "켜면 다음 AI 요청부터, 요청한 범위를 결과를 적용하거나 버릴 때까지 다른 참여자가 바꿀 수 없어요",
     withShortcut: (label: string, shortcut: string) => `${label} (${shortcut})`,
   },
 
@@ -52,8 +55,8 @@ export const strings = {
     nameInput: "내 이름",
     saveName: "이름 저장",
     status: {
-      ai: (where: string | null, reviewing: boolean) =>
-        `${where ?? wholeSheet} ${aiActivity(reviewing)} 중`,
+      ai: (where: string | null, reviewing: boolean, locked: boolean) =>
+        `${where ?? wholeSheet} ${aiActivity(reviewing)} 중${locked ? " · 잠금" : ""}`,
       editing: (cell: string) => `${cell} 입력 중`,
       viewing: (range: string) => `${range} 보는 중`,
       joining: "들어오는 중",
@@ -63,7 +66,10 @@ export const strings = {
   grid: {
     cellEditor: "셀 편집",
     remoteEditing: "· 입력 중",
-    remoteAi: (reviewing: boolean) => `${aiActivity(reviewing)} 중`,
+    remoteAi: (reviewing: boolean, locked: boolean) =>
+      `${aiActivity(reviewing)} 중${locked ? " · 잠금" : ""}`,
+    lockedByAi: (name: string) =>
+      `${name}님이 AI 편집을 위해 잠근 셀이에요 · 끝나면 편집할 수 있어요`,
     coEditing: (names: string) => `${names}님도 이 셀을 입력 중이에요`,
     inRemoteAiRange: (name: string, reviewing: boolean) =>
       `${name}님이 ${aiActivity(reviewing)} 중 · 입력한 값은 기본으로 유지돼요`,
@@ -106,6 +112,10 @@ export const strings = {
       modelTitle: "다음 요청에 쓸 모델",
       overlap: (names: string, reviewing: boolean) =>
         `${names}님이 이 범위를 AI로 ${reviewing ? "검토" : "편집"} 중이에요. 요청할 수는 있지만, 먼저 적용된 셀은 내 결과에서 충돌로 표시되고 기본으로 건너뛰어요.`,
+      lockedByOther: (names: string, reviewing: boolean) =>
+        `${names}님이 이 범위를 잠그고 AI로 ${reviewing ? "검토" : "편집"} 중이에요. 끝날 때까지 이 범위에는 요청할 수 없어요.`,
+      cannotLock: (names: string, reviewing: boolean) =>
+        `${names}님이 이 범위를 AI로 ${reviewing ? "검토" : "편집"} 중이라 잠글 수 없어요. 셀 잠금을 끄거나 끝난 뒤에 요청해 주세요.`,
     },
 
     run: {

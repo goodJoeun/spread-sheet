@@ -84,8 +84,10 @@ describe("Presence", () => {
     const other = () => b.presence.getParticipants().find((p) => !p.isSelf);
 
     const range = { start: { row: 1, col: 1 }, end: { row: 2, col: 1 } };
-    a.presence.setAi({ status: "reviewing", range });
-    await vi.waitFor(() => expect(other()?.ai).toEqual({ status: "reviewing", range }));
+    a.presence.setAi({ status: "reviewing", range, locked: true });
+    await vi.waitFor(() =>
+      expect(other()?.ai).toEqual({ status: "reviewing", range, locked: true }),
+    );
 
     a.presence.setAi(null);
     await vi.waitFor(() => expect(other()?.ai).toBeNull());
