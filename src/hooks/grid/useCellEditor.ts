@@ -49,8 +49,9 @@ export function useCellEditor(
           controller.runAction(action);
         },
         onInput: () => {
-          if (!controller.isEditing() && !composingRef.current)
-            controller.startEdit("enter", false);
+          // 한글 조합 중인 글자도 알린다. 다른 참여자에게 입력하는 모습이 그대로 보이게.
+          if (controller.isEditing()) controller.draftChanged();
+          else if (!composingRef.current) controller.startEdit("enter", false);
         },
         onCompositionStart: () => {
           composingRef.current = true;

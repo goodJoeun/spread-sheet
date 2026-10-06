@@ -17,10 +17,15 @@ export interface AiActivity {
   locked: boolean;
 }
 
+/** 입력 중인 글자를 알릴 때의 길이 상한. 글자마다 다른 탭에 보내므로 크기를 제한한다. */
+export const DRAFT_MAX_LENGTH = 1000;
+
 export interface PresenceState {
   user: UserInfo;
   selection: Selection | null;
   editing: CellCoord | null;
+  /** editing 셀에 입력 중인, 아직 확정하지 않은 글자. 문서에는 쓰지 않고 확정할 때 셀 값이 된다. */
+  draft: string | null;
   ai: AiActivity | null;
 }
 
@@ -55,10 +60,13 @@ const isAiActivity = (value: unknown): value is AiActivity =>
   ((value as AiActivity).range === null || isRange((value as AiActivity).range)) &&
   ((value as AiActivity).locked === undefined || typeof (value as AiActivity).locked === "boolean");
 
-/** ai가 없는 상태(이전 버전 탭)는 AI 편집이 없는 것으로, locked가 없으면 잠그지 않은 것으로 본다. */
+/**
+ * ai가 없는 상태(이전 버전 탭)는 AI 편집이 없는 것으로, locked가 없으면 잠그지 않은 것으로 본다.
+ * draft가 없으면 입력 중인 글자를 알리지 않는 것으로 본다.
+ */
 export function isPresenceState(value: unknown): value is PresenceState {
   if (typeof value !== "object" || value === null) return false;
-  const { user, selection, editing, ai } = value as PresenceState;
+  const { user, selection, editing, draft, ai } = value as PresenceState;
   return (
     typeof user === "object" &&
     user !== null &&
@@ -66,6 +74,7 @@ export function isPresenceState(value: unknown): value is PresenceState {
     typeof user.color === "string" &&
     (selection === null || isSelection(selection)) &&
     (editing === null || isCoord(editing)) &&
+    (draft === undefined || draft === null || typeof draft === "string") &&
     (ai === undefined || ai === null || isAiActivity(ai))
   );
 }

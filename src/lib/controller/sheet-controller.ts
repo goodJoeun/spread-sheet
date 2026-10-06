@@ -52,6 +52,8 @@ export interface ControllerSession {
   presence: {
     setSelection(selection: Selection): void;
     setEditing(coord: CellCoord | null): void;
+    /** 없으면 입력 중인 글자를 알리지 않는다. */
+    setDraft?(draft: string | null): void;
     /** 없으면 다른 참여자가 없는(잠금이 없는) 것으로 본다. */
     getParticipants?(): readonly Participant[];
   };
@@ -93,7 +95,11 @@ export class SheetController {
   connect(): () => void {
     const { presence, undoManager } = this.session;
     const publishSelection = () => presence.setSelection(this.selection.get());
-    const publishEditing = () => presence.setEditing(this.edit.get()?.coord ?? null);
+    const publishEditing = () => {
+      const edit = this.edit.get();
+      presence.setEditing(edit?.coord ?? null);
+      presence.setDraft?.(edit ? this.view.readDraft() : null);
+    };
     publishSelection();
     publishEditing();
     const offSelection = this.selection.subscribe(publishSelection);
@@ -154,6 +160,11 @@ export class SheetController {
     }
     if (keepContent) this.view.writeDraft(getValue(this.session.doc, coord));
     this.edit.set({ mode, coord });
+  }
+
+  /** 편집칸 글자가 바뀌었다. 다른 참여자가 확정 전에도 입력 중인 글자를 볼 수 있게 알린다. */
+  draftChanged(): void {
+    if (this.edit.get()) this.session.presence.setDraft?.(this.view.readDraft());
   }
 
   commitEdit(): void {

@@ -1,6 +1,8 @@
 /** 그리드 안 겹침 순서(z-index). 숫자가 클수록 앞에 보인다. */
 export const Layer = {
   remoteRange: 6,
+  /** 다른 참여자가 입력 중인 글자. 그 사람의 커서 테두리는 같은 층에서 뒤에 그려 위에 보인다. */
+  remoteDraft: 7,
   remoteCursor: 7,
   aiPreview: 8,
   remoteAi: 9,

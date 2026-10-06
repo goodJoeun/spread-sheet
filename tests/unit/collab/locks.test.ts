@@ -12,6 +12,7 @@ function participant(clientId: number, ai: AiActivity | null, isSelf = false): P
     user: { name: `참여자 ${clientId}`, color: "#e8710a" },
     selection: null,
     editing: null,
+    draft: null,
     ai,
   };
 }

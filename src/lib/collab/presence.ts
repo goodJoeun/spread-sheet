@@ -4,6 +4,7 @@ import type { Selection } from "@/lib/sheet/selection";
 import { normalizeName, pickColor, randomName } from "./identity";
 import { TabLiveness, webLocks } from "./liveness";
 import {
+  DRAFT_MAX_LENGTH,
   isPresenceState,
   type AiActivity,
   type Participant,
@@ -32,7 +33,7 @@ export class Presence {
     user: UserInfo,
     private readonly onUserChange?: (user: UserInfo) => void,
   ) {
-    this.local = { user, selection: null, editing: null, ai: null };
+    this.local = { user, selection: null, editing: null, draft: null, ai: null };
     const locks = webLocks();
     this.liveness = locks ? new TabLiveness(locks, this.handleGone) : null;
     if (this.liveness) {
@@ -72,8 +73,16 @@ export class Presence {
     this.publish();
   }
 
+  /** 편집을 끝내면 입력 중이던 글자도 지운다. */
   setEditing(editing: CellCoord | null): void {
-    this.local = { ...this.local, editing };
+    this.local = { ...this.local, editing, draft: editing ? this.local.draft : null };
+    this.publish();
+  }
+
+  setDraft(draft: string | null): void {
+    const next = draft === null ? null : draft.slice(0, DRAFT_MAX_LENGTH);
+    if (next === this.local.draft) return;
+    this.local = { ...this.local, draft: next };
     this.publish();
   }
 
@@ -175,6 +184,7 @@ export class Presence {
       if (!isPresenceState(state)) return;
       participants.push({
         ...state,
+        draft: state.editing && typeof state.draft === "string" ? state.draft : null,
         ai: state.ai ? { ...state.ai, locked: state.ai.locked === true } : null,
         clientId,
         isSelf: clientId === this.clientId,

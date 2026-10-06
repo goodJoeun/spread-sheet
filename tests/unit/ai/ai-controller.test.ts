@@ -524,6 +524,7 @@ describe("cell lock", () => {
     user: { name: "다른 사람", color: "#e8710a" },
     selection: null,
     editing: null,
+    draft: null,
     ai,
   });
 

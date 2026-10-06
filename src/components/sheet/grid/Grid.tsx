@@ -25,6 +25,7 @@ import { GridCells } from "./GridCells";
 import { GridHeaders } from "./GridHeaders";
 import { RemoteAiActivity } from "./RemoteAiActivity";
 import { RemoteCursors } from "./RemoteCursors";
+import { RemoteDrafts } from "./RemoteDrafts";
 import { SelectionOverlay } from "./SelectionOverlay";
 import { useCellEditor } from "@/hooks/grid/useCellEditor";
 import { useGridPointer } from "@/hooks/grid/useGridPointer";
@@ -90,6 +91,7 @@ export function Grid() {
       >
         <GridHeaders range={selectionRange(selection)} />
         <GridCells doc={session.doc} version={version} />
+        <RemoteDrafts participants={participants} doc={session.doc} version={version} />
         <RemoteCursors participants={participants} />
         <RemoteAiActivity participants={participants} />
         <AiPreview run={aiRun} states={aiStates} showOriginal={showOriginal} />

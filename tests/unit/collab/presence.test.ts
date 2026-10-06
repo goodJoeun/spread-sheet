@@ -6,7 +6,7 @@ import { BroadcastChannelProvider } from "@/lib/collab/broadcast-provider";
 import { PARTICIPANT_COLORS } from "@/resources/colors";
 import { normalizeName, pickColor } from "@/lib/collab/identity";
 import { Presence } from "@/lib/collab/presence";
-import type { UserInfo } from "@/lib/collab/presence-state";
+import { DRAFT_MAX_LENGTH, type UserInfo } from "@/lib/collab/presence-state";
 
 // 탭 하나 = Y.Doc + Awareness + BroadcastChannelProvider + Presence.
 // Node 24에는 BroadcastChannel과 Web Locks(navigator.locks)가 있어 브라우저와 같은 경로로 동작한다.
@@ -74,6 +74,24 @@ describe("Presence", () => {
       expect(seen?.selection).toEqual(selection);
       expect(seen?.editing).toEqual({ row: 1, col: 1 });
     });
+  });
+
+  it("shares the text being typed, and drops it when editing ends", async () => {
+    const room = crypto.randomUUID();
+    const a = openTab(room);
+    const b = openTab(room);
+    await Promise.all([a.presence.join(), b.presence.join()]);
+    const other = () => b.presence.getParticipants().find((p) => !p.isSelf);
+
+    a.presence.setEditing({ row: 0, col: 0 });
+    a.presence.setDraft("안녕");
+    await vi.waitFor(() => expect(other()?.draft).toBe("안녕"));
+
+    a.presence.setDraft("x".repeat(DRAFT_MAX_LENGTH + 10));
+    await vi.waitFor(() => expect(other()?.draft).toHaveLength(DRAFT_MAX_LENGTH));
+
+    a.presence.setEditing(null);
+    await vi.waitFor(() => expect(other()?.draft).toBeNull());
   });
 
   it("shares the AI edit in progress, without the proposed values", async () => {

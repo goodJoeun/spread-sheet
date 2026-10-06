@@ -36,10 +36,15 @@ function fakeView() {
 function setup(start = "A1", participants: Participant[] = []) {
   const doc = new Y.Doc();
   const undoManager = createUndoManager(doc);
-  const published = { selection: [] as Selection[], editing: [] as Array<CellCoord | null> };
+  const published = {
+    selection: [] as Selection[],
+    editing: [] as Array<CellCoord | null>,
+    draft: [] as Array<string | null>,
+  };
   const presence = {
     setSelection: (s: Selection) => published.selection.push(s),
     setEditing: (c: CellCoord | null) => published.editing.push(c),
+    setDraft: (d: string | null) => published.draft.push(d),
     getParticipants: () => participants,
   };
   const controller = new SheetController(
@@ -158,6 +163,24 @@ describe("presence", () => {
     controller.cancelEdit();
     expect(published.editing.at(-1)).toBeNull();
   });
+
+  it("publishes the text being typed before it is committed", () => {
+    const { controller, view, published, typeInto } = setup();
+    typeInto("1");
+    expect(published.draft.at(-1)).toBe("1");
+    view.type("2");
+    controller.draftChanged();
+    expect(published.draft.at(-1)).toBe("12");
+    controller.commitEdit();
+    expect(published.draft.at(-1)).toBeNull();
+  });
+
+  it("publishes the current value as the draft when editing it in place", () => {
+    const { doc, controller, published } = setup();
+    setValue(doc, at("A1"), "old", EditOrigin.User);
+    controller.startEdit("edit", true);
+    expect(published.draft.at(-1)).toBe("old");
+  });
 });
 
 describe("AI cell lock", () => {
@@ -167,6 +190,7 @@ describe("AI cell lock", () => {
     user: { name: "다른 사람", color: "#e8710a" },
     selection: null,
     editing: null,
+    draft: null,
     ai: { status: "generating", range: parseRangeA1(range)!, locked: true },
   });
 
