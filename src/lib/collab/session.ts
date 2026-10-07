@@ -14,21 +14,21 @@ export interface SheetSession {
   readonly presence: Presence;
   readonly undoManager: Y.UndoManager;
   /**
-   * "ready": 저장된 내용을 다 불러왔다.
-   * "unavailable": 저장소를 열 수 없다(차단·용량 초과 등). 탭 간 동기화는 되지만 새로고침하면 사라질 수 있다.
+   * "ready": 저장된 내용을 모두 불러왔음.
+   * "unavailable": 저장소를 열 수 없음(차단·용량 초과 등). 탭끼리 동기화는 되지만, 새로고침하면 내용이 사라질 수 있음.
    */
   readonly whenLoaded: Promise<StorageStatus>;
-  /** 저장소가 늦게라도 준비되면 resolve된다("unavailable"이었다가 회복되는 경우). */
+  /** 저장소가 늦게라도 준비되면 resolve됨. "unavailable"이었다가 회복되는 경우에 씀. */
   readonly whenPersisted: Promise<void>;
   leave(): void;
-  /** bfcache에서 복원됐을 때 */
+  /** 뒤로/앞으로 가기 캐시(bfcache)에서 복원됐을 때 호출 */
   rejoin(): void;
   destroy(): Promise<void>;
 }
 
 export type StorageStatus = "ready" | "unavailable";
 
-/** 저장소가 이 시간 안에 응답하지 않으면 저장 없이 시트를 연다. */
+/** 저장소가 이 시간 안에 응답하지 않으면 저장 없이 시트를 엶. */
 export const STORAGE_TIMEOUT_MS = 5000;
 
 export interface SheetSessionOptions {
@@ -41,9 +41,9 @@ export function createSheetSession(
   options: SheetSessionOptions = {},
 ): SheetSession {
   const doc = new Y.Doc();
-  // 커서·선택 영역처럼 저장하지 않는 임시 상태. 탭마다 자기 상태를 하나씩 가진다.
+  // 커서·선택 영역처럼 저장하지 않는 임시 상태. 탭마다 자기 상태를 하나씩 가짐.
   const awareness = new Awareness(doc);
-  // doc의 변경을 IndexedDB에 저장하고, 열 때 저장된 내용을 doc에 불러온다.
+  // doc의 변경을 IndexedDB에 저장하고, 시트를 열 때 저장된 내용을 doc에 불러옴.
   const persistence = new IndexeddbPersistence(`spread-sheet:${sheetId}`, doc);
   // 같은 브라우저의 다른 탭과 doc·awareness 변경을 주고받는다.
   const provider = new BroadcastChannelProvider(sheetId, doc, { awareness });

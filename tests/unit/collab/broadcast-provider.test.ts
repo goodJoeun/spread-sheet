@@ -5,8 +5,8 @@ import { EditOrigin, getValue, setValue } from "@/lib/sheet/document";
 import { BroadcastChannelProvider } from "@/lib/collab/broadcast-provider";
 import { createUndoManager } from "@/lib/collab/undo";
 
-// Node의 BroadcastChannel도 브라우저처럼 같은 이름의 다른 인스턴스에 메시지를 전달한다.
-// 탭 하나 = Y.Doc 하나 + provider 하나로 보고 테스트한다.
+// Node의 BroadcastChannel도 브라우저처럼, 같은 이름의 다른 인스턴스에 메시지를 전달함.
+// 탭 하나를 Y.Doc 하나 + provider 하나로 보고 테스트함.
 
 const at = (a1: string): CellCoord => parseA1(a1)!;
 const { User } = EditOrigin;
@@ -113,7 +113,7 @@ describe("BroadcastChannelProvider", () => {
       const room = crypto.randomUUID();
       const a = openTab(room);
       const b = openTab(room);
-      // 합류 과정(동기화, awareness 요청/응답)이 끝난 뒤부터 관찰한다.
+      // 합류 과정(동기화, awareness 요청/응답)이 끝난 뒤부터 지켜봄.
       await settle();
       const observer = new BroadcastChannel(`spread-sheet:${room}`);
       cleanup.push(() => observer.close());

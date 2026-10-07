@@ -28,8 +28,8 @@ import type { PointerTargetKind } from "@/lib/sheet/viewport";
 import { createStore, type Store } from "@/lib/store";
 
 /**
- * 키보드·마우스·툴바·AI 패널이 같은 명령을 부르므로 "편집 중이면 먼저 확정" 같은 규칙이 한 곳에만 있다.
- * DOM이 필요한 일(스크롤, 포커스, 편집칸 글자)은 그리드가 붙여 주는 SheetView에 맡긴다.
+ * 키보드·마우스·툴바·AI 패널이 모두 같은 명령을 부름. 그래서 "편집 중이면 먼저 확정" 같은 규칙이 한 곳에만 있음.
+ * DOM이 필요한 일(스크롤, 포커스, 편집칸 글자)은 그리드가 붙여 주는 SheetView에 맡김.
  */
 
 export interface EditState {
@@ -42,7 +42,7 @@ export interface SheetView {
   focus(): void;
   visibleRowCount(): number;
   readDraft(): string;
-  /** 편집칸의 글자를 바꾸고 커서를 끝으로 옮긴다. */
+  /** 편집칸의 글자를 바꾸고 커서를 끝으로 옮김. */
   writeDraft(text: string): void;
 }
 
@@ -52,9 +52,9 @@ export interface ControllerSession {
   presence: {
     setSelection(selection: Selection): void;
     setEditing(coord: CellCoord | null): void;
-    /** 없으면 입력 중인 글자를 알리지 않는다. */
+    /** 없으면 입력 중인 글자를 다른 탭에 알리지 않음. */
     setDraft?(draft: string | null): void;
-    /** 없으면 다른 참여자가 없는(잠금이 없는) 것으로 본다. */
+    /** 없으면 다른 참여자가 없는(잠금도 없는) 것으로 봄. */
     getParticipants?(): readonly Participant[];
   };
 }
@@ -79,7 +79,7 @@ interface StackItemEvent {
 export class SheetController {
   readonly selection: Store<Selection>;
   readonly edit: Store<EditState | null> = createStore<EditState | null>(null);
-  /** 다른 참여자가 잠근 셀을 바꾸려다 막힌 위치. 선택을 옮기면 지운다. */
+  /** 다른 참여자가 잠근 셀을 바꾸려다 막힌 위치. 선택을 옮기면 지움. */
   readonly lockNotice: Store<CellCoord | null> = createStore<CellCoord | null>(null);
   private view: SheetView = detachedView();
   private tabReturnCol: number | null = null;
@@ -91,7 +91,7 @@ export class SheetController {
     this.selection = createStore(initialSelection);
   }
 
-  /** 생성자에서 구독하지 않는다. React 개발 모드가 객체를 두 번 만들 때 구독이 새지 않게. */
+  /** 구독은 생성자가 아니라 여기서 시작함. React 개발 모드가 객체를 두 번 만들어도 구독이 새지 않게. */
   connect(): () => void {
     const { presence, undoManager } = this.session;
     const publishSelection = () => presence.setSelection(this.selection.get());
@@ -105,7 +105,7 @@ export class SheetController {
     const offSelection = this.selection.subscribe(publishSelection);
     const offEditing = this.edit.subscribe(publishEditing);
 
-    // 실행 취소/다시 실행하면 그 변경이 있던 곳으로 선택을 되돌린다.
+    // 실행 취소/다시 실행하면, 그 변경이 있던 곳으로 선택을 되돌림.
     let addedDuringPop: StackItemEvent["stackItem"] | null = null;
     const onAdded = ({ stackItem }: StackItemEvent) => {
       if (!stackItem.meta.has("selection")) stackItem.meta.set("selection", this.selection.get());
@@ -113,7 +113,7 @@ export class SheetController {
     };
     const onPopped = ({ stackItem }: StackItemEvent) => {
       const saved = stackItem.meta.get("selection") as Selection | undefined;
-      // 되돌리면서 반대쪽 스택에 새로 생긴 항목도 같은 위치를 기억하게 한다.
+      // 되돌리면서 반대쪽 스택에 새로 생긴 항목도 같은 위치를 기억하게 함.
       if (saved && addedDuringPop && addedDuringPop !== stackItem) {
         addedDuringPop.meta.set("selection", saved);
       }
@@ -154,7 +154,7 @@ export class SheetController {
   startEdit(mode: EditMode, keepContent: boolean): void {
     const coord = this.selection.get().active;
     if (this.refuseLocked({ start: coord, end: coord })) {
-      // 바로 타이핑해 시작한 경우 편집칸에 이미 들어간 글자를 지운다.
+      // 바로 타이핑해서 시작했다면 편집칸에 이미 들어간 글자를 지움.
       this.view.writeDraft("");
       return;
     }
@@ -162,7 +162,7 @@ export class SheetController {
     this.edit.set({ mode, coord });
   }
 
-  /** 편집칸 글자가 바뀌었다. 다른 참여자가 확정 전에도 입력 중인 글자를 볼 수 있게 알린다. */
+  /** 편집칸 글자가 바뀌었을 때 호출. 다른 참여자가 확정 전에도 입력 중인 글자를 볼 수 있게 알림. */
   draftChanged(): void {
     if (this.edit.get()) this.session.presence.setDraft?.(this.view.readDraft());
   }
@@ -248,8 +248,8 @@ export class SheetController {
   }
 
   /**
-   * 다른 참여자가 AI 편집을 위해 잠근 셀이 range에 있으면 막고 안내를 띄운다.
-   * 잠금 전에 시작한 입력은 확정할 수 있다. 입력한 글자를 버리지 않고, 그 셀은 AI 결과에서 충돌로 표시된다.
+   * 다른 참여자가 AI 편집을 위해 잠근 셀이 range에 있으면, 막고 안내를 띄움.
+   * 잠금 전에 시작한 입력은 확정할 수 있음. 입력한 글자를 버리지 않기 위함이고, 그 셀은 AI 결과에서 충돌로 표시됨.
    */
   private refuseLocked(range: CellRange): boolean {
     const participants = this.session.presence.getParticipants?.() ?? [];
@@ -258,7 +258,7 @@ export class SheetController {
     return true;
   }
 
-  /** 편집 중에도 편집을 유지한 채 적용한다(구글시트와 같음). */
+  /** 편집 중에도 편집을 유지한 채 서식을 적용함(구글 시트와 같음). */
   toggleFormat(key: FormatKey): void {
     if (this.refuseLocked(this.range)) return;
     toggleFormat(this.session.doc, this.range, key, EditOrigin.User);
@@ -279,7 +279,7 @@ export class SheetController {
     clearValues(this.session.doc, this.range, EditOrigin.User);
   }
 
-  /** 편집 중이면 먼저 확정한다. 그래서 실행 취소가 "입력 취소"처럼 동작하고 다시 실행으로 되살릴 수 있다. */
+  /** 편집 중이면 먼저 확정함. 그래서 실행 취소가 "입력 취소"처럼 동작하고, 다시 실행으로 되살릴 수 있음. */
   undo(): void {
     this.commitEdit();
     this.session.undoManager.undo();

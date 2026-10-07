@@ -54,7 +54,7 @@ function setup(start = "A1", participants: Participant[] = []) {
   const { view, calls, draft } = fakeView();
   cleanup.push(controller.attachView(view), controller.connect(), () => undoManager.destroy());
 
-  /** 사용자가 셀을 선택한 채 타이핑을 시작한 것과 같다. */
+  /** 사용자가 셀을 선택한 채 타이핑을 시작한 상황을 흉내 냄. */
   const typeInto = (text: string) => {
     view.type(text);
     controller.startEdit("enter", false);

@@ -1,6 +1,6 @@
 import { useEffect, type RefObject } from "react";
 
-/** Esc는 캡처 단계에서 먼저 받아, 그리드가 같은 키로 편집을 취소하지 않게 한다. */
+/** Esc를 캡처 단계에서 먼저 받음. 그래야 그리드가 같은 Esc로 편집을 취소하지 않음. */
 export function useDismiss(
   rootRef: RefObject<HTMLElement | null>,
   open: boolean,

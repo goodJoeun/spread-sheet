@@ -7,8 +7,9 @@ import type { AiCell, AiEditRequest } from "../protocol";
 const WHOLE_SHEET = rangeToA1(SHEET_RANGE);
 
 /**
- * 편집 결과는 propose_edits 도구 호출로 받는다. 도구 입력을 스트리밍(eager_input_streaming)하면
- * edits 원소가 생성되는 대로 도착해 셀 제안을 하나씩 보여 줄 수 있다. 도구를 실행해 대화를 잇지는 않는다.
+ * 편집 결과는 propose_edits 도구 호출로 받음.
+ * 도구 입력을 스트리밍(eager_input_streaming)하면 edits 원소가 만들어지는 대로 도착해서, 셀 제안을 하나씩 보여 줄 수 있음.
+ * 도구를 실제로 실행해 대화를 이어 가지는 않음.
  */
 
 export const EDIT_TOOL_NAME = "propose_edits";

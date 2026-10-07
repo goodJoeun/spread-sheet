@@ -5,7 +5,7 @@ import type { AiController } from "@/lib/ai/ai-controller";
 import { loadModelPreference } from "@/lib/ai/model-preference";
 import { AI_ENDPOINT, type AiConnectionInfo } from "@/lib/ai/protocol";
 
-/** 마지막으로 고른 모델을 되살리되, 서버가 더 이상 허용하지 않으면 서버 기본 모델로 돌아간다. */
+/** 마지막으로 고른 모델을 다시 불러옴. 서버가 더 이상 그 모델을 허용하지 않으면 서버 기본 모델로 돌아감. */
 export function useAiConnection(ai: AiController): AiConnectionInfo | null {
   const [connection, setConnection] = useState<AiConnectionInfo | null>(null);
 

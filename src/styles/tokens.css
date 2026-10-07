@@ -1,7 +1,7 @@
 /*
- * 디자인 토큰. 화면 코드는 여기 정의된 단계만 쓴다.
- * Tailwind 기본 팔레트·글자 크기·굵기·모서리·그림자는 initial로 꺼 두었다.
- * 토큰 밖의 값(neutral-500, text-sm, rounded-xl…)은 클래스가 만들어지지 않으니 새 값이 필요하면 여기에 먼저 더한다.
+ * 디자인 토큰. 화면 코드는 여기 정의된 단계만 씀.
+ * Tailwind 기본 팔레트·글자 크기·굵기·모서리·그림자는 initial로 꺼 두었음.
+ * 토큰에 없는 값(neutral-500, text-sm, rounded-xl…)은 클래스가 만들어지지 않음. 새 값이 필요하면 여기에 먼저 더함.
  */
 @theme {
   /* ───── 색 ───── */
@@ -58,8 +58,8 @@
   --text-title--line-height: 22px;
 
   --leading-*: initial;
-  --leading-cell: 23px; /* 셀 높이(geometry.ts ROW_HEIGHT 24px) - 아래 격자선 1px */
-  --leading-label: 18px; /* 셀 위에 붙는 띠. AiPreview·CoEditNotice가 이 높이로 위치를 잡는다. */
+  --leading-cell: 23px; /* 셀 높이(geometry.ts ROW_HEIGHT 24px)에서 아래 격자선 1px을 뺀 값 */
+  --leading-label: 18px; /* 셀 위에 붙는 띠의 높이. AiPreview·CoEditNotice가 이 높이로 위치를 잡음. */
 
   /* ───── 굵기 ───── */
   --font-weight-*: initial;
@@ -68,7 +68,7 @@
   --font-weight-semibold: 600; /* 제목, 선택된 머리글 */
 
   /* ───── 간격(gap, padding, margin) ───── */
-  /* 크기 고정값(size-8, h-10 같은 컴포넌트 치수)은 Tailwind의 4px 단위를 그대로 쓴다. */
+  /* 컴포넌트 크기 고정값(size-8, h-10 등)은 Tailwind의 4px 단위를 그대로 씀. */
   --spacing-2xs: 2px;
   --spacing-xs: 4px;
   --spacing-sm: 6px;

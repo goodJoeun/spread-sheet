@@ -9,8 +9,8 @@ import { SheetController } from "@/lib/controller/sheet-controller";
 import { parseA1, parseRangeA1, rangeToA1 } from "@/lib/sheet/address";
 import { EditOrigin, getValue, setValue } from "@/lib/sheet/document";
 
-// 실제 탭과 같은 구성(Y.Doc + IndexedDB + BroadcastChannel + Presence)을 두 개 열어
-// 공동 편집과 AI 편집이 만나는 세 상황을 재현한다. AI 응답만 테스트가 직접 흘려보낸다.
+// 실제 탭과 같은 구성(Y.Doc + IndexedDB + BroadcastChannel + Presence)을 두 개 열어서,
+// 공동 편집과 AI 편집이 만나는 세 상황을 재현함. AI 응답만 테스트에서 직접 흘려보냄.
 
 const at = (a1: string) => parseA1(a1)!;
 const range = (a1: string) => parseRangeA1(a1)!;

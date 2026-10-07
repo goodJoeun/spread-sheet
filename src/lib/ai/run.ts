@@ -2,7 +2,7 @@ import { parseA1, rangeContains, toA1, type CellCoord, type CellRange } from "@/
 import { isInSheet } from "@/lib/sheet/schema";
 import { AI_LIMITS, type AiErrorInfo, type AiStreamEvent, type AiWarning } from "./protocol";
 
-/** AI 요청 한 번(실행)의 상태. 컨트롤러·충돌 판단·화면이 함께 쓴다. */
+/** AI 요청 한 번(실행)의 상태. 컨트롤러, 충돌 판단, 화면이 함께 씀. */
 
 export type AiRunStatus =
   | "waiting"
@@ -27,7 +27,7 @@ export interface AiRun {
   instruction: string;
   /** 편집을 허용한 범위. null이면 시트 전체 */
   scope: CellRange | null;
-  /** 끝날 때까지 scope를 다른 참여자가 바꾸지 못하게 잠갔다. 요청할 때 정해지고 바뀌지 않는다. */
+  /** 요청 범위를 끝날 때까지 다른 참여자가 바꾸지 못하게 잠갔는지. 요청할 때 정해지고 바뀌지 않음. */
   locked: boolean;
   status: AiRunStatus;
   connected: boolean;
@@ -42,7 +42,7 @@ export interface AiRun {
   error: AiErrorInfo | null;
   /** 요청 시점의 셀 값(비어 있지 않은 셀) */
   base: ReadonlyMap<string, string>;
-  /** 적용한 결과. 요청 뒤 바뀌어서 건너뛴 셀 수를 함께 보여 준다. */
+  /** 적용한 결과. 요청 뒤에 값이 바뀌어 건너뛴 셀 수도 함께 보여 줌. */
   result: { applied: number; skipped: number } | null;
 }
 
@@ -79,7 +79,7 @@ export function createRun(init: {
   };
 }
 
-/** 실행을 끝내지 않는 스트림 이벤트. done·error는 컨트롤러가 요청을 정리하면서 처리한다. */
+/** 실행을 끝내지 않는 스트림 이벤트. done·error는 컨트롤러가 요청을 정리하면서 따로 처리함. */
 export type AiProgressEvent = Exclude<AiStreamEvent, { type: "done" } | { type: "error" }>;
 
 export function applyProgress(run: AiRun, event: AiProgressEvent): AiRun {
@@ -107,12 +107,12 @@ export function applyProgress(run: AiRun, event: AiProgressEvent): AiRun {
   }
 }
 
-/** 제안이 있으면 검토로, 없으면 답만 한 것으로 끝낸다. */
+/** 제안이 있으면 검토 단계로, 없으면 답만 한 것으로 끝냄. */
 export function finishRun(run: AiRun): AiRun {
   return { ...run, slow: false, status: run.proposals.length > 0 ? "review" : "answered" };
 }
 
-/** 범위 밖이거나 주소가 잘못된 제안은 세기만 하고, 요청 때 값과 같아진 셀은 제안에서 뺀다. */
+/** 범위 밖이거나 주소가 잘못된 제안은 세기만 함. 요청 때 값과 같아진 셀은 제안에서 뺌. */
 function addProposal(run: AiRun, cell: string, value: string): AiRun {
   const coord = parseA1(cell);
   const base = { ...run, connected: true, slow: false, status: "streaming" as const };

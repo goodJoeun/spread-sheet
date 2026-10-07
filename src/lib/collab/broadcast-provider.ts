@@ -5,9 +5,9 @@ import * as syncProtocol from "y-protocols/sync";
 import * as Y from "yjs";
 
 /**
- * BroadcastChannel로 같은 출처의 탭끼리 Y.Doc과 awareness를 동기화한다.
- * 메시지는 y-websocket과 같은 y-protocols 인코딩이라, 네트워크로 옮길 때 이 클래스만 WebsocketProvider로 바꾸면 된다.
- * 1:N 방송이라 SyncStep2 답장도 모든 탭에 가지만 Yjs 업데이트는 멱등이라 안전하다.
+ * BroadcastChannel로 같은 출처의 탭끼리 Y.Doc과 awareness를 동기화함.
+ * 메시지 형식은 y-websocket과 같은 y-protocols 인코딩임. 그래서 네트워크로 옮길 때 이 클래스만 WebsocketProvider로 바꾸면 됨.
+ * 한 번 보내면 모든 탭이 받는 구조라 SyncStep2 답장도 모든 탭에 감. 같은 업데이트를 여러 번 받아도 결과가 같아서(멱등) 문제없음.
  */
 
 const MESSAGE_SYNC = 0;

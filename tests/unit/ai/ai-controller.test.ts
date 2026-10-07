@@ -128,7 +128,7 @@ describe("AiController", () => {
       { type: "edit", cell: "B2", value: "150" },
       { type: "edit", cell: "B3", value: "400" },
       { type: "edit", cell: "C9", value: "out of range" },
-      { type: "edit", cell: "B2", value: "200" }, // 같은 셀은 마지막 제안으로
+      { type: "edit", cell: "B2", value: "200" }, // 같은 셀은 마지막 제안을 씀
       { type: "edit", cell: "B4", value: "" }, // 원래도 빈칸 → 바뀌는 게 없음
     );
     expect(lastRun()?.proposals.map((p) => [p.cell, p.before, p.after])).toEqual([

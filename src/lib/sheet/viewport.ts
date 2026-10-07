@@ -2,7 +2,7 @@ import type { CellCoord } from "./address";
 import { COL_HEADER_HEIGHT, COL_WIDTH, ROW_HEADER_WIDTH, ROW_HEIGHT, cellRect } from "./geometry";
 import { clampCoord } from "./selection";
 
-/** 고정 머리글에 가리는 부분은 빼고 계산한다. */
+/** 화면에 고정된 머리글에 가려지는 부분은 빼고 계산함. */
 
 /** 그리드에서 누른 곳: 셀, 행 머리글, 열 머리글, 왼쪽 위 모서리 */
 export type PointerTargetKind = "cell" | "row" | "col" | "corner";
@@ -27,7 +27,7 @@ export function visibleRowCount(scroller: HTMLElement | null): number {
   return Math.max(1, Math.floor((scroller.clientHeight - COL_HEADER_HEIGHT) / ROW_HEIGHT) - 1);
 }
 
-/** 머리글은 화면에 고정돼 있어 스크롤 영역 기준으로, 셀은 콘텐츠 기준으로 계산한다. */
+/** 머리글은 화면에 고정돼 있어서 스크롤 영역 기준으로, 셀은 콘텐츠 기준으로 계산함. */
 export function hitTest(
   scroller: HTMLElement,
   content: HTMLElement,

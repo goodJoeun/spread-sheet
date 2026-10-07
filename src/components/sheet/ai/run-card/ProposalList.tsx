@@ -8,12 +8,12 @@ const S = strings.ai.run;
 const DIFF_ROW =
   "grid w-full grid-cols-[2.5rem_1fr_auto_1fr] items-center gap-sm px-md py-xs text-left text-label " +
   "hover:bg-hover";
-/** 제안 아래 덧붙임 줄. 셀 이름 칸(앞 여백 8 + 칸 40 + 간격 6)만큼 들여 쓴다. */
+/** 제안 아래 덧붙임 줄. 셀 이름 칸(앞 여백 8 + 칸 40 + 간격 6)만큼 들여 씀. */
 const DIFF_NOTE = "px-md pb-xs pl-[54px] text-caption";
 
 interface ProposalListProps {
   proposals: readonly AiProposal[];
-  /** 지금 시트 값과 비교한 상태. 지난 실행이면 null(비교하지 않는다) */
+  /** 지금 시트 값과 비교한 결과. 지난 실행이면 비교하지 않으므로 null */
   states: ProposalState[] | null;
   reviewing: boolean;
   onJump: (coord: CellCoord) => void;

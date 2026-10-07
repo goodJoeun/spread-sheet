@@ -8,7 +8,7 @@ interface VersionStore {
 
 const versionStores = new WeakMap<Y.Doc, VersionStore>();
 
-/** 문서 하나에 리스너 하나만 걸고, 구독자 모두에게 같은 버전 번호를 준다. */
+/** 문서 하나에 리스너를 하나만 걸고, 구독하는 컴포넌트 모두에 같은 버전 번호를 줌. */
 function docVersionStore(doc: Y.Doc): VersionStore {
   const cached = versionStores.get(doc);
   if (cached) return cached;
@@ -34,7 +34,7 @@ function docVersionStore(doc: Y.Doc): VersionStore {
   return store;
 }
 
-/** 문서가 바뀔 때마다 다시 그린다. 값은 렌더 중에 문서에서 직접 읽는다. */
+/** 문서가 바뀔 때마다 다시 그리게 함. 값은 렌더링 중에 문서에서 직접 읽음. */
 export function useDocVersion(doc: Y.Doc): number {
   const store = docVersionStore(doc);
   return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);

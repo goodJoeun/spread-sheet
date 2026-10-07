@@ -12,7 +12,7 @@ import { Layer } from "./layers";
 const PROPOSAL =
   "overlay overflow-hidden bg-ai-soft px-xs text-body leading-cell whitespace-pre text-ai-ink";
 const PROPOSAL_MARK = "shadow-[inset_2px_0_0_var(--color-ai)]";
-/** 충돌한 셀을 덮어쓰기로 고른 경우 주의 색 테두리를 더한다. */
+/** 충돌한 셀을 덮어쓰기로 고르면 주의 색 테두리를 더함. */
 const PROPOSAL_MARK_OVERWRITE =
   "shadow-[inset_2px_0_0_var(--color-ai),inset_0_0_0_1px_var(--color-warn)]";
 
@@ -22,7 +22,7 @@ interface AiPreviewProps {
   showOriginal: boolean;
 }
 
-/** 문서에는 쓰지 않고 셀 위에 제안 값을 덮어 그리기만 한다. */
+/** 제안 값을 셀 위에 겹쳐 그리기만 함. 문서에는 쓰지 않음. */
 export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: AiPreviewProps) {
   if (!run) return null;
   const generating = isRunning(run);

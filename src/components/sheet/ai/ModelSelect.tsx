@@ -11,7 +11,7 @@ const MODEL_SELECT =
   "min-w-0 truncate rounded-md bg-transparent py-xs pr-xs pl-sm text-label text-fg-muted " +
   "outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-ai/40";
 
-/** 다음 요청에 쓸 모델. 고른 모델은 이 브라우저에 기억한다. */
+/** 다음 요청에 쓸 모델. 고른 모델은 이 브라우저에 기억함. */
 export function ModelSelect({ connection }: { connection: AiConnectionInfo }) {
   const { ai } = useSheet();
   const model = useStore(ai.model) ?? connection.defaultModel;

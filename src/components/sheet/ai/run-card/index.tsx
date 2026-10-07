@@ -22,7 +22,7 @@ interface AiRunCardProps {
   run: AiRun;
 }
 
-/** AI 실행 하나. 데이터는 여기서만 읽고 하위 부품에는 props로 넘긴다. */
+/** AI 실행 결과 카드. 데이터는 이 컴포넌트에서만 읽고, 하위 컴포넌트에는 props로 넘김. */
 export function AiRunCard({ run }: AiRunCardProps) {
   const { ai, controller, session } = useSheet();
   const showOriginal = useStore(ai.showOriginal);
@@ -30,7 +30,7 @@ export function AiRunCard({ run }: AiRunCardProps) {
   const busy = active !== null;
   const generating = isRunning(run);
   const reviewing = run.status === "review";
-  // 생성·검토 중인 실행만 지금 시트 값과 비교한다. 문서나 덮어쓰기 선택이 바뀌면 다시 그린다.
+  // 생성 중이거나 검토 중인 실행만 지금 시트 값과 비교함. 문서나 덮어쓰기 선택이 바뀌면 다시 그림.
   useDocVersion(session.doc);
   useStore(ai.overwrites);
   const states = active?.id === run.id ? ai.states(run) : null;

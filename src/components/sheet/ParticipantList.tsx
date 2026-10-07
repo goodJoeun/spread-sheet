@@ -128,7 +128,7 @@ function SelfRow({
     if (e.nativeEvent.isComposing) return;
     if (e.key === "Enter") save();
     if (e.key === "Escape") {
-      // 목록은 열어 둔 채 이름 변경만 취소한다.
+      // 이름 변경만 취소하고 목록은 열어 둠.
       e.stopPropagation();
       setDraft(null);
     }

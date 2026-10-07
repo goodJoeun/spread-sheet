@@ -48,7 +48,7 @@ const Cell = memo(function Cell({
 
 interface GridCellsProps {
   doc: Y.Doc;
-  /** 문서 버전. 바뀔 때만 셀 전체를 다시 그린다(선택 변경으로는 다시 그리지 않음). */
+  /** 문서 버전. 이 값이 바뀔 때만 셀 전체를 다시 그림. 선택만 바뀌어서는 다시 그리지 않음. */
   version: number;
 }
 
@@ -59,7 +59,7 @@ export const GridCells = memo(function GridCells({ doc }: GridCellsProps) {
     for (let col = 0; col < COL_COUNT; col++) {
       const coord = { row, col };
       const key = toA1(coord);
-      // 서식 값은 모두 원시값이라 Cell의 memo 비교가 그대로 동작한다.
+      // 서식 값이 모두 원시값(문자열·true)이라 Cell의 memo 비교가 그대로 통함.
       cells.push(
         <Cell
           key={key}

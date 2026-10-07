@@ -16,12 +16,12 @@ interface CellEditorProps {
 }
 
 const IDLE = "absolute cursor-cell bg-transparent opacity-0 outline-none";
-// 글자 시작점을 셀 글자(px-xs)와 맞추려고 테두리 2px·바깥 1px을 뺀 3px만 띄운다.
+// 편집칸 글자가 셀 글자(px-xs)와 같은 자리에서 시작하도록, 테두리 2px과 바깥 1px을 뺀 3px만 띄움.
 const EDITING =
   "absolute border-2 border-accent bg-surface px-[3px] text-body shadow-md outline-none " +
   "select-text [field-sizing:content]";
 
-/** 편집 중이 아닐 때도 투명하게 active 셀 위에 남아 포커스를 쥔다. 그래야 IME 후보창도 셀 위치에 뜬다. */
+/** 편집 중이 아닐 때도 투명한 상태로 선택한 셀 위에 남아 포커스를 쥐고 있음. 그래야 한글 입력기 후보창도 셀 위치에 뜸. */
 export function CellEditor({ inputRef, handlers, editing, format, rect }: CellEditorProps) {
   return (
     <input

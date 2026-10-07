@@ -42,7 +42,7 @@ export function Grid() {
   const participants = useParticipants(session.presence);
   const aiRun = useStore(ai.active);
   const showOriginal = useStore(ai.showOriginal);
-  useStore(ai.overwrites); // 덮어쓰기를 고르면 미리보기를 다시 그린다.
+  useStore(ai.overwrites); // 덮어쓰기를 고르면 미리보기를 다시 그림.
   const blockedAt = useStore(controller.lockNotice);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -63,7 +63,7 @@ export function Grid() {
     [controller, editor],
   );
 
-  // 처음 열렸을 때 바로 타이핑할 수 있게 편집칸에 포커스를 준다.
+  // 처음 열렸을 때 바로 타이핑할 수 있게 편집칸에 포커스를 줌.
   useEffect(() => editor.focus(), [editor]);
 
   const activeCoord = edit?.coord ?? selection.active;
@@ -73,7 +73,7 @@ export function Grid() {
     : blockedAt
       ? lockedCellNotices(participants, blockedAt)
       : [];
-  // 문서가 바뀌면(version) 다시 그려지므로, 다른 참여자의 변경으로 생긴 충돌도 바로 반영된다.
+  // 다른 참여자가 셀을 바꾸면 문서 버전(version)이 바뀌어 다시 그려짐. 그래서 새로 생긴 충돌도 바로 보임.
   const aiStates = aiRun ? ai.states(aiRun) : [];
 
   return (

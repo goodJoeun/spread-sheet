@@ -12,13 +12,13 @@ interface RemoteCursorsProps {
   participants: Participant[];
 }
 
-/** 내 선택보다 아래 레이어에 두어 내 커서가 가려지지 않게 하고, 이름표만 위로 올린다. */
+/** 다른 참여자의 커서는 내 선택보다 아래 층에 그려서 내 커서를 가리지 않게 함. 이름표만 위로 올림. */
 export const RemoteCursors = memo(function RemoteCursors({ participants }: RemoteCursorsProps) {
   return participants.map((participant) => {
     const { selection, editing, user, clientId, isSelf } = participant;
     if (isSelf || !selection) return null;
 
-    // 다른 탭에서 온 좌표라 시트 범위 안으로 맞춘다.
+    // 다른 탭에서 온 좌표라 시트 범위 안으로 맞춤.
     const safe = {
       anchor: clampCoord(selection.anchor),
       focus: clampCoord(selection.focus),
@@ -27,7 +27,7 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
     const range = outsetRect(rangeRect(selectionRange(safe)));
     const cursor = clampCoord(editing ?? safe.active);
     const rect = outsetRect(cellRect(cursor));
-    const labelBelow = cursor.row === 0; // 첫 행이면 머리글에 가리지 않게 아래에 붙인다.
+    const labelBelow = cursor.row === 0; // 첫 행이면 머리글에 가리지 않게 아래에 붙임.
 
     return (
       <Fragment key={clientId}>

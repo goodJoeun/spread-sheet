@@ -1,5 +1,5 @@
 /**
- * 데이터로 쓰는 색 목록. 화면 모양을 정하는 색 토큰은 styles/tokens.css에 있다.
+ * 데이터로 쓰는 색 목록. 화면 모양을 정하는 색 토큰은 styles/tokens.css에 있음.
  */
 
 /** 툴바 글자색 견본(셀에 저장되는 값) */
@@ -38,7 +38,7 @@ export const CELL_FILL_COLORS = [
   "#d5a6bd",
 ];
 
-/** 참여자 색. 흰 글자를 얹어도 읽히는 색이고, 내 선택 표시에 쓰는 파란색(accent)은 뺐다. */
+/** 참여자 색. 흰 글자를 얹어도 잘 읽히는 색만 골랐고, 내 선택 표시에 쓰는 파란색(accent)은 뺐음. */
 export const PARTICIPANT_COLORS = [
   "#e8710a",
   "#1e8e3e",

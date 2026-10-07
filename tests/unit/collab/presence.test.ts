@@ -9,7 +9,7 @@ import { Presence } from "@/lib/collab/presence";
 import { DRAFT_MAX_LENGTH, type UserInfo } from "@/lib/collab/presence-state";
 
 // 탭 하나 = Y.Doc + Awareness + BroadcastChannelProvider + Presence.
-// Node 24에는 BroadcastChannel과 Web Locks(navigator.locks)가 있어 브라우저와 같은 경로로 동작한다.
+// Node 24에는 BroadcastChannel과 Web Locks(navigator.locks)가 있어서, 브라우저와 같은 경로로 동작함.
 
 let cleanup: Array<() => void> = [];
 afterEach(() => {

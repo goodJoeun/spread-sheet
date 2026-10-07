@@ -12,8 +12,8 @@ import { createEditStreamParser } from "@/lib/ai/server/edit-stream-parser";
 import { createMockAnthropicFetch } from "@/lib/ai/server/mock-anthropic";
 import { buildUserMessage, parseUserMessage } from "@/lib/ai/server/prompt";
 
-// 가짜 Claude API를 SDK의 fetch 자리에 넣고 실제 SDK로 호출한다.
-// 그래서 이 테스트는 실제 모델을 쓸 때 돌아갈 코드(SDK 스트림 해석, 셀 제안 추출, 오류 분류)를 그대로 검증한다.
+// 가짜 Claude API를 SDK의 fetch 자리에 넣고, 실제 SDK로 호출함.
+// 그래서 이 테스트는 실제 모델을 쓸 때 돌아갈 코드(SDK 스트림 해석, 셀 제안 추출, 오류 분류)를 그대로 검증함.
 
 function mockSetup(model = "claude-opus-5-5"): ClaudeSetup {
   return {

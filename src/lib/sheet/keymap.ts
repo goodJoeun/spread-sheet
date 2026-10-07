@@ -2,8 +2,8 @@ import type { Alignment, FormatKey } from "./schema";
 
 /**
  * 편집 모드(엑셀과 같은 구분)
- * - enter: 셀을 선택한 채 바로 타이핑해 시작. 방향키를 누르면 입력을 확정하고 이동한다.
- * - edit: F2·더블클릭으로 시작. 방향키는 글자 사이 커서를 움직인다.
+ * - enter: 셀을 선택한 채 바로 타이핑해 시작. 방향키를 누르면 입력을 확정하고 이동함.
+ * - edit: F2·더블클릭으로 시작. 방향키는 글자 사이 커서를 움직임.
  */
 export type EditMode = "enter" | "edit";
 
@@ -54,7 +54,7 @@ const ALIGN_SHORTCUTS: Record<string, Alignment> = {
   r: "right",
 };
 
-/** null이면 브라우저 기본 동작(글자 입력, 커서 이동 등)에 맡긴다. */
+/** null이면 브라우저 기본 동작(글자 입력, 커서 이동 등)에 맡김. */
 export function resolveGridKey(
   e: KeyInput,
   editMode: EditMode | null,
@@ -68,7 +68,7 @@ export function resolveGridKey(
     if (!e.shiftKey && FORMAT_SHORTCUTS[key]) return { type: "format", key: FORMAT_SHORTCUTS[key] };
     if (e.shiftKey && ALIGN_SHORTCUTS[key]) return { type: "align", value: ALIGN_SHORTCUTS[key] };
     if (!e.shiftKey && key === "\\") return { type: "clearFormat" };
-    // 편집 중의 Ctrl+Z/A는 입력칸의 기본 동작(글자 되돌리기, 전체 선택)에 맡긴다.
+    // 편집 중의 Ctrl+Z/A는 입력칸의 기본 동작(글자 되돌리기, 전체 선택)에 맡김.
     if (!editing) {
       if (key === "z") return { type: e.shiftKey ? "redo" : "undo" };
       if (key === "y" && !e.shiftKey) return { type: "redo" };

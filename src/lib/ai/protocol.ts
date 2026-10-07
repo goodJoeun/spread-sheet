@@ -1,14 +1,15 @@
 /**
- * 브라우저와 /api/ai/edit 사이의 형식. 응답은 NDJSON(한 줄에 AiStreamEvent 하나)이고,
- * 스트림을 시작하기 전에 실패하면 HTTP 오류 상태와 { error: AiErrorInfo }를 돌려준다.
- * 오류·경고는 코드로만 보낸다. 화면 문구는 브라우저가 고른다(messages.ts).
+ * 브라우저와 /api/ai/edit 사이에 주고받는 형식.
+ * 응답은 NDJSON(한 줄에 AiStreamEvent 하나)임.
+ * 스트림을 시작하기 전에 실패하면 HTTP 오류 상태와 { error: AiErrorInfo }를 돌려줌.
+ * 오류·경고는 코드로만 보내고, 화면 문구는 브라우저가 고름(messages.ts).
  */
 
 import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
 
 export const AI_ENDPOINT = "/api/ai/edit";
 
-/** 요청 크기 상한. cells는 시트 전체 */
+/** 요청 크기 상한. cells는 시트 전체 셀 수 */
 export const AI_LIMITS = {
   instruction: 2000,
   cellValue: 1000,
@@ -44,14 +45,14 @@ export interface AiModelOption {
   label: string;
 }
 
-/** 화면에서 고를 수 있는 모델. 서버는 이 목록과 ANTHROPIC_MODEL로만 요청한다(비용 통제). */
+/** 화면에서 고를 수 있는 모델. 비용을 통제하려고 서버는 이 목록과 ANTHROPIC_MODEL로만 요청함. */
 export const AI_MODELS: readonly AiModelOption[] = [
   { id: "claude-opus-5-5", label: "Opus 5.5" },
   { id: "claude-sonnet-5-5", label: "Sonnet 5.5" },
   { id: "claude-haiku-4-5", label: "Haiku 4.5" },
 ];
 
-/** 응답의 모델 id에는 날짜가 붙을 수 있다(claude-haiku-4-5-20251001). */
+/** 응답의 모델 id에는 날짜가 붙을 수 있음(예: claude-haiku-4-5-20251001). */
 export function modelLabel(id: string, options: readonly AiModelOption[] = AI_MODELS): string {
   return options.find((m) => id === m.id || id.startsWith(`${m.id}-`))?.label ?? id;
 }

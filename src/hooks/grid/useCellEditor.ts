@@ -4,9 +4,10 @@ import { isApplePlatform } from "@/lib/platform";
 import { resolveGridKey } from "@/lib/sheet/keymap";
 
 /**
- * 편집칸은 항상 DOM에 남아 포커스를 쥔다. 셀을 선택한 채 타이핑하거나 한글 조합을 시작해도 첫 글자(첫 자모)를 잃지 않게.
- * 값은 비제어로 다룬다. React가 조합 중인 값을 덮어쓰면 한글 입력이 깨진다.
- * inputRef를 객체에 담아 받지 않는 이유: 렌더링 중 ref 접근으로 판단된다.
+ * 편집칸은 편집 중이 아닐 때도 DOM에 남아 포커스를 쥐고 있음.
+ * 그래서 셀을 선택한 채 바로 타이핑하거나 한글 조합을 시작해도 첫 글자(첫 자모)를 놓치지 않음.
+ * 편집칸 값은 React state로 관리하지 않음(비제어 입력). React가 조합 중인 값을 덮어쓰면 한글 입력이 깨지기 때문.
+ * inputRef를 객체에 담아 받지 않는 이유: 그러면 렌더링 중에 ref에 접근하는 것으로 판단됨.
  */
 export function useCellEditor(
   controller: SheetController,
@@ -27,12 +28,12 @@ export function useCellEditor(
         el.setSelectionRange(text.length, text.length);
       },
 
-      /** IME 조합 중이면 blur로 조합을 먼저 확정시킨다. */
+      /** 한글 조합 중이면 blur로 조합을 먼저 끝냄. */
       finishBeforePointer: () => {
         const el = input();
         if (!controller.isEditing() || !el) return;
         if (composingRef.current) {
-          el.blur(); // compositionend → blur → onBlur에서 확정
+          el.blur(); // compositionend → blur → onBlur 순서로 값이 확정됨
           el.focus({ preventScroll: true });
         } else {
           controller.commitEdit();
@@ -41,7 +42,7 @@ export function useCellEditor(
 
       handlers: {
         onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => {
-          // IME 조합 중인 키(한글 등)는 입력기에 맡긴다. 여기서 Enter를 처리하면 마지막 글자가 사라지거나 두 번 들어간다.
+          // 한글처럼 조합 중인 키는 입력기에 맡김. 여기서 Enter를 처리하면 마지막 글자가 사라지거나 두 번 들어감.
           if (e.nativeEvent.isComposing || e.keyCode === 229) return;
           const action = resolveGridKey(e, controller.edit.get()?.mode ?? null, isApplePlatform());
           if (!action) return;
@@ -49,7 +50,7 @@ export function useCellEditor(
           controller.runAction(action);
         },
         onInput: () => {
-          // 한글 조합 중인 글자도 알린다. 다른 참여자에게 입력하는 모습이 그대로 보이게.
+          // 한글 조합 중인 글자도 다른 참여자에게 알림. 입력하는 모습이 그대로 보이도록.
           if (controller.isEditing()) controller.draftChanged();
           else if (!composingRef.current) controller.startEdit("enter", false);
         },
@@ -59,11 +60,11 @@ export function useCellEditor(
         },
         onCompositionEnd: () => {
           composingRef.current = false;
-          // 잠긴 셀이라 편집을 시작하지 못했으면 조합한 글자가 편집칸에 남지 않게 지운다.
+          // 잠긴 셀이라 편집을 시작하지 못했다면, 조합한 글자가 편집칸에 남지 않게 지움.
           if (!controller.isEditing()) controller.cancelEdit();
         },
         onBlur: () => {
-          // 다른 창·탭으로 전환한 경우에는 편집을 유지한다(돌아오면 이어서 입력).
+          // 다른 창이나 탭으로 전환한 경우에는 편집을 유지함. 돌아오면 이어서 입력할 수 있음.
           if (!document.hasFocus()) return;
           controller.commitEdit();
         },

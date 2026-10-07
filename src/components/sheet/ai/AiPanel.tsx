@@ -25,7 +25,7 @@ export function AiPanel() {
 
   useEffect(() => inputRef.current?.focus(), []);
 
-  // 새 내용이 오면 맨 아래를 보여 준다(첫 안내 화면은 위에서부터).
+  // 새 메시지가 오면 맨 아래로 스크롤함. 첫 안내 화면만 위에서부터 보여 줌.
   useEffect(() => {
     const el = listRef.current;
     if (el && messages.length > 0) el.scrollTop = el.scrollHeight;

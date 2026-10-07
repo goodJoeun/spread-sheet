@@ -34,7 +34,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   const running = isRunning(active);
   const reviewing = active?.status === "review";
 
-  // 범위를 여러 칸 선택해 두었으면 그 범위로, 아니면 시트 전체로. 사용자가 고르면 그걸 따른다.
+  // 범위를 여러 칸 선택했으면 그 범위로, 아니면 시트 전체로 요청함. 사용자가 직접 고르면 그 선택을 따름.
   const [chosen, setChosen] = useState<ScopeMode | null>(null);
   const mode: ScopeMode = chosen ?? (isMultiCell(selection) ? "selection" : "sheet");
   const range = selectionRange(selection);
@@ -50,7 +50,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // 한글 조합 중 Enter는 글자를 확정하는 키라 보내지 않는다.
+    // 한글 조합 중의 Enter는 글자를 확정하는 키라서 요청을 보내지 않음.
     if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();

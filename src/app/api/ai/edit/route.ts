@@ -9,7 +9,7 @@ import { AiProviderError, streamClaudeEdits } from "@/lib/ai/server/claude";
 import { getClaudeSetup } from "@/lib/ai/server/setup";
 import { parseEditRequest } from "@/lib/ai/server/validate";
 
-/** API 키는 이 서버 코드에서만 읽고 브라우저로 보내지 않는다. */
+/** API 키는 서버에서만 읽음. 브라우저로는 보내지 않음. */
 
 const encoder = new TextEncoder();
 const line = (event: AiStreamEvent) => encoder.encode(`${JSON.stringify(event)}\n`);

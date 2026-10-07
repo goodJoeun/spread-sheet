@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "@/app/api/ai/edit/route";
 import { parseStreamEvent, type AiConnectionInfo, type AiEditRequest } from "@/lib/ai/protocol";
 
-// API 키 없이 → 가짜 Claude API(같은 SDK 경로). 지연 없이 돌린다.
+// API 키 없이 가짜 Claude API(같은 SDK 경로)를 지연 없이 씀.
 beforeAll(() => {
   vi.stubEnv("ANTHROPIC_API_KEY", "");
   vi.stubEnv("AI_MOCK_DELAY_SCALE", "0");

@@ -36,9 +36,9 @@ export function useGridPointer({
     return {
       onPointerDown: (e: PointerEvent<HTMLDivElement>) => {
         if (e.button !== 0) return;
-        // 편집 중인 입력칸 안을 누르면 커서 이동 등 기본 동작에 맡긴다.
+        // 편집 중인 입력칸 안을 누르면 커서 이동 같은 브라우저 기본 동작에 맡김.
         if (onEditor(e)) return;
-        e.preventDefault(); // 편집칸의 포커스를 유지하고, 드래그 중 글자가 선택되지 않게 한다.
+        e.preventDefault(); // 편집칸의 포커스를 유지하고, 드래그 중 글자가 선택되지 않게 함.
 
         editor.finishBeforePointer();
         const { kind, coord } = locate(e);

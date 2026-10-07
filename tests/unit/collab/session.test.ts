@@ -57,7 +57,7 @@ describe("createSheetSession", () => {
   });
 
   it("opens without storage when IndexedDB never answers, and still syncs tabs", async () => {
-    // 응답하지 않는 IndexedDB(차단·멈춤 상황): open 요청이 성공도 실패도 하지 않는다.
+    // 응답하지 않는 IndexedDB(차단·멈춤 상황): open 요청이 성공도 실패도 하지 않음.
     vi.stubGlobal("indexedDB", { open: () => ({}) });
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const sheetId = crypto.randomUUID();

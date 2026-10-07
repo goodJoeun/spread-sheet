@@ -22,7 +22,7 @@ const at = (a1: string): CellCoord => parseA1(a1)!;
 const range = (a1: string) => parseRangeA1(a1)!;
 const { User } = EditOrigin;
 
-/** 두 문서가 서로의 변경을 모두 받게 한다(네트워크 왕복 한 번에 해당). */
+/** 두 문서가 서로의 변경을 모두 받게 함. 네트워크로 한 번 주고받은 것과 같음. */
 function exchange(a: Y.Doc, b: Y.Doc) {
   const fromA = Y.encodeStateAsUpdate(a, Y.encodeStateVector(b));
   const fromB = Y.encodeStateAsUpdate(b, Y.encodeStateVector(a));

@@ -3,8 +3,8 @@ import { NAME_ADJECTIVES, NAME_ANIMALS } from "@/resources/names";
 import type { UserInfo } from "./presence-state";
 
 /**
- * 탭별 신원(이름·색). sessionStorage는 탭마다 따로라서 새 탭은 새 참여자가 되고,
- * 같은 탭을 새로고침하면 같은 이름으로 돌아온다.
+ * 탭마다 따로 갖는 신원(이름·색).
+ * sessionStorage는 탭마다 따로라서, 새 탭은 새 참여자가 되고 같은 탭을 새로고침하면 같은 이름으로 돌아옴.
  */
 const STORAGE_KEY = "spread-sheet:user";
 

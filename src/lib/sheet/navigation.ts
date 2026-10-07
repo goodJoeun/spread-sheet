@@ -31,7 +31,7 @@ export function isNavigationAction(action: GridAction): action is NavigationActi
 
 export interface NavigationState {
   selection: Selection;
-  /** Tab으로 입력해 나가기 시작한 열. Enter를 누르면 이 열의 다음 행으로 돌아간다(엑셀과 같음). */
+  /** Tab으로 입력해 나가기 시작한 열. Enter를 누르면 이 열의 다음 행으로 돌아감(엑셀과 같음). */
   tabReturnCol: number | null;
 }
 
@@ -41,7 +41,7 @@ export interface NavigationContext {
 }
 
 export interface NavigationResult extends NavigationState {
-  /** null이면 스크롤하지 않는다 */
+  /** null이면 스크롤하지 않음 */
   reveal: CellCoord | null;
 }
 

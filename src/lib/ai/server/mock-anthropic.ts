@@ -13,8 +13,9 @@ import type { AiCell } from "../protocol";
 import { EDIT_TOOL_NAME, parseUserMessage } from "./prompt";
 
 /**
- * 가짜 Claude API. SDK의 fetch 자리에 넣으면 실제 Messages API와 같은 SSE·오류 형식으로 답한다.
- * 지시문에 표시를 넣으면 실패·지연을 재현한다: [느림] 8초 지연, [한도] 429, [키] 401,
+ * 가짜 Claude API. SDK의 fetch 자리에 넣으면 실제 Messages API와 같은 SSE·오류 형식으로 답함.
+ * 지시문에 아래 표시를 넣으면 실패·지연을 재현함.
+ * [느림] 8초 지연, [한도] 429, [키] 401,
  * [과부하] 생성 도중 과부하, [거절] 모델 거절, [잘림] 최대 길이에서 끊김
  */
 

@@ -14,7 +14,7 @@ import { createUndoManager } from "@/lib/collab/undo";
 const at = (a1: string): CellCoord => parseA1(a1)!;
 const { User, Ai } = EditOrigin;
 
-/** from의 변경 중 to에 없는 것을 원격 변경으로 적용한다. */
+/** from에만 있는 변경을 to에 원격 변경으로 적용함. */
 function deliver(from: Y.Doc, to: Y.Doc) {
   Y.applyUpdate(to, Y.encodeStateAsUpdate(from, Y.encodeStateVector(to)), "remote");
 }

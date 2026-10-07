@@ -10,18 +10,18 @@ import {
 import { createEditStreamParser } from "./edit-stream-parser";
 import { EDIT_TOOL, EDIT_TOOL_NAME, SYSTEM_PROMPT, buildMessages } from "./prompt";
 
-/** 실제 API와 가짜 fetch가 같은 SDK 경로를 지나므로, 가짜로 검증한 코드가 실제 모델에서도 그대로 돈다. */
+/** 실제 API와 가짜 fetch가 같은 SDK 경로를 지남. 그래서 가짜로 검증한 코드가 실제 모델에서도 그대로 동작함. */
 
 export interface ClaudeSetup {
   client: Anthropic;
   defaultModel: string;
-  /** 이 밖의 모델로 온 요청은 받지 않는다 */
+  /** 이 목록에 없는 모델로 온 요청은 받지 않음 */
   models: AiModelOption[];
   effort: "low" | "medium" | "high";
   provider: "anthropic" | "mock";
 }
 
-/** 스트림을 시작하기 전에 실패했다. 라우트가 HTTP 오류로 바꿔 돌려준다. */
+/** 스트림을 시작하기 전에 실패한 경우. 라우트가 HTTP 오류로 바꿔 돌려줌. */
 export class AiProviderError extends Error {
   constructor(readonly info: AiErrorInfo) {
     super(`AI provider failed: ${info.reason ?? info.code}`);

@@ -6,7 +6,7 @@ import { aiActivitiesAt, blockingOverlaps, type AiOverlap } from "./coedit";
 import type { AiErrorInfo, AiWarning } from "./protocol";
 import type { AiRun } from "./run";
 
-/** AI 기능의 상태를 화면 문구로 바꾼다. 서버가 보낸 코드도 여기서 문구가 된다. */
+/** AI 기능의 상태를 화면 문구로 바꿈. 서버가 보낸 코드도 여기서 문구가 됨. */
 
 export function aiErrorMessage(error: AiErrorInfo): string {
   return strings.ai.errors[error.reason ?? error.code];
@@ -23,7 +23,7 @@ export function aiWarningMessage(warning: AiWarning): string {
   }
 }
 
-/** 목록에 없는 모델은 서버가 기본값으로 정한 모델이다. */
+/** 목록에 없는 모델은 서버가 기본값으로 정한 모델로 봄. */
 export function modelDescription(id: string): string {
   const descriptions: Readonly<Record<string, string>> = strings.ai.models.descriptions;
   return descriptions[id] ?? strings.ai.models.serverDefault;
@@ -35,7 +35,7 @@ export interface StatusLine {
   icon: "spinner" | "check" | "alert" | null;
 }
 
-/** 실행 카드 맨 위의 진행 상태. 답만 한 실행은 보여 줄 상태가 없다(null). */
+/** 실행 카드 맨 위에 보이는 진행 상태. 답만 한 실행은 보여 줄 상태가 없어서 null */
 export function runStatusLine(run: AiRun, undoKey: string): StatusLine | null {
   const S = strings.ai.run.status;
   const line = (
@@ -75,11 +75,11 @@ export function runStatusLine(run: AiRun, undoKey: string): StatusLine | null {
 
 export interface OverlapNotice {
   text: string;
-  /** 이 범위에는 지금 요청할 수 없다 */
+  /** 이 범위에는 지금 요청할 수 없음 */
   blocking: boolean;
 }
 
-/** AI 요청창 위 안내. 다른 참여자의 AI 편집과 범위가 겹칠 때만 있다. lock: 내 셀 잠금이 켜져 있다. */
+/** AI 요청창 위에 뜨는 안내. 다른 참여자의 AI 편집과 범위가 겹칠 때만 있음. lock은 내 셀 잠금이 켜져 있는지. */
 export function overlapNotice(overlaps: readonly AiOverlap[], lock: boolean): OverlapNotice | null {
   const C = strings.ai.composer;
   const describe = (list: readonly AiOverlap[]) => ({
@@ -100,8 +100,9 @@ export function overlapNotice(overlaps: readonly AiOverlap[], lock: boolean): Ov
 }
 
 /**
- * 편집칸 위 안내. 같은 셀을 동시에 입력하면 나중에 확정한 값이 남고,
- * 다른 참여자의 AI 편집 범위여도 막지 않는다(입력한 셀은 그 사람의 AI 결과에서 충돌로 표시된다).
+ * 편집칸 위에 뜨는 안내.
+ * 같은 셀을 동시에 입력하면 나중에 확정한 값이 남음. 다른 참여자의 AI 편집 범위여도 막지 않음.
+ * (입력한 셀은 그 사람의 AI 결과에서 충돌로 표시됨)
  */
 export function editorNotices(participants: readonly Participant[], coord: CellCoord): string[] {
   const notices: string[] = [];

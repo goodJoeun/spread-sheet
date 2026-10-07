@@ -1,6 +1,6 @@
 /*
- * 여러 곳에서 다시 쓰는 컨트롤만 둔다. 한 곳에서만 쓰는 모양은 그 컴포넌트에 유틸리티로 적는다.
- * 상태는 클래스를 바꾸지 않고 aria-* 속성으로 표현한다(aria-pressed, aria-checked, aria-expanded).
+ * 여러 곳에서 다시 쓰는 컨트롤만 둠. 한 곳에서만 쓰는 모양은 그 컴포넌트에 유틸리티 클래스로 적음.
+ * 상태는 클래스를 바꾸지 않고 aria-* 속성으로 표현함(aria-pressed, aria-checked, aria-expanded).
  */
 @layer components {
   /* 글자 버튼: .btn + 종류(.btn-ai, .btn-outline, .btn-ghost, .btn-warn) + 작은 크기(.btn-sm) */

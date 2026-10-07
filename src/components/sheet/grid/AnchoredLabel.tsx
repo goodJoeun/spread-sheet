@@ -4,9 +4,9 @@ import type { Rect } from "@/lib/sheet/geometry";
 interface AnchoredLabelProps {
   /** 이름표를 붙일 셀·범위 */
   rect: Rect;
-  /** 첫 행이면 머리글에 가리지 않게 아래에 붙인다. */
+  /** 첫 행이면 머리글에 가리지 않게 아래에 붙임. */
   below: boolean;
-  /** 범위 왼쪽 끝(start)이나 오른쪽 끝(end)에 맞춘다. */
+  /** 범위 왼쪽 끝(start)이나 오른쪽 끝(end)에 맞춤. */
   align?: "start" | "end";
   zIndex: number;
   /** 모양(.name-tag, .grid-label …)과 아래 붙일 때의 간격 */
@@ -17,7 +17,7 @@ interface AnchoredLabelProps {
   children: ReactNode;
 }
 
-/** 셀·범위 위(또는 아래)에 붙는 이름표. 높이를 몰라도 되게 위에 붙일 때는 자기 높이만큼 끌어올린다. */
+/** 셀·범위 위(또는 아래)에 붙는 이름표. 위에 붙일 때는 자기 높이만큼 끌어올려서, 이름표 높이를 미리 알 필요가 없음. */
 export function AnchoredLabel({
   rect,
   below,

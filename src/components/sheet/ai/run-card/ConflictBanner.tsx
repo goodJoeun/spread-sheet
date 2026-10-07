@@ -13,7 +13,7 @@ interface ConflictBannerProps {
   onRegenerate: () => void;
 }
 
-/** 요청한 뒤 다른 값으로 바뀐 셀이 있을 때. 기본은 건너뛰기이고 한 번에 덮어쓰거나 다시 요청할 수 있다. */
+/** AI에 요청한 뒤 다른 값으로 바뀐 셀이 있을 때 보이는 안내. 기본은 건너뛰기이고, 한 번에 덮어쓰거나 다시 요청할 수도 있음. */
 export function ConflictBanner({
   conflicts,
   skipped,

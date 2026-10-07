@@ -77,7 +77,7 @@ export function Toolbar() {
       role="toolbar"
       aria-label={strings.toolbar.label}
       className="flex h-10 shrink-0 items-center gap-2xs border-b border-line bg-surface-muted px-md"
-      // 버튼을 눌러도 그리드의 포커스(편집 중인 셀 포함)를 빼앗지 않는다.
+      // 버튼을 눌러도 그리드의 포커스(편집 중인 셀 포함)를 빼앗지 않음.
       onMouseDown={(e) => e.preventDefault()}
     >
       <ToolbarButton

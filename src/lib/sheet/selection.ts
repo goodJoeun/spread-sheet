@@ -2,8 +2,9 @@ import { normalizeRange, type CellCoord, type CellRange } from "./address";
 import { COL_COUNT, ROW_COUNT } from "./schema";
 
 /**
- * anchor: 범위 선택을 시작한 고정 꼭짓점, focus: Shift+방향키·드래그로 움직이는 꼭짓점,
- * active: 입력이 들어가는 셀(범위 안에서 Enter/Tab으로 옮겨 다닌다)
+ * anchor: 범위 선택을 시작한 고정 꼭짓점
+ * focus: Shift+방향키나 드래그로 움직이는 꼭짓점
+ * active: 입력이 들어가는 셀(범위 안에서 Enter/Tab으로 옮겨 다님)
  */
 export interface Selection {
   anchor: CellCoord;
@@ -36,7 +37,7 @@ export function sameCoord(a: CellCoord, b: CellCoord): boolean {
   return a.row === b.row && a.col === b.col;
 }
 
-/** 범위를 해제하고 active 셀 기준으로 이동한다. */
+/** 범위를 풀고 active 셀을 기준으로 이동함. */
 export function moveSelection(selection: Selection, dRow: number, dCol: number): Selection {
   const { active } = selection;
   return collapsedSelection({ row: active.row + dRow, col: active.col + dCol });
@@ -51,7 +52,7 @@ export function extendSelectionTo(selection: Selection, focus: CellCoord): Selec
   return { ...selection, focus: clampCoord(focus) };
 }
 
-/** 범위 안에서 active를 옮긴다. Enter는 열 단위, Tab은 행 단위로 돌고 끝에서 처음으로 돌아간다(엑셀과 같음). */
+/** 범위 안에서 active를 옮김. Enter는 열 방향, Tab은 행 방향으로 돌고, 끝에 닿으면 처음으로 돌아감(엑셀과 같음). */
 export function advanceWithinRange(selection: Selection, dRow: number, dCol: number): Selection {
   const { start, end } = selectionRange(selection);
   const rows = end.row - start.row + 1;

@@ -13,13 +13,13 @@ interface RemoteAiActivityProps {
   participants: Participant[];
 }
 
-/** 제안 값은 보여 주지 않는다. 확정되지 않은 값이 실제 데이터처럼 보이면 혼란스럽다. */
+/** AI 제안 값은 보여 주지 않음. 확정되지 않은 값이 실제 데이터처럼 보이면 헷갈리기 때문. */
 export const RemoteAiActivity = memo(function RemoteAiActivity({
   participants,
 }: RemoteAiActivityProps) {
   return participants.map(({ clientId, isSelf, user, ai }) => {
     if (isSelf || !ai?.range) return null;
-    // 다른 탭에서 온 범위라 시트 안으로 자른다.
+    // 다른 탭에서 온 범위라 시트 밖으로 벗어나지 않게 자름.
     const range = intersectRanges(ai.range, SHEET_RANGE);
     if (!range) return null;
     const rect = outsetRect(rangeRect(range));
@@ -35,7 +35,7 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
             backgroundColor: `${user.color}0d`,
           }}
         />
-        {/* 같은 범위의 선택 이름표와 겹치지 않게 오른쪽 끝에 붙인다. */}
+        {/* 같은 범위에 붙는 선택 이름표와 겹치지 않게 오른쪽 끝에 붙임. */}
         <AnchoredLabel
           rect={rect}
           below={labelBelow}

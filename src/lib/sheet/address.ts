@@ -4,7 +4,7 @@ export interface CellCoord {
   col: number;
 }
 
-/** 시작/끝이 정규화된(start <= end) 사각형 범위. */
+/** start <= end로 정리된 사각형 범위 */
 export interface CellRange {
   start: CellCoord;
   end: CellCoord;

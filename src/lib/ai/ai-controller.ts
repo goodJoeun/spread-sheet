@@ -27,8 +27,8 @@ import { applyProgress, createRun, finishRun, isRunning, type AiMessage, type Ai
 import { AiRequestError, type AiTransport } from "./transport";
 
 /**
- * AI 결과는 제안으로만 들고 있다가 적용할 때 한 트랜잭션으로 쓴다. 그래서 실행 취소 한 번으로 모두 되돌아간다.
- * 요청 시점 값(base)과 달라진 셀은 다른 참여자가 바꾼 것으로 보고 기본으로 건너뛴다.
+ * AI 결과는 제안으로만 들고 있다가, 적용할 때 한 트랜잭션으로 한꺼번에 씀. 그래서 실행 취소 한 번으로 모두 되돌릴 수 있음.
+ * 요청 때 값(base)과 달라진 셀은 다른 참여자가 바꾼 것으로 보고 기본으로 건너뜀.
  */
 
 export const SLOW_AFTER_MS = 5_000;
@@ -43,7 +43,7 @@ export interface AiSheetBinding {
 
 export interface AiPresenceBinding {
   setAi(activity: AiActivity | null): void;
-  /** 없으면 다른 참여자가 없는 것으로 본다. */
+  /** 없으면 다른 참여자가 없는 것으로 봄. */
   getParticipants?(): readonly Participant[];
 }
 
@@ -54,9 +54,9 @@ export class AiController {
   readonly showOriginal = createStore(false);
   /** 다음 요청에 쓸 모델. null이면 서버 기본 모델 */
   readonly model = createStore<string | null>(null);
-  /** 충돌한 셀 중 덮어쓰기로 고른 것: 셀 → 고를 때 본 값 */
+  /** 충돌한 셀 중 덮어쓰기로 고른 셀: 셀 → 고를 때 본 값 */
   readonly overwrites = createStore<ReadonlyMap<string, string>>(new Map());
-  /** 셀 잠금. 켜 두면 다음 요청부터 그 범위를 끝날 때까지 다른 참여자가 바꿀 수 없다. */
+  /** 셀 잠금 토글. 켜 두면 다음 요청부터, 실행이 끝날 때까지 요청 범위를 다른 참여자가 바꿀 수 없음. */
   readonly lockCells = createStore(false);
 
   private nextId = 1;
@@ -72,7 +72,7 @@ export class AiController {
     private readonly presence: AiPresenceBinding = { setAi() {} },
   ) {}
 
-  /** 생성자에서 구독하지 않는다. React 개발 모드의 정리 후 재연결에서 구독이 새거나 끊기지 않게. */
+  /** 구독은 생성자가 아니라 여기서 시작함. React 개발 모드가 정리했다가 다시 연결해도 구독이 새거나 끊기지 않게. */
   connect(): () => void {
     this.publishedActivity = "";
     this.publishActivity();
@@ -84,7 +84,7 @@ export class AiController {
     };
   }
 
-  /** 저장하지 않고 매번 지금 값과 비교한다. 바꾼 사람이 원래 값으로 되돌리면 충돌도 저절로 풀린다. */
+  /** 비교 결과를 저장하지 않고 매번 지금 값과 다시 비교함. 그래서 바꾼 사람이 원래 값으로 되돌리면 충돌도 저절로 풀림. */
   states(run: AiRun | null = this.active.get()): ProposalState[] {
     if (!run) return [];
     const values = valuesOf(this.doc);
@@ -178,7 +178,7 @@ export class AiController {
         }
       })
       .catch((error: unknown) => {
-        // 중단·시간 초과·완료로 이미 정리된 실행이면 무시한다.
+        // 중단·시간 초과·완료로 이미 정리된 실행이면 무시함.
         if (this.inflight?.runId !== run.id) return;
         this.fail(run.id, error instanceof AiRequestError ? error.info : aiError("network"));
       });
@@ -198,17 +198,17 @@ export class AiController {
     const run = this.active.get();
     if (!run || run.status !== "review" || run.proposals.length === 0) return;
 
-    // 내가 입력 중이던 값도 먼저 확정한다. 그 셀이 대상이면 충돌로 판단된다.
+    // 내가 입력 중이던 값도 먼저 확정함. 그 셀이 제안 대상이면 충돌로 판단됨.
     this.sheet.commitEdit();
-    // 화면에 보이던 상태가 아니라 지금 값으로 다시 판단한다. 판단과 쓰기를 같은 동기 코드에서 하므로
-    // 그 사이에 다른 탭의 변경(BroadcastChannel 메시지)이 끼어들 수 없다.
+    // 화면에 보이던 상태가 아니라 지금 값으로 다시 판단함. 판단과 쓰기를 같은 동기 코드에서 하므로,
+    // 그 사이에 다른 탭의 변경(BroadcastChannel 메시지)이 끼어들 수 없음.
     const states = this.states(run);
     const writes = states.filter(writable).map((s) => s.proposal);
     const skipped = summarize(states).skipped;
 
     const box = boundingRange(writes);
     if (box) {
-      // 적용 직전의 선택을 바뀐 범위로 옮겨 둔다. 실행 취소하면 이 범위로 돌아온다.
+      // 적용 직전에 선택을 바뀔 범위로 옮겨 둠. 그래야 실행 취소했을 때 이 범위로 돌아옴.
       this.sheet.select({ anchor: box.start, focus: box.end, active: box.start }, box.start);
       writeValues(
         this.doc,
@@ -239,7 +239,7 @@ export class AiController {
     this.closeReview();
   }
 
-  /** 모델은 원래 요청이 아니라 지금 고른 것으로 보낸다. */
+  /** 다시 시도할 때는 원래 요청의 모델이 아니라 지금 고른 모델로 보냄. */
   retry(runId: number): boolean {
     const message = this.messages.get().find((m) => m.role === "assistant" && m.run.id === runId);
     if (!message || message.role !== "assistant") return false;
@@ -264,7 +264,7 @@ export class AiController {
     }
     const hadProposals = (this.findRun(runId)?.proposals.length ?? 0) > 0;
     this.update(runId, (r) => applyProgress(r, event));
-    // 첫 제안이 오면 그 셀을 화면에 보여 준다. 다른 곳을 보고 있어도 생성 과정을 볼 수 있게.
+    // 첫 제안이 오면 그 셀로 화면을 옮김. 다른 곳을 보고 있어도 생성 과정을 볼 수 있게.
     const first = this.findRun(runId)?.proposals[0];
     if (!hadProposals && first) this.sheet.reveal(first.coord);
     return false;
@@ -280,7 +280,7 @@ export class AiController {
   private fail(runId: number, error: AiErrorInfo): void {
     const current = this.inflight;
     this.settle();
-    // 시간 초과처럼 아직 응답을 받고 있는 경우 요청도 끊는다.
+    // 시간 초과처럼 아직 응답을 받는 중이면 요청도 끊음.
     if (current?.runId === runId) current.abort.abort();
     this.update(runId, (r) => ({ ...r, status: "error", slow: false, error }));
     this.active.set(null);
@@ -300,7 +300,7 @@ export class AiController {
     this.sheet.focus();
   }
 
-  /** 상태나 범위가 바뀔 때만 알린다. 글자가 들어올 때마다 다른 탭에 보내지 않도록. */
+  /** 상태나 범위가 바뀔 때만 다른 탭에 알림. 글자가 들어올 때마다 보내지 않도록. */
   private publishActivity(): void {
     const activity = aiActivityOf(this.active.get());
     const key = activity

@@ -13,14 +13,14 @@ import {
 } from "./schema";
 
 /**
- * 셀마다 중첩 Y.Map을 두지 않고 평평한 키로 저장한다(values "B2" → "100", formats "B2.bold" → true).
- * 빈 셀에 두 탭이 동시에 처음 쓰면 중첩 Map은 각자 새 Map을 만들어 한쪽이 통째로 사라지지만,
- * 평평한 키는 서로 다른 키라 두 변경이 모두 남는다.
+ * 셀마다 Y.Map을 따로 두지 않고 평평한 키로 저장함(values "B2" → "100", formats "B2.bold" → true).
+ * 빈 셀에 두 탭이 동시에 처음 쓰면, 셀마다 Map을 두는 방식은 각자 새 Map을 만들어 한쪽이 통째로 사라짐.
+ * 평평한 키는 서로 다른 키라서 두 변경이 모두 남음.
  */
 
 /**
- * 트랜잭션 origin. UndoManager는 이 origin의 변경만 추적하므로,
- * 다른 탭에서 온 변경(origin = provider)이나 저장소에서 불러온 변경은 실행 취소 대상이 아니다.
+ * 트랜잭션 origin. UndoManager는 이 origin의 변경만 추적함.
+ * 그래서 다른 탭에서 온 변경(origin = provider)이나 저장소에서 불러온 변경은 실행 취소 대상이 아님.
  */
 export const EditOrigin = {
   User: "user-edit",

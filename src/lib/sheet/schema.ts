@@ -1,6 +1,6 @@
 import { parseA1, rangeContains, toA1, type CellCoord, type CellRange } from "./address";
 
-/** 순수 로직(선택·키 매핑·좌표)이 Yjs를 끌어오지 않도록 document.ts와 나눠 둔다. */
+/** 선택·키 매핑·좌표 같은 순수 로직이 Yjs를 끌어오지 않도록 document.ts와 나눠 둠. */
 
 export const ROW_COUNT = 100;
 export const COL_COUNT = 26;
@@ -30,7 +30,7 @@ export function defaultAlignment(value: string): Alignment {
   return NUMBER_PATTERN.test(value) ? "right" : "left";
 }
 
-/** 시트 안의 셀을 정규 A1 표기(대문자, $ 없음)로 적었는지. 다른 탭·브라우저에서 온 주소를 검증할 때 쓴다. */
+/** 시트 안의 셀을 표준 A1 표기(대문자, $ 없음)로 적었는지 확인함. 다른 탭·브라우저에서 온 주소를 검증할 때 씀. */
 export function isSheetCellA1(input: string): boolean {
   const coord = parseA1(input);
   return coord !== null && isInSheet(coord) && toA1(coord) === input;
@@ -44,7 +44,7 @@ export interface CellFormat extends Partial<Record<FormatKey, true>> {
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
-/** 저장소에 들어가는 서식 값은 형식을 검증한다(다른 탭·AI에서 온 값도 같은 함수를 거친다). */
+/** 저장소에 들어가는 서식 값의 형식을 검증함. 다른 탭이나 AI에서 온 값도 이 함수를 거침. */
 export function isValidStyle(key: StyleKey, value: string): boolean {
   if (key === "align") return (ALIGNMENTS as readonly string[]).includes(value);
   return HEX_COLOR.test(value);
