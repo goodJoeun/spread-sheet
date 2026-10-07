@@ -95,6 +95,48 @@ describe("editing", () => {
   });
 });
 
+describe("formula bar", () => {
+  it("mirrors the cell editor draft and clears it when the edit ends", () => {
+    const { controller, view, typeInto } = setup();
+    typeInto("ab");
+    expect(controller.draft.get()).toBe("ab");
+    view.type("c");
+    controller.draftChanged();
+    expect(controller.draft.get()).toBe("abc");
+    controller.cancelEdit();
+    expect(controller.draft.get()).toBe("");
+  });
+
+  it("starts an edit from outside the cell and commits it like cell typing", () => {
+    const { doc, controller, draft, published, active } = setup("B2");
+    expect(controller.replaceDraft("from bar")).toBe(true);
+    expect(controller.edit.get()).toEqual({ mode: "edit", coord: at("B2") });
+    expect(draft()).toBe("from bar");
+    expect(published.draft.at(-1)).toBe("from bar");
+
+    controller.runAction({ type: "advance", dRow: 1, dCol: 0 });
+    expect(getValue(doc, at("B2"))).toBe("from bar");
+    expect(active()).toBe("B3");
+  });
+
+  it("refuses to start an edit on a locked cell", () => {
+    const locked: Participant = {
+      clientId: 2,
+      isSelf: false,
+      user: { name: "다른 사람", color: "#e8710a" },
+      selection: null,
+      editing: null,
+      draft: null,
+      ai: { status: "generating", range: parseRangeA1("B2:B2")!, locked: true },
+    };
+    const { controller, draft } = setup("B2", [locked]);
+    expect(controller.replaceDraft("x")).toBe(false);
+    expect(controller.isEditing()).toBe(false);
+    expect(draft()).toBe("");
+    expect(controller.lockNotice.get()).toEqual(at("B2"));
+  });
+});
+
 describe("undo", () => {
   it("treats undo while editing as discarding the draft, which redo brings back", () => {
     const { doc, controller, typeInto } = setup();

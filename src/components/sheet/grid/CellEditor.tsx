@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
 import type { Rect } from "@/lib/sheet/geometry";
 import { COL_WIDTH } from "@/lib/sheet/geometry";
+import { DRAFT_INPUT_PROPS } from "@/lib/sheet/draft-input";
 import type { CellFormat } from "@/lib/sheet/schema";
 import { strings } from "@/resources/strings";
 import { cellTextStyle } from "./cell-style";
@@ -27,6 +28,7 @@ export function CellEditor({ inputRef, handlers, editing, format, rect }: CellEd
     <input
       ref={inputRef}
       type="text"
+      {...DRAFT_INPUT_PROPS}
       aria-label={strings.grid.cellEditor}
       autoComplete="off"
       spellCheck={false}
