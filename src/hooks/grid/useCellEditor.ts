@@ -1,6 +1,7 @@
-import { useMemo, useRef, type KeyboardEvent, type RefObject } from "react";
+import { useMemo, useRef, type FocusEvent, type KeyboardEvent, type RefObject } from "react";
 import type { SheetController } from "@/lib/controller/sheet-controller";
 import { isApplePlatform } from "@/lib/platform";
+import { isDraftInput } from "@/lib/sheet/draft-input";
 import { resolveGridKey } from "@/lib/sheet/keymap";
 
 /**
@@ -62,9 +63,9 @@ export function useCellEditor(
           // 잠긴 셀이라 편집을 시작하지 못했으면 조합한 글자가 편집칸에 남지 않게 지운다.
           if (!controller.isEditing()) controller.cancelEdit();
         },
-        onBlur: () => {
-          // 다른 창·탭으로 전환한 경우에는 편집을 유지한다(돌아오면 이어서 입력).
-          if (!document.hasFocus()) return;
+        onBlur: (e: FocusEvent<HTMLInputElement>) => {
+          // 다른 창·탭으로 전환하거나 수식 입력줄로 옮겨 가면 편집을 유지한다(그곳에서 이어서 입력).
+          if (!document.hasFocus() || isDraftInput(e.relatedTarget)) return;
           controller.commitEdit();
         },
       },

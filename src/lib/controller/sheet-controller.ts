@@ -79,6 +79,8 @@ interface StackItemEvent {
 export class SheetController {
   readonly selection: Store<Selection>;
   readonly edit: Store<EditState | null> = createStore<EditState | null>(null);
+  /** 편집 중인 글자. 수식 입력줄이 셀 편집칸과 같은 글자를 보여 주게 한다. */
+  readonly draft: Store<string> = createStore("");
   /** 다른 참여자가 잠근 셀을 바꾸려다 막힌 위치. 선택을 옮기면 지운다. */
   readonly lockNotice: Store<CellCoord | null> = createStore<CellCoord | null>(null);
   private view: SheetView = detachedView();
@@ -160,23 +162,44 @@ export class SheetController {
     }
     if (keepContent) this.view.writeDraft(getValue(this.session.doc, coord));
     this.edit.set({ mode, coord });
+    this.draft.set(this.view.readDraft());
   }
 
   /** 편집칸 글자가 바뀌었다. 다른 참여자가 확정 전에도 입력 중인 글자를 볼 수 있게 알린다. */
   draftChanged(): void {
-    if (this.edit.get()) this.session.presence.setDraft?.(this.view.readDraft());
+    if (!this.edit.get()) return;
+    const draft = this.view.readDraft();
+    this.draft.set(draft);
+    this.session.presence.setDraft?.(draft);
+  }
+
+  /**
+   * 셀 편집칸 밖(수식 입력줄)에서 글자를 바꿨다. 편집 중이 아니면 이 셀의 편집을 시작한다.
+   * 셀 편집칸에도 같은 글자를 써 두므로 확정·이동·다른 참여자 알림은 셀에서 입력할 때와 같다.
+   * @returns 잠긴 셀이라 편집을 시작하지 못했으면 false
+   */
+  replaceDraft(text: string): boolean {
+    if (!this.isEditing()) this.startEdit("edit", false);
+    if (!this.isEditing()) return false;
+    this.view.writeDraft(text);
+    this.draftChanged();
+    return true;
   }
 
   commitEdit(): void {
     const current = this.edit.get();
     if (!current) return;
     setValue(this.session.doc, current.coord, this.view.readDraft(), EditOrigin.User);
-    this.view.writeDraft("");
-    this.edit.set(null);
+    this.clearDraft();
   }
 
   cancelEdit(): void {
+    this.clearDraft();
+  }
+
+  private clearDraft(): void {
     this.view.writeDraft("");
+    this.draft.set("");
     this.edit.set(null);
   }
 
