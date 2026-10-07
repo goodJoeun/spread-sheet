@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 16px에서도 번지지 않게 모든 좌표를 2의 배수에 맞춤 -->
+  <rect width="32" height="32" rx="7" fill="#1a73e8"/>
+  <!-- 시트: 머리글 행 + 3×3 격자 -->
+  <rect x="4" y="4" width="24" height="24" rx="2" fill="#ffffff"/>
+  <path d="M4 6a2 2 0 0 1 2-2h20a2 2 0 0 1 2 2v4H4z" fill="#d3e3fd"/>
+  <path d="M10 4h2v24h-2zM20 4h2v24h-2zM4 10h24v2H4zM4 20h24v2H4z" fill="#8ab4f8"/>
+  <!-- 가운데 셀: AI 제안 색 -->
+  <rect x="12" y="12" width="8" height="8" fill="#7c3aed"/>
+</svg>
