@@ -84,21 +84,24 @@ export interface OverlapNotice {
 /** AI 요청창 위에 뜨는 안내. 다른 참여자의 AI 편집과 범위가 겹칠 때만 있음. lock은 내 셀 잠금이 켜져 있는지. */
 export function overlapNotice(overlaps: readonly AiOverlap[], lock: boolean): OverlapNotice | null {
   const C = strings.ai.composer;
+  // 여러 사람이 겹치면, 모두 검토 중일 때만 "검토 중"으로 알림.
   const describe = (list: readonly AiOverlap[]) => ({
     names: list.map((o) => o.participant.user.name).join(", "),
-    reviewing: list.every((o) => o.activity.status === "reviewing"),
+    stage: list.every((o) => o.activity.status === "reviewing")
+      ? ("reviewing" as const)
+      : ("generating" as const),
   });
   const lockedByOthers = overlaps.filter((o) => o.activity.locked);
   if (lockedByOthers.length > 0) {
-    const { names, reviewing } = describe(lockedByOthers);
-    return { text: C.lockedByOther(names, reviewing), blocking: true };
+    const { names, stage } = describe(lockedByOthers);
+    return { text: C.lockedByOther(names, stage), blocking: true };
   }
   if (overlaps.length === 0) return null;
-  const { names, reviewing } = describe(overlaps);
+  const { names, stage } = describe(overlaps);
   if (blockingOverlaps(overlaps, lock).length > 0) {
-    return { text: C.cannotLock(names, reviewing), blocking: true };
+    return { text: C.cannotLock(names, stage), blocking: true };
   }
-  return { text: C.overlap(names, reviewing), blocking: false };
+  return { text: C.overlap(names, stage), blocking: false };
 }
 
 /**
@@ -115,9 +118,7 @@ export function editorNotices(participants: readonly Participant[], coord: CellC
     notices.push(strings.grid.coEditing(coEditors.map((p) => p.user.name).join(", ")));
   }
   for (const { participant, activity } of aiActivitiesAt(participants, coord)) {
-    notices.push(
-      strings.grid.inRemoteAiRange(participant.user.name, activity.status === "reviewing"),
-    );
+    notices.push(strings.grid.inRemoteAiRange(participant.user.name, activity.status));
   }
   return notices;
 }

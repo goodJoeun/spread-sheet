@@ -1,11 +1,19 @@
 /**
  * 화면에 보이는 문구와 사용자에게 전달되는 메시지. 문구는 이 파일에서만 고침.
- * 값이 들어가는 문구는 함수로 둠. 서버(오류·경고 메시지)와 브라우저가 같이 씀.
+ * 값이 들어가는 문구는 함수로 둠. 서버는 오류·경고를 코드로만 보내고, 문구는 브라우저가 여기서 고름.
  */
 
 const wholeSheet = "시트 전체";
-/** 다른 참여자의 AI 편집 단계 */
-const aiActivity = (reviewing: boolean) => (reviewing ? "AI 결과 검토" : "AI 편집");
+
+/** 다른 참여자의 AI 편집 단계. lib의 AiActivity["status"]와 같은 값(resources는 lib를 import하지 않음) */
+type AiStage = "generating" | "reviewing";
+interface AiActivityLabel {
+  status: AiStage;
+  locked: boolean;
+}
+const aiActivity = (stage: AiStage) => (stage === "reviewing" ? "AI 결과 검토" : "AI 편집");
+const aiVerb = (stage: AiStage) => (stage === "reviewing" ? "검토" : "편집");
+const lockedSuffix = (locked: boolean) => (locked ? " · 잠금" : "");
 
 export const strings = {
   app: {
@@ -55,8 +63,8 @@ export const strings = {
     nameInput: "내 이름",
     saveName: "이름 저장",
     status: {
-      ai: (where: string | null, reviewing: boolean, locked: boolean) =>
-        `${where ?? wholeSheet} ${aiActivity(reviewing)} 중${locked ? " · 잠금" : ""}`,
+      ai: (where: string | null, { status, locked }: AiActivityLabel) =>
+        `${where ?? wholeSheet} ${aiActivity(status)} 중${lockedSuffix(locked)}`,
       editing: (cell: string) => `${cell} 입력 중`,
       viewing: (range: string) => `${range} 보는 중`,
       joining: "들어오는 중",
@@ -66,13 +74,13 @@ export const strings = {
   grid: {
     cellEditor: "셀 편집",
     remoteEditing: "· 입력 중",
-    remoteAi: (reviewing: boolean, locked: boolean) =>
-      `${aiActivity(reviewing)} 중${locked ? " · 잠금" : ""}`,
+    remoteAi: ({ status, locked }: AiActivityLabel) =>
+      `${aiActivity(status)} 중${lockedSuffix(locked)}`,
     lockedByAi: (name: string) =>
       `${name}님이 AI 편집을 위해 잠근 셀이에요 · 끝나면 편집할 수 있어요`,
     coEditing: (names: string) => `${names}님도 이 셀을 입력 중이에요`,
-    inRemoteAiRange: (name: string, reviewing: boolean) =>
-      `${name}님이 ${aiActivity(reviewing)} 중 · 입력한 값은 기본으로 유지돼요`,
+    inRemoteAiRange: (name: string, stage: AiStage) =>
+      `${name}님이 ${aiActivity(stage)} 중 · 입력한 값은 기본으로 유지돼요`,
     aiGenerating: (count: number) => `AI가 제안을 만드는 중… ${count > 0 ? `${count}개` : ""}`,
     aiReviewing: (count: number) => `AI 제안 ${count}개 · 검토 중`,
     aiChanged: (count: number) => `· 바뀐 셀 ${count}개`,
@@ -110,12 +118,12 @@ export const strings = {
       hint: "Enter로 보내기 · Shift+Enter 줄바꿈 · AI 결과는 적용하기 전까지 시트에 쓰이지 않아요",
       model: "AI 모델",
       modelTitle: "다음 요청에 쓸 모델",
-      overlap: (names: string, reviewing: boolean) =>
-        `${names}님이 이 범위를 AI로 ${reviewing ? "검토" : "편집"} 중이에요. 요청할 수는 있지만, 먼저 적용된 셀은 내 결과에서 충돌로 표시되고 기본으로 건너뛰어요.`,
-      lockedByOther: (names: string, reviewing: boolean) =>
-        `${names}님이 이 범위를 잠그고 AI로 ${reviewing ? "검토" : "편집"} 중이에요. 끝날 때까지 이 범위에는 요청할 수 없어요.`,
-      cannotLock: (names: string, reviewing: boolean) =>
-        `${names}님이 이 범위를 AI로 ${reviewing ? "검토" : "편집"} 중이라 잠글 수 없어요. 셀 잠금을 끄거나 끝난 뒤에 요청해 주세요.`,
+      overlap: (names: string, stage: AiStage) =>
+        `${names}님이 이 범위를 AI로 ${aiVerb(stage)} 중이에요. 요청할 수는 있지만, 먼저 적용된 셀은 내 결과에서 충돌로 표시되고 기본으로 건너뛰어요.`,
+      lockedByOther: (names: string, stage: AiStage) =>
+        `${names}님이 이 범위를 잠그고 AI로 ${aiVerb(stage)} 중이에요. 끝날 때까지 이 범위에는 요청할 수 없어요.`,
+      cannotLock: (names: string, stage: AiStage) =>
+        `${names}님이 이 범위를 AI로 ${aiVerb(stage)} 중이라 잠글 수 없어요. 셀 잠금을 끄거나 끝난 뒤에 요청해 주세요.`,
     },
 
     run: {

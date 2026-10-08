@@ -8,7 +8,7 @@ import type { Participant } from "./presence-state";
 export function participantStatus(p: Participant): string {
   if (p.ai) {
     const where = p.ai.range ? rangeToA1(p.ai.range) : null;
-    return strings.participants.status.ai(where, p.ai.status === "reviewing", p.ai.locked);
+    return strings.participants.status.ai(where, p.ai);
   }
   if (p.editing) return strings.participants.status.editing(toA1(p.editing));
   if (p.selection) {

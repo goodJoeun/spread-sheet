@@ -45,7 +45,7 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
           ) : (
             <Sparkles size={ICON.xs} strokeWidth={2.5} aria-hidden />
           )}
-          {user.name} · {strings.grid.remoteAi(ai.status === "reviewing", ai.locked)}
+          {user.name} · {strings.grid.remoteAi(ai)}
         </AnchoredLabel>
       </Fragment>
     );
