@@ -68,11 +68,12 @@ export function Grid() {
 
   const activeCoord = edit?.coord ?? selection.active;
   const activeRect = outsetRect(cellRect(activeCoord));
-  const notices = edit
-    ? editorNotices(participants, edit.coord)
-    : blockedAt
-      ? lockedCellNotices(participants, blockedAt)
-      : [];
+  // 편집칸 위 안내: 편집 중이면 같은 셀을 함께 고치는 사람, 아니면 잠긴 셀을 고치려다 막힌 이유
+  const notices = (() => {
+    if (edit) return editorNotices(participants, edit.coord);
+    if (blockedAt) return lockedCellNotices(participants, blockedAt);
+    return [];
+  })();
   // 다른 참여자가 셀을 바꾸면 문서 버전(version)이 바뀌어 다시 그려짐. 그래서 새로 생긴 충돌도 바로 보임.
   const aiStates = aiRun ? ai.states(aiRun) : [];
 

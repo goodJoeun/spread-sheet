@@ -26,6 +26,7 @@ import {
   applyProgress,
   createRun,
   finishRun,
+  isReviewing,
   isRunning,
   type AiMessage,
   type AiRun,
@@ -127,7 +128,7 @@ export class AiController {
 
   isBusy(): boolean {
     const run = this.active.get();
-    return this.inflight !== null || run?.status === "review";
+    return this.inflight !== null || isReviewing(run);
   }
 
   send(instruction: string, scope: CellRange | null): boolean {
@@ -165,7 +166,7 @@ export class AiController {
 
   apply(): void {
     const run = this.active.get();
-    if (!run || run.status !== "review" || run.proposals.length === 0) return;
+    if (!isReviewing(run) || run.proposals.length === 0) return;
 
     // 내가 입력 중이던 값도 먼저 확정함. 그 셀이 제안 대상이면 충돌로 판단됨.
     this.sheet.commitEdit();
@@ -196,14 +197,14 @@ export class AiController {
 
   regenerate(): boolean {
     const run = this.active.get();
-    if (!run || run.status !== "review") return false;
+    if (!isReviewing(run)) return false;
     this.discard();
     return this.send(run.instruction, run.scope);
   }
 
   discard(): void {
     const run = this.active.get();
-    if (!run || run.status !== "review") return;
+    if (!isReviewing(run)) return;
     this.updateRun(run.id, (r) => ({ ...r, status: "discarded" }));
     this.closeReview();
   }
@@ -290,7 +291,7 @@ export class AiController {
     this.endRequest();
     this.updateRun(runId, finishRun);
     const run = this.findRun(runId);
-    this.active.set(run?.status === "review" ? run : null);
+    this.active.set(isReviewing(run) ? run : null);
   }
 
   private fail(runId: number, error: AiErrorInfo): void {

@@ -6,7 +6,7 @@ import {
 } from "@/lib/sheet/address";
 import { aiArea } from "@/lib/collab/locks";
 import type { AiActivity, Participant } from "@/lib/collab/presence-state";
-import { isRunning, type AiProposal, type AiRun } from "./run";
+import { isReviewing, isRunning, type AiProposal, type AiRun } from "./run";
 
 /**
  * 요청 때 값(base)에서 바뀐 셀은 충돌로 보고 기본으로 건너뜀.
@@ -80,9 +80,10 @@ export function activityRange(
  * 잠근 실행은 요청한 범위를 그대로 알림. 제안에 따라 범위가 바뀌면 어느 셀이 잠겼는지 예측할 수 없기 때문.
  */
 export function aiActivityOf(run: AiRun | null): AiActivity | null {
-  if (!run || !(isRunning(run) || run.status === "review")) return null;
+  const inProgress = isRunning(run) || isReviewing(run);
+  if (!run || !inProgress) return null;
   return {
-    status: run.status === "review" ? "reviewing" : "generating",
+    status: isReviewing(run) ? "reviewing" : "generating",
     range: run.locked ? run.scope : activityRange(run.scope, run.proposals),
     locked: run.locked,
   };

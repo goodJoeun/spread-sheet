@@ -5,7 +5,7 @@ import { useState, type KeyboardEvent, type ReactNode, type RefObject } from "re
 import { overlappingAi } from "@/lib/ai/coedit";
 import { overlapNotice } from "@/lib/ai/messages";
 import { AI_LIMITS, type AiConnectionInfo } from "@/lib/ai/protocol";
-import { isRunning } from "@/lib/ai/run";
+import { isReviewing, isRunning } from "@/lib/ai/run";
 import { isImeComposing } from "@/lib/platform";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { isMultiCell, selectionRange } from "@/lib/sheet/selection";
@@ -33,7 +33,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
   const active = useStore(ai.active);
   const lockCells = useStore(ai.lockCells);
   const running = isRunning(active);
-  const reviewing = active?.status === "review";
+  const reviewing = isReviewing(active);
 
   // 범위를 여러 칸 선택했으면 그 범위로, 아니면 시트 전체로 요청함. 사용자가 직접 고르면 그 선택을 따름.
   const [chosen, setChosen] = useState<ScopeMode | null>(null);

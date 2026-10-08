@@ -21,19 +21,21 @@ export function ConflictBanner({
   onOverwriteAll,
   onRegenerate,
 }: ConflictBannerProps) {
+  // 건너뛰는 셀이 하나라도 있으면 버튼은 "모두 덮어쓰기", 모두 덮어쓰기로 골랐으면 "모두 건너뛰기"
+  const someSkipped = skipped > 0;
   return (
     <Notice role="status" icon={GitCompareArrows}>
       <p>
-        {S.summary(conflicts)} {skipped > 0 ? S.keeping : S.overwriting}
+        {S.summary(conflicts)} {someSkipped ? S.keeping : S.overwriting}
       </p>
       {reviewing && (
         <div className="mt-sm flex flex-wrap gap-sm">
           <button
             type="button"
-            onClick={() => onOverwriteAll(skipped > 0)}
+            onClick={() => onOverwriteAll(someSkipped)}
             className="btn btn-sm btn-warn"
           >
-            {skipped > 0 ? S.overwriteAll : S.skipAll}
+            {someSkipped ? S.overwriteAll : S.skipAll}
           </button>
           <button type="button" onClick={onRegenerate} className="btn btn-sm btn-warn">
             <RefreshCw size={ICON.sm} aria-hidden />

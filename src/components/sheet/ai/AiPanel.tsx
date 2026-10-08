@@ -20,6 +20,7 @@ export function AiPanel() {
   const messages = useStore(ai.messages);
   const [draft, setDraft] = useState("");
   const connection = useAiConnection(ai);
+  const isMock = connection?.provider === "mock";
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -46,16 +47,10 @@ export function AiPanel() {
         <h2 className="text-title font-semibold text-fg">{strings.ai.panel.title}</h2>
         {connection && (
           <span
-            className={connection.provider === "mock" ? "badge badge-warn" : "badge"}
-            title={
-              connection.provider === "mock"
-                ? strings.ai.panel.mockTitle
-                : strings.ai.panel.connectedTitle
-            }
+            className={isMock ? "badge badge-warn" : "badge"}
+            title={isMock ? strings.ai.panel.mockTitle : strings.ai.panel.connectedTitle}
           >
-            {connection.provider === "mock"
-              ? strings.ai.panel.mockBadge
-              : strings.ai.panel.connectedBadge}
+            {isMock ? strings.ai.panel.mockBadge : strings.ai.panel.connectedBadge}
           </span>
         )}
         <button
@@ -87,9 +82,7 @@ export function AiPanel() {
                 </button>
               ))}
             </div>
-            {connection?.provider === "mock" && (
-              <Notice>{strings.ai.panel.mockHint(MOCK_TAGS)}</Notice>
-            )}
+            {isMock && <Notice>{strings.ai.panel.mockHint(MOCK_TAGS)}</Notice>}
           </div>
         ) : (
           messages.map((m) =>

@@ -45,7 +45,12 @@ export function hitTest(
     row: Math.floor((clientY - box.top - COL_HEADER_HEIGHT) / ROW_HEIGHT),
     col: Math.floor((clientX - box.left - ROW_HEADER_WIDTH) / COL_WIDTH),
   });
-  const kind: PointerTargetKind =
-    inColHeader && inRowHeader ? "corner" : inColHeader ? "col" : inRowHeader ? "row" : "cell";
-  return { kind, coord };
+  return { kind: pointerTargetKind(inColHeader, inRowHeader), coord };
+}
+
+function pointerTargetKind(inColHeader: boolean, inRowHeader: boolean): PointerTargetKind {
+  if (inColHeader && inRowHeader) return "corner";
+  if (inColHeader) return "col";
+  if (inRowHeader) return "row";
+  return "cell";
 }

@@ -7,7 +7,7 @@ import { useStore } from "@/hooks/useStore";
 import { summarize } from "@/lib/ai/coedit";
 import { aiWarningMessage } from "@/lib/ai/messages";
 import { modelLabel } from "@/lib/ai/protocol";
-import { isRunning, type AiRun } from "@/lib/ai/run";
+import { isReviewing, isRunning, type AiRun } from "@/lib/ai/run";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
@@ -29,12 +29,18 @@ export function AiRunCard({ run }: AiRunCardProps) {
   const active = useStore(ai.active);
   const busy = active !== null;
   const generating = isRunning(run);
-  const reviewing = run.status === "review";
+  const reviewing = isReviewing(run);
   // 생성 중이거나 검토 중인 실행만 지금 시트 값과 비교함. 문서나 덮어쓰기 선택이 바뀌면 다시 그림.
   useDocVersion(session.doc);
   useStore(ai.overwrites);
   const states = active?.id === run.id ? ai.states(run) : null;
   const summary = states ? summarize(states) : null;
+  const nothingToApply = summary?.toApply === 0;
+  const stopped = run.status === "error" || run.status === "cancelled";
+  // 실패하거나 중단한 실행은 받다 만 제안을 보여 주지 않음.
+  const showProposals = run.proposals.length > 0 && !stopped;
+  // 중단한 실행은 오류 정보가 없으므로 다시 시도할 수 있는 것으로 봄.
+  const canRetry = stopped && (run.error?.retryable ?? true);
 
   return (
     <div className="rounded-lg border border-line bg-surface text-body">
@@ -63,7 +69,9 @@ export function AiRunCard({ run }: AiRunCardProps) {
             {aiWarningMessage(warning)}
           </Notice>
         ))}
-        {run.excluded > 0 && <p className="text-label text-fg-subtle">{S.excluded(run.excluded)}</p>}
+        {run.excluded > 0 && (
+          <p className="text-label text-fg-subtle">{S.excluded(run.excluded)}</p>
+        )}
 
         {summary && summary.conflicts > 0 && (
           <ConflictBanner
@@ -75,7 +83,7 @@ export function AiRunCard({ run }: AiRunCardProps) {
           />
         )}
 
-        {run.proposals.length > 0 && run.status !== "error" && run.status !== "cancelled" && (
+        {showProposals && (
           <ProposalList
             proposals={run.proposals}
             states={states}
@@ -90,8 +98,8 @@ export function AiRunCard({ run }: AiRunCardProps) {
             <button
               type="button"
               onClick={() => ai.apply()}
-              disabled={summary?.toApply === 0}
-              title={summary?.toApply === 0 ? S.nothingToApply : undefined}
+              disabled={nothingToApply}
+              title={nothingToApply ? S.nothingToApply : undefined}
               className="btn btn-ai"
             >
               <Check size={ICON.sm} aria-hidden />
@@ -113,18 +121,17 @@ export function AiRunCard({ run }: AiRunCardProps) {
           </div>
         )}
 
-        {(run.status === "error" || run.status === "cancelled") &&
-          (run.error?.retryable ?? true) && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => ai.retry(run.id)}
-              className="btn btn-outline"
-            >
-              <RotateCcw size={ICON.sm} aria-hidden />
-              {S.retry}
-            </button>
-          )}
+        {canRetry && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => ai.retry(run.id)}
+            className="btn btn-outline"
+          >
+            <RotateCcw size={ICON.sm} aria-hidden />
+            {S.retry}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -58,6 +58,11 @@ export function isRunning(run: Pick<AiRun, "status"> | null | undefined): boolea
   return run?.status === "waiting" || run?.status === "streaming";
 }
 
+/** 결과를 다 받아, 적용할지 버릴지 고르는 중 */
+export function isReviewing(run: AiRun | null | undefined): run is AiRun {
+  return run?.status === "review";
+}
+
 export interface AiRunInit {
   id: number;
   instruction: string;
