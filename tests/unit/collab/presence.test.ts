@@ -135,12 +135,14 @@ describe("Presence", () => {
 
   it("brings coordinates from other tabs inside the sheet", async () => {
     const room = crypto.randomUUID();
+    // 색이 겹치면 한 탭이 나중에 색을 바꾸며 상태를 다시 알려서, 아래에서 직접 넣은 상태를 덮어씀.
+    const user = { name: "다른 탭", color: "#1e8e3e" };
     const a = openTab(room);
-    const b = openTab(room);
+    const b = openTab(room, { user });
     await Promise.all([a.presence.join(), b.presence.join()]);
     const far = { row: 500, col: -3 };
     b.awareness.setLocalState({
-      user: { name: "다른 탭", color: "#1e8e3e" },
+      user,
       selection: { anchor: far, focus: far, active: far },
       editing: far,
       draft: "입력 중",
