@@ -45,12 +45,21 @@ export interface AiModelOption {
   label: string;
 }
 
-/** 화면에서 고를 수 있는 모델. 비용을 통제하려고 서버는 이 목록과 ANTHROPIC_MODEL로만 요청함. */
-export const AI_MODELS: readonly AiModelOption[] = [
+/**
+ * 화면에서 고를 수 있는 모델. 비용을 통제하려고 서버는 이 목록과 ANTHROPIC_MODEL로만 요청함.
+ * 모델을 추가하고 화면 설명(strings)이나 지원 옵션(server/claude.ts)을 빠뜨리면 타입 오류가 남.
+ */
+export const AI_MODELS = [
   { id: "claude-opus-5-5", label: "Opus 5.5" },
   { id: "claude-sonnet-5-5", label: "Sonnet 5.5" },
   { id: "claude-haiku-4-5", label: "Haiku 4.5" },
-];
+] as const satisfies readonly AiModelOption[];
+
+export type AiModelId = (typeof AI_MODELS)[number]["id"];
+
+export function isAiModelId(id: string): id is AiModelId {
+  return AI_MODELS.some((m) => m.id === id);
+}
 
 /** 응답의 모델 id에는 날짜가 붙을 수 있음(예: claude-haiku-4-5-20251001). */
 export function modelLabel(id: string, options: readonly AiModelOption[] = AI_MODELS): string {

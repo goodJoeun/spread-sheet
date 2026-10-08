@@ -1,12 +1,12 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { AI_MODELS, type AiModelOption } from "../protocol";
+import { AI_MODELS, type AiModelId, type AiModelOption } from "../protocol";
 import type { ClaudeSetup } from "./claude";
 import { createMockAnthropicFetch } from "./mock-anthropic";
 
 /** 환경 변수는 .env.example 참고. API 키가 없거나 AI_MOCK=1이면, 같은 SDK 경로로 가짜 API를 씀. */
 
-const DEFAULT_MODEL = "claude-opus-5-5";
+const DEFAULT_MODEL: AiModelId = "claude-opus-5-5";
 const EFFORTS = ["low", "medium", "high"] as const;
 
 let cached: ClaudeSetup | null = null;

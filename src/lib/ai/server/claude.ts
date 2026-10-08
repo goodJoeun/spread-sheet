@@ -4,6 +4,7 @@ import {
   aiError,
   type AiEditRequest,
   type AiErrorInfo,
+  type AiModelId,
   type AiModelOption,
   type AiStreamEvent,
 } from "../protocol";
@@ -38,12 +39,27 @@ const MAX_TOKENS = 32000;
  * 지원하지 않는 옵션을 보내면 400이 나므로 모르는 모델에는 둘 다 쓰지 않는다.
  * fallbacks: 안전 분류기가 거절하면 서버가 다른 모델로 이어서 처리한다.
  */
-const MODEL_FEATURES: Record<string, { effort: boolean; fallbacks: boolean }> = {
+interface ModelFeatures {
+  effort: boolean;
+  fallbacks: boolean;
+}
+
+/** 고를 수 있는 모델(AI_MODELS)은 모두 여기 있어야 한다. */
+const OFFERED_MODEL_FEATURES: Record<AiModelId, ModelFeatures> = {
   "claude-opus-5-5": { effort: true, fallbacks: true },
-  "claude-opus-5": { effort: true, fallbacks: true },
   "claude-sonnet-5-5": { effort: true, fallbacks: true },
-  "claude-fable-5-1": { effort: true, fallbacks: true },
   "claude-haiku-4-5": { effort: false, fallbacks: false },
+};
+
+/** 목록에는 없지만 ANTHROPIC_MODEL로 기본 모델에 지정할 수 있는 모델 */
+const OTHER_MODEL_FEATURES: Record<string, ModelFeatures> = {
+  "claude-opus-5": { effort: true, fallbacks: true },
+  "claude-fable-5-1": { effort: true, fallbacks: true },
+};
+
+const MODEL_FEATURES: Record<string, ModelFeatures> = {
+  ...OTHER_MODEL_FEATURES,
+  ...OFFERED_MODEL_FEATURES,
 };
 
 export function buildParams(

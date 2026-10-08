@@ -3,7 +3,7 @@ import type { CellCoord } from "@/lib/sheet/address";
 import { sameCoord } from "@/lib/sheet/selection";
 import { strings } from "@/resources/strings";
 import { aiActivitiesAt, blockingOverlaps, type AiOverlap } from "./coedit";
-import type { AiErrorInfo, AiWarning } from "./protocol";
+import { isAiModelId, type AiErrorInfo, type AiModelId, type AiWarning } from "./protocol";
 import type { AiRun } from "./run";
 
 /** AI 기능의 상태를 화면 문구로 바꿈. 서버가 보낸 코드도 여기서 문구가 됨. */
@@ -23,10 +23,12 @@ export function aiWarningMessage(warning: AiWarning): string {
   }
 }
 
+/** AI_MODELS에 모델을 추가하고 설명을 빠뜨리면 여기서 타입 오류가 남. */
+const MODEL_DESCRIPTIONS: Readonly<Record<AiModelId, string>> = strings.ai.models.descriptions;
+
 /** 목록에 없는 모델은 서버가 기본값으로 정한 모델로 봄. */
 export function modelDescription(id: string): string {
-  const descriptions: Readonly<Record<string, string>> = strings.ai.models.descriptions;
-  return descriptions[id] ?? strings.ai.models.serverDefault;
+  return isAiModelId(id) ? MODEL_DESCRIPTIONS[id] : strings.ai.models.serverDefault;
 }
 
 export interface StatusLine {
