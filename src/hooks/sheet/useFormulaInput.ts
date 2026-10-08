@@ -40,35 +40,38 @@ export function useFormulaInput(
       if (el) el.value = valueRef.current;
     };
 
+    // 셀 편집칸(useCellEditor)과 같은 모양으로 돌려줌. 입력칸에 펼쳐 넣을 이벤트 처리기는 handlers에 담음.
     return {
-      onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => {
-        if (isImeComposing(e.nativeEvent)) return;
-        // 이 칸에서는 방향키가 언제나 글자 사이 커서를 움직인다(F2 편집 모드와 같음).
-        const action = resolveGridKey(e, "edit", isApplePlatform());
-        if (!action) return;
-        e.preventDefault();
-        controller.runAction(action);
-        // Enter·Tab으로 확정하거나 Esc로 취소하면 시트로 돌아가 바로 이어서 움직일 수 있게 한다.
-        if (action.type === "advance" || action.type === "cancelEdit") controller.focus();
-      },
-      onInput: () => {
-        const el = input();
-        if (!el || (composingRef.current && !controller.isEditing())) return;
-        if (!controller.replaceDraft(el.value)) restore();
-      },
-      onCompositionStart: () => {
-        composingRef.current = true;
-        // 조합 중인 글자가 들어오기 전 값으로 편집을 시작해 둔다.
-        if (!controller.isEditing()) controller.replaceDraft(input()?.value ?? "");
-      },
-      onCompositionEnd: () => {
-        composingRef.current = false;
-        if (!controller.isEditing()) restore();
-      },
-      onBlur: (e: FocusEvent<HTMLInputElement>) => {
-        // 다른 창·탭으로 전환하거나 셀 편집칸으로 옮겨 가면 편집을 유지한다.
-        if (!document.hasFocus() || isDraftInput(e.relatedTarget)) return;
-        controller.commitEdit();
+      handlers: {
+        onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => {
+          if (isImeComposing(e.nativeEvent)) return;
+          // 이 칸에서는 방향키가 언제나 글자 사이 커서를 움직인다(F2 편집 모드와 같음).
+          const action = resolveGridKey(e, "edit", isApplePlatform());
+          if (!action) return;
+          e.preventDefault();
+          controller.runAction(action);
+          // Enter·Tab으로 확정하거나 Esc로 취소하면 시트로 돌아가 바로 이어서 움직일 수 있게 한다.
+          if (action.type === "advance" || action.type === "cancelEdit") controller.focus();
+        },
+        onInput: () => {
+          const el = input();
+          if (!el || (composingRef.current && !controller.isEditing())) return;
+          if (!controller.replaceDraft(el.value)) restore();
+        },
+        onCompositionStart: () => {
+          composingRef.current = true;
+          // 조합 중인 글자가 들어오기 전 값으로 편집을 시작해 둔다.
+          if (!controller.isEditing()) controller.replaceDraft(input()?.value ?? "");
+        },
+        onCompositionEnd: () => {
+          composingRef.current = false;
+          if (!controller.isEditing()) restore();
+        },
+        onBlur: (e: FocusEvent<HTMLInputElement>) => {
+          // 다른 창·탭으로 전환하거나 셀 편집칸으로 옮겨 가면 편집을 유지한다.
+          if (!document.hasFocus() || isDraftInput(e.relatedTarget)) return;
+          controller.commitEdit();
+        },
       },
     };
   }, [controller, inputRef]);

@@ -19,7 +19,7 @@ export function FormulaBar() {
   const draft = useStore(controller.draft);
   const value = edit ? draft : getValue(session.doc, selection.active);
   const inputRef = useRef<HTMLInputElement>(null);
-  const handlers = useFormulaInput(controller, inputRef, value);
+  const { handlers } = useFormulaInput(controller, inputRef, value);
 
   return (
     <div className="flex h-8 shrink-0 items-center border-b border-line bg-surface text-body">

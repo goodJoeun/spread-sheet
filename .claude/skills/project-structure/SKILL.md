@@ -79,4 +79,4 @@ ai/run-card/
 
 ## 알려진 예외 (고치면 이 목록에서 지운다)
 
-- 없음.
+- `components/sheet/SheetContext.tsx`가 `useSheet`·`useSelection`·`useEditState` hook을 함께 내보낸다. context가 components에 있어서 hooks로 옮기면 hooks가 components를 import하게 되기 때문이다. context를 만드는 코드(`SheetProvider`)가 컨트롤러를 조립하는 곳이라 지금은 그대로 둔다.
