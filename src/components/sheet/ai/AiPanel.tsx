@@ -3,10 +3,11 @@
 import { Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { MOCK_SCENARIO_TAGS } from "@/lib/ai/mock-scenarios";
-import { rangeToA1 } from "@/lib/sheet/address";
+import { rangeToA1, type CellRange } from "@/lib/sheet/address";
 import { useStore } from "@/hooks/useStore";
 import { useSheet } from "../SheetContext";
 import { AiComposer } from "./AiComposer";
+import { ModelSelect } from "./ModelSelect";
 import { AiRunCard } from "./run-card";
 import { useAiConnection } from "@/hooks/ai/useAiConnection";
 import { Notice } from "@/components/ui/Notice";
@@ -65,37 +66,17 @@ export function AiPanel() {
 
       <div ref={listRef} className="min-h-0 flex-1 space-y-lg overflow-y-auto p-lg">
         {messages.length === 0 ? (
-          <div className="space-y-lg pt-md text-body text-fg-muted">
-            <p>{strings.ai.panel.intro}</p>
-            <div className="flex flex-col items-start gap-sm">
-              {strings.ai.panel.examples.map((example) => (
-                <button
-                  key={example}
-                  type="button"
-                  onClick={() => {
-                    setDraft(example);
-                    inputRef.current?.focus();
-                  }}
-                  className="chip chip-suggest"
-                >
-                  {example}
-                </button>
-              ))}
-            </div>
-            {isMock && <Notice>{strings.ai.panel.mockHint(MOCK_TAGS)}</Notice>}
-          </div>
+          <AiIntro
+            showMockHint={isMock}
+            onPickExample={(example) => {
+              setDraft(example);
+              inputRef.current?.focus();
+            }}
+          />
         ) : (
           messages.map((m) =>
             m.role === "user" ? (
-              <div
-                key={m.id}
-                className="ml-2xl rounded-lg bg-ai-soft px-lg py-md text-body text-fg"
-              >
-                <p className="whitespace-pre-wrap">{m.text}</p>
-                <p className="mt-xs text-caption text-ai-ink/70">
-                  {strings.ai.panel.requestScope(m.scope && rangeToA1(m.scope))}
-                </p>
-              </div>
+              <UserMessage key={m.id} text={m.text} scope={m.scope} />
             ) : (
               <AiRunCard key={m.id} run={m.run} />
             ),
@@ -107,8 +88,47 @@ export function AiPanel() {
         inputRef={inputRef}
         draft={draft}
         onDraftChange={setDraft}
-        connection={connection}
+        modelSelect={connection && <ModelSelect connection={connection} />}
       />
     </aside>
+  );
+}
+
+/** 대화가 없을 때 보이는 첫 안내. 예시를 누르면 요청창에 채워 넣음. */
+function AiIntro({
+  showMockHint,
+  onPickExample,
+}: {
+  showMockHint: boolean;
+  onPickExample: (example: string) => void;
+}) {
+  return (
+    <div className="space-y-lg pt-md text-body text-fg-muted">
+      <p>{strings.ai.panel.intro}</p>
+      <div className="flex flex-col items-start gap-sm">
+        {strings.ai.panel.examples.map((example) => (
+          <button
+            key={example}
+            type="button"
+            onClick={() => onPickExample(example)}
+            className="chip chip-suggest"
+          >
+            {example}
+          </button>
+        ))}
+      </div>
+      {showMockHint && <Notice>{strings.ai.panel.mockHint(MOCK_TAGS)}</Notice>}
+    </div>
+  );
+}
+
+function UserMessage({ text, scope }: { text: string; scope: CellRange | null }) {
+  return (
+    <div className="ml-2xl rounded-lg bg-ai-soft px-lg py-md text-body text-fg">
+      <p className="whitespace-pre-wrap">{text}</p>
+      <p className="mt-xs text-caption text-ai-ink/70">
+        {strings.ai.panel.requestScope(scope && rangeToA1(scope))}
+      </p>
+    </div>
   );
 }

@@ -8,7 +8,7 @@ import { strings } from "@/resources/strings";
 import { AiPanel } from "./ai/AiPanel";
 import { FormulaBar } from "./FormulaBar";
 import { Grid } from "./grid/Grid";
-import { ParticipantList } from "./ParticipantList";
+import { ParticipantList } from "./participant-list";
 import { SheetProvider, useSheet } from "./SheetContext";
 import { Toolbar } from "./toolbar";
 import { useSheetSession } from "@/hooks/sheet/useSheetSession";

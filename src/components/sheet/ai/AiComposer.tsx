@@ -4,7 +4,7 @@ import { ArrowUp, Lock, Sparkles, Square } from "lucide-react";
 import { useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { overlappingAi } from "@/lib/ai/coedit";
 import { overlapNotice } from "@/lib/ai/messages";
-import { AI_LIMITS, type AiConnectionInfo } from "@/lib/ai/protocol";
+import { AI_LIMITS } from "@/lib/ai/protocol";
 import { isReviewing, isRunning } from "@/lib/ai/run";
 import { isImeComposing } from "@/lib/platform";
 import { rangeToA1 } from "@/lib/sheet/address";
@@ -13,7 +13,6 @@ import { useStore } from "@/hooks/useStore";
 import { useSelection, useSheet } from "../SheetContext";
 import { useParticipants } from "@/hooks/sheet/useParticipants";
 import { Notice } from "@/components/ui/Notice";
-import { ModelSelect } from "./ModelSelect";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
 
@@ -23,10 +22,11 @@ interface AiComposerProps {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   draft: string;
   onDraftChange: (text: string) => void;
-  connection: AiConnectionInfo | null;
+  /** 보내기 버튼 왼쪽에 놓을 모델 고르기. 서버 연결 정보를 아는 패널이 만들어 넘김. */
+  modelSelect?: ReactNode;
 }
 
-export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiComposerProps) {
+export function AiComposer({ inputRef, draft, onDraftChange, modelSelect }: AiComposerProps) {
   const { ai, session } = useSheet();
   const selection = useSelection();
   const participants = useParticipants(session.presence);
@@ -94,7 +94,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
           className="block max-h-32 min-h-10 w-full resize-none bg-transparent text-body outline-none placeholder:text-fg-faint"
         />
         <div className="mt-xs flex items-center gap-md">
-          {connection && <ModelSelect connection={connection} />}
+          {modelSelect}
           {running ? (
             <button
               type="button"
