@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { resolveGridKey, type EditMode, type KeyInput } from "@/lib/sheet/keymap";
+import {
+  ALIGN_SHORTCUTS,
+  COMMAND_SHORTCUTS,
+  FORMAT_SHORTCUTS,
+  resolveGridKey,
+  shortcutLabel,
+  type EditMode,
+  type KeyInput,
+  type Shortcut,
+} from "@/lib/sheet/keymap";
 
 const press = (key: string, mods: Partial<KeyInput> = {}): KeyInput => ({
   key,
@@ -80,6 +89,32 @@ describe("shortcuts", () => {
     expect(win(press("i", { ctrlKey: true }), "enter")).toEqual({ type: "format", key: "italic" });
     expect(win(press("z", { ctrlKey: true }), "edit")).toBeNull();
     expect(win(press("a", { ctrlKey: true }), "edit")).toBeNull();
+  });
+});
+
+describe("shortcut tables", () => {
+  const pressShortcut = ({ key, shift }: Shortcut) =>
+    press(key, { ctrlKey: true, shiftKey: shift ?? false });
+
+  it("resolves every listed shortcut to its action", () => {
+    for (const [key, shortcut] of Object.entries(FORMAT_SHORTCUTS)) {
+      expect(win(pressShortcut(shortcut))).toEqual({ type: "format", key });
+    }
+    for (const [value, shortcut] of Object.entries(ALIGN_SHORTCUTS)) {
+      expect(win(pressShortcut(shortcut))).toEqual({ type: "align", value });
+    }
+    for (const [type, shortcut] of Object.entries(COMMAND_SHORTCUTS)) {
+      expect(win(pressShortcut(shortcut))).toEqual({ type });
+    }
+  });
+
+  it("labels shortcuts with Ctrl on Windows and ⌘ on macOS", () => {
+    expect(shortcutLabel(FORMAT_SHORTCUTS.bold, false)).toBe("Ctrl+B");
+    expect(shortcutLabel(FORMAT_SHORTCUTS.strike, true)).toBe("⌘5");
+    expect(shortcutLabel(ALIGN_SHORTCUTS.left, false)).toBe("Ctrl+Shift+L");
+    expect(shortcutLabel(ALIGN_SHORTCUTS.center, true)).toBe("⌘Shift+E");
+    expect(shortcutLabel(COMMAND_SHORTCUTS.undo, true)).toBe("⌘Z");
+    expect(shortcutLabel(COMMAND_SHORTCUTS.clearFormat, false)).toBe("Ctrl+\\");
   });
 });
 

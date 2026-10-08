@@ -24,6 +24,12 @@ import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
 import { isApplePlatform } from "@/lib/platform";
 import { commonStyle, hasFormatEverywhere } from "@/lib/sheet/document";
+import {
+  ALIGN_SHORTCUTS,
+  COMMAND_SHORTCUTS,
+  FORMAT_SHORTCUTS,
+  shortcutLabel,
+} from "@/lib/sheet/keymap";
 import type { Alignment, FormatKey } from "@/lib/sheet/schema";
 import { selectionRange } from "@/lib/sheet/selection";
 import { useStore } from "@/hooks/useStore";
@@ -32,17 +38,17 @@ import { useUndoState } from "@/hooks/sheet/useUndoState";
 import { useDocVersion } from "@/hooks/sheet/useDocVersion";
 import { ColorMenu } from "./ColorMenu";
 
-const FORMAT_BUTTONS: { key: FormatKey; label: string; icon: LucideIcon; shortcut: string }[] = [
-  { key: "bold", label: strings.toolbar.bold, icon: Bold, shortcut: "B" },
-  { key: "italic", label: strings.toolbar.italic, icon: Italic, shortcut: "I" },
-  { key: "underline", label: strings.toolbar.underline, icon: Underline, shortcut: "U" },
-  { key: "strike", label: strings.toolbar.strike, icon: Strikethrough, shortcut: "5" },
+const FORMAT_BUTTONS: { key: FormatKey; label: string; icon: LucideIcon }[] = [
+  { key: "bold", label: strings.toolbar.bold, icon: Bold },
+  { key: "italic", label: strings.toolbar.italic, icon: Italic },
+  { key: "underline", label: strings.toolbar.underline, icon: Underline },
+  { key: "strike", label: strings.toolbar.strike, icon: Strikethrough },
 ];
 
-const ALIGN_BUTTONS: { value: Alignment; label: string; icon: LucideIcon; shortcut: string }[] = [
-  { value: "left", label: strings.toolbar.alignLeft, icon: AlignLeft, shortcut: "Shift+L" },
-  { value: "center", label: strings.toolbar.alignCenter, icon: AlignCenter, shortcut: "Shift+E" },
-  { value: "right", label: strings.toolbar.alignRight, icon: AlignRight, shortcut: "Shift+R" },
+const ALIGN_BUTTONS: { value: Alignment; label: string; icon: LucideIcon }[] = [
+  { value: "left", label: strings.toolbar.alignLeft, icon: AlignLeft },
+  { value: "center", label: strings.toolbar.alignCenter, icon: AlignCenter },
+  { value: "right", label: strings.toolbar.alignRight, icon: AlignRight },
 ];
 
 /** 툴바 오른쪽 끝의 AI 편집 버튼. 패널이 열려 있으면 aria-pressed */
@@ -65,7 +71,7 @@ export function Toolbar() {
   useDocVersion(doc);
   const range = selectionRange(useSelection());
   const { canUndo, canRedo } = useUndoState(undoManager);
-  const mod = isApplePlatform() ? "⌘" : "Ctrl+";
+  const isMac = isApplePlatform();
 
   const run = (command: () => void) => {
     command();
@@ -82,7 +88,7 @@ export function Toolbar() {
     >
       <ToolbarButton
         label={strings.toolbar.undo}
-        shortcut={`${mod}Z`}
+        shortcut={shortcutLabel(COMMAND_SHORTCUTS.undo, isMac)}
         disabled={!canUndo}
         onClick={() => run(() => controller.undo())}
       >
@@ -90,7 +96,7 @@ export function Toolbar() {
       </ToolbarButton>
       <ToolbarButton
         label={strings.toolbar.redo}
-        shortcut={`${mod}Y`}
+        shortcut={shortcutLabel(COMMAND_SHORTCUTS.redo, isMac)}
         disabled={!canRedo}
         onClick={() => run(() => controller.redo())}
       >
@@ -99,11 +105,11 @@ export function Toolbar() {
 
       <Divider />
 
-      {FORMAT_BUTTONS.map(({ key, label, icon: Icon, shortcut }) => (
+      {FORMAT_BUTTONS.map(({ key, label, icon: Icon }) => (
         <ToolbarButton
           key={key}
           label={label}
-          shortcut={`${mod}${shortcut}`}
+          shortcut={shortcutLabel(FORMAT_SHORTCUTS[key], isMac)}
           pressed={hasFormatEverywhere(doc, range, key)}
           onClick={() => run(() => controller.toggleFormat(key))}
         >
@@ -134,11 +140,11 @@ export function Toolbar() {
 
       <Divider />
 
-      {ALIGN_BUTTONS.map(({ value, label, icon: Icon, shortcut }) => (
+      {ALIGN_BUTTONS.map(({ value, label, icon: Icon }) => (
         <ToolbarButton
           key={value}
           label={label}
-          shortcut={`${mod}${shortcut}`}
+          shortcut={shortcutLabel(ALIGN_SHORTCUTS[value], isMac)}
           pressed={commonStyle(doc, range, "align") === value}
           onClick={() => run(() => controller.setStyle("align", value))}
         >
@@ -150,7 +156,7 @@ export function Toolbar() {
 
       <ToolbarButton
         label={strings.toolbar.clearFormat}
-        shortcut={`${mod}\\`}
+        shortcut={shortcutLabel(COMMAND_SHORTCUTS.clearFormat, isMac)}
         onClick={() => run(() => controller.clearFormats())}
       >
         <RemoveFormatting size={ICON.md} />

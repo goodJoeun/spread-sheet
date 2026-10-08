@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { runStatusLine, type StatusLine as StatusLineView } from "@/lib/ai/messages";
 import type { AiRun } from "@/lib/ai/run";
 import { isApplePlatform } from "@/lib/platform";
+import { COMMAND_SHORTCUTS, shortcutLabel } from "@/lib/sheet/keymap";
 import { ICON } from "@/styles/icon";
 
 const TONE: Record<StatusLineView["tone"], string> = {
@@ -19,7 +20,7 @@ const ICONS: Record<NonNullable<StatusLineView["icon"]>, ReactNode> = {
 };
 
 export function StatusLine({ run }: { run: AiRun }) {
-  const line = runStatusLine(run, isApplePlatform() ? "⌘Z" : "Ctrl+Z");
+  const line = runStatusLine(run, shortcutLabel(COMMAND_SHORTCUTS.undo, isApplePlatform()));
   if (!line) return null;
   return (
     <p

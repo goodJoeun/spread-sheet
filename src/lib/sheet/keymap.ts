@@ -41,18 +41,53 @@ const ARROWS: Record<string, [number, number]> = {
   ArrowRight: [0, 1],
 };
 
-const FORMAT_SHORTCUTS: Record<string, FormatKey> = {
-  b: "bold",
-  i: "italic",
-  u: "underline",
-  "5": "strike", // 엑셀 Ctrl+5
+/**
+ * Ctrl(맥은 ⌘)과 함께 누르는 단축키. 키 판정(resolveGridKey)과 화면의 단축키 표기가 이 표를 함께 씀.
+ * 그래서 단축키를 바꾸면 툴바 안내도 함께 바뀜.
+ */
+export interface Shortcut {
+  /** 글자 키는 소문자로 적음. */
+  key: string;
+  shift?: boolean;
+}
+
+export const FORMAT_SHORTCUTS: Record<FormatKey, Shortcut> = {
+  bold: { key: "b" },
+  italic: { key: "i" },
+  underline: { key: "u" },
+  strike: { key: "5" }, // 엑셀 Ctrl+5
 };
 
-const ALIGN_SHORTCUTS: Record<string, Alignment> = {
-  l: "left",
-  e: "center",
-  r: "right",
+export const ALIGN_SHORTCUTS: Record<Alignment, Shortcut> = {
+  left: { key: "l", shift: true },
+  center: { key: "e", shift: true },
+  right: { key: "r", shift: true },
 };
+
+export const COMMAND_SHORTCUTS = {
+  undo: { key: "z" },
+  redo: { key: "y" },
+  clearFormat: { key: "\\" },
+  selectAll: { key: "a" },
+} as const satisfies Record<string, Shortcut>;
+
+/** 다시 실행은 Ctrl+Shift+Z로도 받음(맥 관례). 화면에는 COMMAND_SHORTCUTS.redo만 보여 줌. */
+const REDO_ALT: Shortcut = { key: "z", shift: true };
+
+/** 화면에 보여 줄 표기. 예: "Ctrl+B", "⌘Shift+L" */
+export function shortcutLabel({ key, shift }: Shortcut, isMac: boolean): string {
+  return `${isMac ? "⌘" : "Ctrl+"}${shift ? "Shift+" : ""}${key.toUpperCase()}`;
+}
+
+function findShortcut<K extends string>(
+  table: Record<K, Shortcut>,
+  isPressed: (shortcut: Shortcut) => boolean,
+): K | null {
+  for (const name of Object.keys(table) as K[]) {
+    if (isPressed(table[name])) return name;
+  }
+  return null;
+}
 
 /** null이면 브라우저 기본 동작(글자 입력, 커서 이동 등)에 맡김. */
 export function resolveGridKey(
@@ -63,16 +98,20 @@ export function resolveGridKey(
   const mod = isMac ? e.metaKey : e.ctrlKey;
   const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   const editing = editMode !== null;
+  const isPressed = (shortcut: Shortcut) =>
+    shortcut.key === key && (shortcut.shift ?? false) === e.shiftKey;
 
   if (mod && !e.altKey) {
-    if (!e.shiftKey && FORMAT_SHORTCUTS[key]) return { type: "format", key: FORMAT_SHORTCUTS[key] };
-    if (e.shiftKey && ALIGN_SHORTCUTS[key]) return { type: "align", value: ALIGN_SHORTCUTS[key] };
-    if (!e.shiftKey && key === "\\") return { type: "clearFormat" };
+    const format = findShortcut(FORMAT_SHORTCUTS, isPressed);
+    if (format) return { type: "format", key: format };
+    const align = findShortcut(ALIGN_SHORTCUTS, isPressed);
+    if (align) return { type: "align", value: align };
+    if (isPressed(COMMAND_SHORTCUTS.clearFormat)) return { type: "clearFormat" };
     // 편집 중의 Ctrl+Z/A는 입력칸의 기본 동작(글자 되돌리기, 전체 선택)에 맡김.
     if (!editing) {
-      if (key === "z") return { type: e.shiftKey ? "redo" : "undo" };
-      if (key === "y" && !e.shiftKey) return { type: "redo" };
-      if (key === "a" && !e.shiftKey) return { type: "selectAll" };
+      if (isPressed(COMMAND_SHORTCUTS.undo)) return { type: "undo" };
+      if (isPressed(COMMAND_SHORTCUTS.redo) || isPressed(REDO_ALT)) return { type: "redo" };
+      if (isPressed(COMMAND_SHORTCUTS.selectAll)) return { type: "selectAll" };
       if (key === "Home") return { type: "sheetStart" };
     }
   }
