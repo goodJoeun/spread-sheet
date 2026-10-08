@@ -59,7 +59,9 @@ export class Presence {
     await this.liveness?.hold(this.clientId);
     if (this.destroyed) return;
     this.joined = true;
-    this.local = { ...this.local, user: this.avoidTaken(this.local.user) };
+    const user = this.avoidTaken(this.local.user);
+    if (user !== this.local.user) this.onUserChange?.(user);
+    this.local = { ...this.local, user };
     this.publish();
   }
 
@@ -133,6 +135,7 @@ export class Presence {
     return others;
   }
 
+  /** 다른 참여자가 이미 쓰는 이름·색이면 바꾼 신원을 돌려줌. 겹치지 않으면 받은 객체 그대로. */
   private avoidTaken(user: UserInfo): UserInfo {
     const others = this.otherStates().map(([, state]) => state.user);
     const colors = new Set(others.map((u) => u.color));
@@ -140,27 +143,21 @@ export class Presence {
     let next = user;
     if (colors.has(next.color)) next = { ...next, color: pickColor(colors) };
     if (names.has(next.name)) next = { ...next, name: freeName(names) };
-    if (next !== user) this.onUserChange?.(next);
     return next;
   }
 
   /** 이름이나 색이 겹치면 clientID가 큰 쪽이 양보함. 양쪽이 같은 규칙을 따르므로 한쪽만 바뀜. */
   private resolveConflicts(): void {
     if (!this.joined) return;
-    const senior = this.otherStates().filter(([clientId]) => clientId < this.clientId);
+    const others = this.otherStates();
+    const senior = others.filter(([clientId]) => clientId < this.clientId);
     const { user } = this.local;
     let next = user;
     if (senior.some(([, s]) => s.user.color === user.color)) {
-      next = {
-        ...next,
-        color: pickColor(new Set(this.otherStates().map(([, s]) => s.user.color))),
-      };
+      next = { ...next, color: pickColor(new Set(others.map(([, s]) => s.user.color))) };
     }
     if (senior.some(([, s]) => s.user.name === user.name)) {
-      next = {
-        ...next,
-        name: freeName(new Set(this.otherStates().map(([, s]) => s.user.name))),
-      };
+      next = { ...next, name: freeName(new Set(others.map(([, s]) => s.user.name))) };
     }
     if (next !== user) this.updateUser(next);
   }

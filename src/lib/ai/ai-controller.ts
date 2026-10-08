@@ -22,7 +22,15 @@ import {
   type AiStreamEvent,
 } from "./protocol";
 import { conversationHistory, snapshotCells } from "./request";
-import { applyProgress, createRun, finishRun, isRunning, type AiMessage, type AiRun } from "./run";
+import {
+  applyProgress,
+  createRun,
+  finishRun,
+  isRunning,
+  type AiMessage,
+  type AiRun,
+  type AiRunInit,
+} from "./run";
 import { AiRequestError, type AiTransport } from "./transport";
 
 /**
@@ -125,11 +133,9 @@ export class AiController {
   send(instruction: string, scope: CellRange | null): boolean {
     const text = instruction.trim().slice(0, AI_LIMITS.instruction);
     if (!text || this.isBusy()) return false;
-
     const range = scope ? clipToSheet(scope) : null;
     const locked = this.lockCells.get();
-    const overlaps = overlappingAi(this.presence.getParticipants?.() ?? [], range);
-    if (blockingOverlaps(overlaps, locked).length > 0) return false;
+    if (this.isBlockedByOtherAi(range, locked)) return false;
 
     const cells = snapshotCells(this.doc);
     const model = this.model.get();
@@ -137,59 +143,23 @@ export class AiController {
       instruction: text,
       range: range ? rangeToA1(range) : null,
       cells,
+      // 이번 요청을 대화에 넣기 전에 만들어야 이번 지시문이 이전 대화에 겹쳐 들어가지 않음.
       history: conversationHistory(this.messages.get()),
       ...(model ? { model } : {}),
     };
-    const userId = this.nextId++;
-    const run = createRun({
-      id: this.nextId++,
-      instruction: text,
-      scope: range,
-      model,
-      base: new Map(cells.map((c) => [c.cell, c.value])),
-      locked,
-    });
-    this.messages.set((list) => [
-      ...list,
-      { id: userId, role: "user", text, scope: range },
-      { id: run.id, role: "assistant", run },
-    ]);
-    this.showOriginal.set(false);
-    this.overwrites.set(new Map());
-    this.active.set(run);
-
-    const abort = new AbortController();
-    this.inflight = { runId: run.id, abort };
-    this.armWatchdog();
-
-    let finished = false;
-    this.transport(request, {
-      signal: abort.signal,
-      onEvent: (event) => {
-        if (this.inflight?.runId !== run.id) return;
-        this.armWatchdog();
-        if (this.handleEvent(run.id, event)) finished = true;
-      },
-    })
-      .then(() => {
-        if (!finished && this.inflight?.runId === run.id) {
-          this.fail(run.id, aiError("network", "stream_dropped"));
-        }
-      })
-      .catch((error: unknown) => {
-        // 중단·시간 초과·완료로 이미 정리된 실행이면 무시함.
-        if (this.inflight?.runId !== run.id) return;
-        this.fail(run.id, error instanceof AiRequestError ? error.info : aiError("network"));
-      });
+    // 요청에 실은 셀 값이 곧 요청 때 값(base). 적용할 때 이 값과 지금 값을 비교함.
+    const base = new Map(cells.map((c) => [c.cell, c.value]));
+    const run = this.beginRun({ instruction: text, scope: range, model, base, locked });
+    this.stream(run.id, request);
     return true;
   }
 
   cancel(): void {
     const current = this.inflight;
     if (!current) return;
-    this.settle();
+    this.endRequest();
     current.abort.abort();
-    this.update(current.runId, (run) => ({ ...run, status: "cancelled", slow: false }));
+    this.updateRun(current.runId, (run) => ({ ...run, status: "cancelled", slow: false }));
     this.active.set(null);
   }
 
@@ -216,7 +186,7 @@ export class AiController {
       );
     }
 
-    this.update(run.id, (r) => ({
+    this.updateRun(run.id, (r) => ({
       ...r,
       status: "applied",
       result: { applied: writes.length, skipped },
@@ -234,21 +204,68 @@ export class AiController {
   discard(): void {
     const run = this.active.get();
     if (!run || run.status !== "review") return;
-    this.update(run.id, (r) => ({ ...r, status: "discarded" }));
+    this.updateRun(run.id, (r) => ({ ...r, status: "discarded" }));
     this.closeReview();
   }
 
   /** 다시 시도할 때는 원래 요청의 모델이 아니라 지금 고른 모델로 보냄. */
   retry(runId: number): boolean {
-    const message = this.messages.get().find((m) => m.role === "assistant" && m.run.id === runId);
-    if (!message || message.role !== "assistant") return false;
-    return this.send(message.run.instruction, message.run.scope);
+    const run = this.findRun(runId);
+    return run ? this.send(run.instruction, run.scope) : false;
   }
 
   destroy(): void {
-    this.settle();
-    this.inflight?.abort.abort();
-    this.inflight = null;
+    const current = this.inflight;
+    this.endRequest();
+    current?.abort.abort();
+  }
+
+  /** 남이 잠근 범위에는 요청할 수 없고, 내가 잠그려면 겹치는 AI 편집이 없어야 함. */
+  private isBlockedByOtherAi(range: CellRange | null, locked: boolean): boolean {
+    const overlaps = overlappingAi(this.presence.getParticipants?.() ?? [], range);
+    return blockingOverlaps(overlaps, locked).length > 0;
+  }
+
+  /** 대화에 요청과 실행을 넣고, 미리보기에 그릴 실행으로 정함. */
+  private beginRun(init: Omit<AiRunInit, "id">): AiRun {
+    const userMessageId = this.nextId++;
+    const run = createRun({ ...init, id: this.nextId++ });
+    this.messages.set((list) => [
+      ...list,
+      { id: userMessageId, role: "user", text: init.instruction, scope: init.scope },
+      { id: run.id, role: "assistant", run },
+    ]);
+    this.showOriginal.set(false);
+    this.overwrites.set(new Map());
+    this.active.set(run);
+    return run;
+  }
+
+  /** 요청을 보내고 받은 이벤트를 실행에 반영함. done 없이 끝나거나 요청이 실패하면 오류로 끝냄. */
+  private stream(runId: number, request: AiEditRequest): void {
+    const abort = new AbortController();
+    this.inflight = { runId, abort };
+    this.armWatchdog();
+
+    let finished = false;
+    this.transport(request, {
+      signal: abort.signal,
+      onEvent: (event) => {
+        if (this.inflight?.runId !== runId) return;
+        this.armWatchdog();
+        if (this.handleEvent(runId, event)) finished = true;
+      },
+    })
+      .then(() => {
+        if (!finished && this.inflight?.runId === runId) {
+          this.fail(runId, aiError("network", "stream_dropped"));
+        }
+      })
+      .catch((error: unknown) => {
+        // 중단·시간 초과·완료로 이미 정리된 실행이면 무시함.
+        if (this.inflight?.runId !== runId) return;
+        this.fail(runId, error instanceof AiRequestError ? error.info : aiError("network"));
+      });
   }
 
   /** @returns 실행이 끝났으면 true */
@@ -262,7 +279,7 @@ export class AiController {
       return true;
     }
     const hadProposals = (this.findRun(runId)?.proposals.length ?? 0) > 0;
-    this.update(runId, (r) => applyProgress(r, event));
+    this.updateRun(runId, (r) => applyProgress(r, event));
     // 첫 제안이 오면 그 셀로 화면을 옮김. 다른 곳을 보고 있어도 생성 과정을 볼 수 있게.
     const first = this.findRun(runId)?.proposals[0];
     if (!hadProposals && first) this.sheet.reveal(first.coord);
@@ -270,18 +287,18 @@ export class AiController {
   }
 
   private finish(runId: number): void {
-    this.settle();
-    this.update(runId, finishRun);
+    this.endRequest();
+    this.updateRun(runId, finishRun);
     const run = this.findRun(runId);
     this.active.set(run?.status === "review" ? run : null);
   }
 
   private fail(runId: number, error: AiErrorInfo): void {
     const current = this.inflight;
-    this.settle();
+    this.endRequest();
     // 시간 초과처럼 아직 응답을 받는 중이면 요청도 끊음.
     if (current?.runId === runId) current.abort.abort();
-    this.update(runId, (r) => ({ ...r, status: "error", slow: false, error }));
+    this.updateRun(runId, (r) => ({ ...r, status: "error", slow: false, error }));
     this.active.set(null);
   }
 
@@ -310,27 +327,33 @@ export class AiController {
     this.presence.setAi(activity);
   }
 
-  private settle(): void {
-    if (this.slowTimer) clearTimeout(this.slowTimer);
-    if (this.idleTimer) clearTimeout(this.idleTimer);
-    this.slowTimer = this.idleTimer = null;
+  /** 진행 중인 요청을 정리함(감시 타이머를 끄고 inflight를 비움). 요청을 끊을지(abort)는 부르는 쪽이 정함. */
+  private endRequest(): void {
+    this.stopWatchdog();
     this.inflight = null;
   }
 
+  private stopWatchdog(): void {
+    if (this.slowTimer) clearTimeout(this.slowTimer);
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.slowTimer = this.idleTimer = null;
+  }
+
+  /** 이벤트가 올 때마다 다시 잼. 한동안 없으면 "응답 지연"을 표시하고, 더 오래 없으면 시간 초과로 끝냄. */
   private armWatchdog(): void {
     const runId = this.inflight?.runId;
     if (runId === undefined) return;
-    if (this.slowTimer) clearTimeout(this.slowTimer);
-    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.stopWatchdog();
     this.slowTimer = setTimeout(() => {
-      if (this.inflight?.runId === runId) this.update(runId, (r) => ({ ...r, slow: true }));
+      if (this.inflight?.runId === runId) this.updateRun(runId, (r) => ({ ...r, slow: true }));
     }, SLOW_AFTER_MS);
     this.idleTimer = setTimeout(() => {
       if (this.inflight?.runId === runId) this.fail(runId, aiError("timeout"));
     }, IDLE_TIMEOUT_MS);
   }
 
-  private update(runId: number, change: (run: AiRun) => AiRun): void {
+  /** 대화에 있는 실행을 바꿈. 생성 중인 실행이면 미리보기(active)도 같이 바꿈. */
+  private updateRun(runId: number, change: (run: AiRun) => AiRun): void {
     this.messages.set((list) =>
       list.map((m) =>
         m.role === "assistant" && m.run.id === runId ? { ...m, run: change(m.run) } : m,

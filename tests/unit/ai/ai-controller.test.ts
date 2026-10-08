@@ -193,6 +193,16 @@ describe("AiController", () => {
     expect(lastRun()?.proposals).toHaveLength(1);
   });
 
+  it("aborts the request in flight when destroyed", () => {
+    const { transport, calls } = scriptedTransport();
+    const { ai } = setup(transport);
+    ai.send("두 배로", null);
+
+    ai.destroy();
+    expect(calls[0].options.signal.aborted).toBe(true);
+    expect(ai.isBusy()).toBe(false);
+  });
+
   it("finishes as an answer when nothing needs to change", () => {
     const { transport, calls } = scriptedTransport();
     const { ai, lastRun } = setup(transport);

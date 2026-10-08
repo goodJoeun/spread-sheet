@@ -55,14 +55,16 @@ export function isRunning(run: Pick<AiRun, "status"> | null | undefined): boolea
   return run?.status === "waiting" || run?.status === "streaming";
 }
 
-export function createRun(init: {
+export interface AiRunInit {
   id: number;
   instruction: string;
   scope: CellRange | null;
   model: string | null;
   base: ReadonlyMap<string, string>;
   locked?: boolean;
-}): AiRun {
+}
+
+export function createRun(init: AiRunInit): AiRun {
   return {
     ...init,
     locked: init.locked ?? false,
