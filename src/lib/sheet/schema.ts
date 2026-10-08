@@ -1,3 +1,10 @@
+/*
+ * 시트가 지키는 규칙을 한 곳에 모아 둔다. 시트 크기, 서식의 종류와 형식, 기본 정렬, 주소 검증이 여기 있다.
+ *   - 화면, AI 프롬프트, 서버 검증이 같은 숫자와 규칙을 쓰므로 다른 곳에 다시 적지 않는다.
+ *   - 다른 탭이나 AI에서 온 값은 isSheetCellA1, isValidStyle로 검증한 뒤에 쓴다.
+ * Y.Doc에 읽고 쓰는 일은 document.ts가 맡는다. 선택·키 매핑 같은 순수 로직이 Yjs를 끌어오지 않도록 나눠 두었다.
+ */
+
 import {
   intersectRanges,
   parseA1,
@@ -6,8 +13,6 @@ import {
   type CellCoord,
   type CellRange,
 } from "./address";
-
-/** 선택·키 매핑·좌표 같은 순수 로직이 Yjs를 끌어오지 않도록 document.ts와 나눠 둠. */
 
 export const ROW_COUNT = 100;
 export const COL_COUNT = 26;
