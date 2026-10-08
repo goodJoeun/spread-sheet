@@ -3,7 +3,7 @@ import { parseA1, toA1, type CellCoord } from "@/lib/sheet/address";
 import { resolveGridKey } from "@/lib/sheet/keymap";
 import {
   isNavigationAction,
-  navigate,
+  applyNavigation,
   type NavigationAction,
   type NavigationState,
 } from "@/lib/sheet/navigation";
@@ -16,7 +16,7 @@ const context = { pageRows: 10, isFilled: () => false };
 function walk(start: Selection, actions: NavigationAction[]): string[] {
   let state: NavigationState = { selection: start, tabReturnCol: null };
   return actions.map((action) => {
-    state = navigate(state, action, context);
+    state = applyNavigation(state, action, context);
     return toA1(state.selection.active);
   });
 }
@@ -46,7 +46,7 @@ describe("Tab then Enter", () => {
 describe("advance inside a range", () => {
   it("cycles the active cell without changing the range", () => {
     const range: Selection = { anchor: at("A1"), focus: at("B2"), active: at("A1") };
-    const result = navigate({ selection: range, tabReturnCol: null }, enter, context);
+    const result = applyNavigation({ selection: range, tabReturnCol: null }, enter, context);
     expect(toA1(result.selection.active)).toBe("A2");
     expect(selectionRange(result.selection)).toEqual({ start: at("A1"), end: at("B2") });
   });
@@ -54,7 +54,7 @@ describe("advance inside a range", () => {
 
 describe("reveal", () => {
   it("follows the moving corner when extending", () => {
-    const result = navigate(
+    const result = applyNavigation(
       { selection: collapsedSelection(at("C3")), tabReturnCol: null },
       { type: "page", direction: 1, extend: true },
       context,
@@ -65,7 +65,7 @@ describe("reveal", () => {
   });
 
   it("does not scroll when selecting everything", () => {
-    const result = navigate(
+    const result = applyNavigation(
       { selection: collapsedSelection(at("C3")), tabReturnCol: null },
       { type: "selectAll" },
       context,
@@ -81,7 +81,7 @@ describe("reveal", () => {
 describe("jump", () => {
   it("extends to the edge of the data with Ctrl+Shift+arrow", () => {
     const filled = new Set(["A1", "A2", "A3"]);
-    const result = navigate(
+    const result = applyNavigation(
       { selection: collapsedSelection(at("A1")), tabReturnCol: null },
       { type: "jump", dRow: 1, dCol: 0, extend: true },
       { ...context, isFilled: (c) => filled.has(toA1(c)) },

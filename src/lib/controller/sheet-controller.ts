@@ -2,17 +2,11 @@ import type * as Y from "yjs";
 import { lockHolder } from "@/lib/collab/locks";
 import type { Participant } from "@/lib/collab/presence-state";
 import type { CellCoord, CellRange } from "@/lib/sheet/address";
-import {
-  EditOrigin,
-  clearFormats,
-  clearValues,
-  getValue,
-  setStyle,
-  setValue,
-  toggleFormat,
-} from "@/lib/sheet/document";
+// 컨트롤러의 서식·지우기 명령은 문서 함수와 이름이 같지만, 선택 범위에 적용하고 잠긴 셀이면 막는다는 점이 다름.
+// 그래서 문서를 직접 바꾸는 호출은 SheetDoc.으로 구분함.
+import * as SheetDoc from "@/lib/sheet/document";
 import type { EditMode, GridAction } from "@/lib/sheet/keymap";
-import { isNavigationAction, navigate, type NavigationAction } from "@/lib/sheet/navigation";
+import { applyNavigation, isNavigationAction, type NavigationAction } from "@/lib/sheet/navigation";
 import type { FormatKey, StyleKey } from "@/lib/sheet/schema";
 import {
   collapsedSelection,
@@ -152,15 +146,18 @@ export class SheetController {
     return this.edit.get() !== null;
   }
 
-  /** keepContent: F2·더블클릭처럼 기존 값을 고칠 때 true, 바로 타이핑해 바꿀 때 false */
-  startEdit(mode: EditMode, keepContent: boolean): void {
+  /**
+   * keepContent: F2·더블클릭처럼 기존 값을 고칠 때 true.
+   * 바로 타이핑해 바꿀 때는 생략함(편집칸에 이미 들어간 글자로 시작).
+   */
+  startEdit(mode: EditMode, { keepContent = false }: { keepContent?: boolean } = {}): void {
     const coord = this.selection.get().active;
-    if (this.refuseLocked({ start: coord, end: coord })) {
+    if (this.blockIfLocked({ start: coord, end: coord })) {
       // 바로 타이핑해서 시작했다면 편집칸에 이미 들어간 글자를 지움.
       this.view.writeDraft("");
       return;
     }
-    if (keepContent) this.view.writeDraft(getValue(this.session.doc, coord));
+    if (keepContent) this.view.writeDraft(SheetDoc.getValue(this.session.doc, coord));
     this.edit.set({ mode, coord });
     this.draft.set(this.view.readDraft());
   }
@@ -179,7 +176,7 @@ export class SheetController {
    * @returns 잠긴 셀이라 편집을 시작하지 못했으면 false
    */
   replaceDraft(text: string): boolean {
-    if (!this.isEditing()) this.startEdit("edit", false);
+    if (!this.isEditing()) this.startEdit("edit");
     if (!this.isEditing()) return false;
     this.view.writeDraft(text);
     this.draftChanged();
@@ -189,15 +186,21 @@ export class SheetController {
   commitEdit(): void {
     const current = this.edit.get();
     if (!current) return;
-    setValue(this.session.doc, current.coord, this.view.readDraft(), EditOrigin.User);
-    this.clearDraft();
+    SheetDoc.setValue(
+      this.session.doc,
+      current.coord,
+      this.view.readDraft(),
+      SheetDoc.EditOrigin.User,
+    );
+    this.endEdit();
   }
 
   cancelEdit(): void {
-    this.clearDraft();
+    this.endEdit();
   }
 
-  private clearDraft(): void {
+  /** 편집을 끝내고 편집칸의 글자를 비움. 확정할지는 부르는 쪽이 정함. */
+  private endEdit(): void {
     this.view.writeDraft("");
     this.draft.set("");
     this.edit.set(null);
@@ -223,12 +226,12 @@ export class SheetController {
 
   navigate(action: NavigationAction): void {
     this.commitEdit();
-    const result = navigate(
+    const result = applyNavigation(
       { selection: this.selection.get(), tabReturnCol: this.tabReturnCol },
       action,
       {
         pageRows: this.view.visibleRowCount(),
-        isFilled: (coord) => getValue(this.session.doc, coord) !== "",
+        isFilled: (coord) => SheetDoc.getValue(this.session.doc, coord) !== "",
       },
     );
     this.tabReturnCol = result.tabReturnCol;
@@ -271,10 +274,10 @@ export class SheetController {
   }
 
   /**
-   * 다른 참여자가 AI 편집을 위해 잠근 셀이 range에 있으면, 막고 안내를 띄움.
+   * 다른 참여자가 AI 편집을 위해 잠근 셀이 range에 있으면 lockNotice로 안내를 띄우고 true를 돌려줌(부르는 쪽이 멈춤).
    * 잠금 전에 시작한 입력은 확정할 수 있음. 입력한 글자를 버리지 않기 위함이고, 그 셀은 AI 결과에서 충돌로 표시됨.
    */
-  private refuseLocked(range: CellRange): boolean {
+  private blockIfLocked(range: CellRange): boolean {
     const participants = this.session.presence.getParticipants?.() ?? [];
     if (!lockHolder(participants, range)) return false;
     this.lockNotice.set(this.selection.get().active);
@@ -283,23 +286,23 @@ export class SheetController {
 
   /** 편집 중에도 편집을 유지한 채 서식을 적용함(구글 시트와 같음). */
   toggleFormat(key: FormatKey): void {
-    if (this.refuseLocked(this.range)) return;
-    toggleFormat(this.session.doc, this.range, key, EditOrigin.User);
+    if (this.blockIfLocked(this.range)) return;
+    SheetDoc.toggleFormat(this.session.doc, this.range, key, SheetDoc.EditOrigin.User);
   }
 
   setStyle(key: StyleKey, value: string | null): void {
-    if (this.refuseLocked(this.range)) return;
-    setStyle(this.session.doc, this.range, key, value, EditOrigin.User);
+    if (this.blockIfLocked(this.range)) return;
+    SheetDoc.setStyle(this.session.doc, this.range, key, value, SheetDoc.EditOrigin.User);
   }
 
   clearFormats(): void {
-    if (this.refuseLocked(this.range)) return;
-    clearFormats(this.session.doc, this.range, EditOrigin.User);
+    if (this.blockIfLocked(this.range)) return;
+    SheetDoc.clearFormats(this.session.doc, this.range, SheetDoc.EditOrigin.User);
   }
 
   clearValues(): void {
-    if (this.refuseLocked(this.range)) return;
-    clearValues(this.session.doc, this.range, EditOrigin.User);
+    if (this.blockIfLocked(this.range)) return;
+    SheetDoc.clearValues(this.session.doc, this.range, SheetDoc.EditOrigin.User);
   }
 
   /** 편집 중이면 먼저 확정함. 그래서 실행 취소가 "입력 취소"처럼 동작하고, 다시 실행으로 되살릴 수 있음. */
@@ -324,7 +327,7 @@ export class SheetController {
       case "toggleEditMode":
         return this.toggleEditMode();
       case "startEdit":
-        return this.startEdit("edit", true);
+        return this.startEdit("edit", { keepContent: true });
       case "format":
         return this.toggleFormat(action.key);
       case "align":

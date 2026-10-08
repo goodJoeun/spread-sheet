@@ -57,7 +57,7 @@ function setup(start = "A1", participants: Participant[] = []) {
   /** 사용자가 셀을 선택한 채 타이핑을 시작한 상황을 흉내 냄. */
   const typeInto = (text: string) => {
     view.type(text);
-    controller.startEdit("enter", false);
+    controller.startEdit("enter");
   };
   const active = () => toA1(controller.selection.get().active);
   return { doc, controller, view, calls, draft, published, typeInto, active };
@@ -220,7 +220,7 @@ describe("presence", () => {
   it("publishes the current value as the draft when editing it in place", () => {
     const { doc, controller, published } = setup();
     setValue(doc, at("A1"), "old", EditOrigin.User);
-    controller.startEdit("edit", true);
+    controller.startEdit("edit", { keepContent: true });
     expect(published.draft.at(-1)).toBe("old");
   });
 });
@@ -243,7 +243,7 @@ describe("AI cell lock", () => {
     expect(draft()).toBe("");
     expect(controller.lockNotice.get()).toEqual(at("B2"));
 
-    controller.startEdit("edit", true);
+    controller.startEdit("edit", { keepContent: true });
     expect(controller.isEditing()).toBe(false);
   });
 

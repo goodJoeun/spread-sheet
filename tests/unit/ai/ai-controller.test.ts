@@ -396,7 +396,7 @@ describe("AiController: co-editing", () => {
       },
     });
     sheet.select(collapsedSelection(at("B2")));
-    sheet.startEdit("enter", false);
+    sheet.startEdit("enter");
     draft = "mine";
 
     ai.apply();

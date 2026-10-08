@@ -45,7 +45,7 @@ export interface NavigationResult extends NavigationState {
   reveal: CellCoord | null;
 }
 
-export function navigate(
+export function applyNavigation(
   state: NavigationState,
   action: NavigationAction,
   context: NavigationContext,

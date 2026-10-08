@@ -52,11 +52,11 @@ export function useCellEditor(
         onInput: () => {
           // 한글 조합 중인 글자도 다른 참여자에게 알림. 입력하는 모습이 그대로 보이도록.
           if (controller.isEditing()) controller.draftChanged();
-          else if (!composingRef.current) controller.startEdit("enter", false);
+          else if (!composingRef.current) controller.startEdit("enter");
         },
         onCompositionStart: () => {
           composingRef.current = true;
-          if (!controller.isEditing()) controller.startEdit("enter", false);
+          if (!controller.isEditing()) controller.startEdit("enter");
         },
         onCompositionEnd: () => {
           composingRef.current = false;

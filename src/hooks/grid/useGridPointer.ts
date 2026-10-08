@@ -54,7 +54,7 @@ export function useGridPointer({
       onPointerCancel: endDrag,
       onDoubleClick: (e: MouseEvent<HTMLDivElement>) => {
         if (onEditor(e)) return;
-        if (locate(e).kind === "cell") controller.startEdit("edit", true);
+        if (locate(e).kind === "cell") controller.startEdit("edit", { keepContent: true });
       },
     };
   }, [controller, editor, inputRef, scrollRef, contentRef]);
