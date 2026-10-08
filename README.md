@@ -10,7 +10,27 @@ Node.js 20 이상이 필요합니다.
 
 ```bash
 npm install
-cp .env.example .env.local   # ANTHROPIC_API_KEY 입력
+cp .env.example .env.local
+```
+
+복사한 `.env.local`에서 `ANTHROPIC_API_KEY`만 채우면 됩니다. 나머지 값은 기본값 그대로 두어도 됩니다.
+
+```bash
+# .env.local
+ANTHROPIC_API_KEY=${key}
+# 사용할 모델 (기본값: claude-opus-5-5). 예: claude-sonnet-5-5, claude-haiku-4-5
+ANTHROPIC_MODEL=claude-opus-5-5
+# 생각하는 정도: low | medium | high (기본값: low, 빠른 응답 우선)
+ANTHROPIC_EFFORT=low
+# 1로 두면 API 키가 있어도 가짜 응답으로 동작합니다(지연·오류 재현용).
+AI_MOCK=
+```
+
+API 키를 비워 두면 가짜 Claude API로 동작합니다. 키 없이도 AI 편집 흐름을 그대로 확인할 수 있습니다.
+
+키를 채웠으면 개발 서버를 켭니다.
+
+```bash
 npm run dev
 ```
 
