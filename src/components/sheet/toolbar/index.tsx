@@ -19,14 +19,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import {
-  CELL_FILL_COLORS,
-  CELL_TEXT_COLORS,
-  DEFAULT_FILL_COLOR,
-  DEFAULT_TEXT_COLOR,
-} from "@/resources/colors";
-import { strings } from "@/resources/strings";
-import { ICON } from "@/styles/icon";
+import { useDocVersion } from "@/hooks/sheet/useDocVersion";
+import { useUndoState } from "@/hooks/sheet/useUndoState";
+import { useStore } from "@/hooks/useStore";
 import { isApplePlatform } from "@/lib/platform";
 import { commonStyle, hasFormatEverywhere } from "@/lib/sheet/document";
 import {
@@ -37,10 +32,15 @@ import {
 } from "@/lib/sheet/keymap";
 import type { Alignment, FormatKey } from "@/lib/sheet/schema";
 import { selectionRange } from "@/lib/sheet/selection";
-import { useStore } from "@/hooks/useStore";
+import {
+  CELL_FILL_COLORS,
+  CELL_TEXT_COLORS,
+  DEFAULT_FILL_COLOR,
+  DEFAULT_TEXT_COLOR,
+} from "@/resources/colors";
+import { strings } from "@/resources/strings";
+import { ICON } from "@/styles/icon";
 import { useSelection, useSheet } from "../SheetContext";
-import { useUndoState } from "@/hooks/sheet/useUndoState";
-import { useDocVersion } from "@/hooks/sheet/useDocVersion";
 import { ColorMenu } from "./ColorMenu";
 
 const FORMAT_BUTTONS: { key: FormatKey; label: string; icon: LucideIcon }[] = [

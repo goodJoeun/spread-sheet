@@ -7,8 +7,8 @@ import {
   SLOW_AFTER_MS,
   type AiPresenceBinding,
 } from "@/lib/ai/ai-controller";
-import type { AiRun } from "@/lib/ai/run";
 import { aiError, type AiEditRequest, type AiStreamEvent } from "@/lib/ai/protocol";
+import type { AiRun } from "@/lib/ai/run";
 import {
   AiRequestError,
   createLineSplitter,
@@ -16,12 +16,12 @@ import {
   type AiTransport,
   type AiTransportOptions,
 } from "@/lib/ai/transport";
+import type { AiActivity, Participant } from "@/lib/collab/presence-state";
 import { createUndoManager } from "@/lib/collab/undo";
 import { SheetController } from "@/lib/controller/sheet-controller";
 import { parseA1, parseRangeA1, rangeToA1 } from "@/lib/sheet/address";
 import { EditOrigin, getValue, setValue } from "@/lib/sheet/document";
 import { collapsedSelection, selectionRange } from "@/lib/sheet/selection";
-import type { AiActivity, Participant } from "@/lib/collab/presence-state";
 
 const at = (a1: string) => parseA1(a1)!;
 const range = (a1: string) => parseRangeA1(a1)!;

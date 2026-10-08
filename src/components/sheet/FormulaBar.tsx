@@ -1,15 +1,15 @@
 "use client";
 
 import { useRef } from "react";
+import { useDocVersion } from "@/hooks/sheet/useDocVersion";
+import { useFormulaInput } from "@/hooks/sheet/useFormulaInput";
+import { useStore } from "@/hooks/useStore";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { getValue } from "@/lib/sheet/document";
 import { DRAFT_INPUT_PROPS } from "@/lib/sheet/draft-input";
 import { selectionRange } from "@/lib/sheet/selection";
-import { useEditState, useSelection, useSheet } from "./SheetContext";
 import { strings } from "@/resources/strings";
-import { useDocVersion } from "@/hooks/sheet/useDocVersion";
-import { useFormulaInput } from "@/hooks/sheet/useFormulaInput";
-import { useStore } from "@/hooks/useStore";
+import { useEditState, useSelection, useSheet } from "./SheetContext";
 
 export function FormulaBar() {
   const { session, controller } = useSheet();

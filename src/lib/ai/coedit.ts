@@ -1,11 +1,11 @@
+import { aiArea } from "@/lib/collab/locks";
+import type { AiActivity, Participant } from "@/lib/collab/presence-state";
 import {
   boundingRange,
   intersectRanges,
   type CellCoord,
   type CellRange,
 } from "@/lib/sheet/address";
-import { aiArea } from "@/lib/collab/locks";
-import type { AiActivity, Participant } from "@/lib/collab/presence-state";
 import { isReviewing, isRunning, type AiProposal, type AiRun } from "./run";
 
 /**

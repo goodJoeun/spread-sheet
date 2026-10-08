@@ -3,6 +3,7 @@
 import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { Notice } from "@/components/ui/Notice";
+import { useSheetSession } from "@/hooks/sheet/useSheetSession";
 import { useStore } from "@/hooks/useStore";
 import { strings } from "@/resources/strings";
 import { AiPanel } from "./ai/AiPanel";
@@ -11,7 +12,6 @@ import { Grid } from "./grid/Grid";
 import { ParticipantList } from "./participant-list";
 import { SheetProvider, useSheet } from "./SheetContext";
 import { Toolbar } from "./toolbar";
-import { useSheetSession } from "@/hooks/sheet/useSheetSession";
 
 interface SheetAppProps {
   sheetId: string;

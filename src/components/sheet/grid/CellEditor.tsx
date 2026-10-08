@@ -1,13 +1,12 @@
 import type { RefObject } from "react";
-import type { Rect } from "@/lib/sheet/geometry";
-import { COL_WIDTH } from "@/lib/sheet/geometry";
+import type { CellEditorBinding } from "@/hooks/grid/useCellEditor";
 import { DRAFT_INPUT_PROPS } from "@/lib/sheet/draft-input";
+import { COL_WIDTH, type Rect } from "@/lib/sheet/geometry";
 import type { CellFormat } from "@/lib/sheet/schema";
 import { DEFAULT_FILL_COLOR } from "@/resources/colors";
 import { strings } from "@/resources/strings";
 import { cellTextStyle } from "./cell-style";
 import { Layer } from "./layers";
-import type { CellEditorBinding } from "@/hooks/grid/useCellEditor";
 
 interface CellEditorProps {
   inputRef: RefObject<HTMLInputElement | null>;

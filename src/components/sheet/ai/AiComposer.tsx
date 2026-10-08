@@ -2,6 +2,9 @@
 
 import { ArrowUp, Lock, Sparkles, Square } from "lucide-react";
 import { useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import { Notice } from "@/components/ui/Notice";
+import { useParticipants } from "@/hooks/sheet/useParticipants";
+import { useStore } from "@/hooks/useStore";
 import { overlappingAi } from "@/lib/ai/coedit";
 import { overlapNotice } from "@/lib/ai/messages";
 import { AI_LIMITS } from "@/lib/ai/protocol";
@@ -9,12 +12,9 @@ import { isReviewing, isRunning } from "@/lib/ai/run";
 import { isImeComposing } from "@/lib/platform";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { isMultiCell, selectionRange } from "@/lib/sheet/selection";
-import { useStore } from "@/hooks/useStore";
-import { useSelection, useSheet } from "../SheetContext";
-import { useParticipants } from "@/hooks/sheet/useParticipants";
-import { Notice } from "@/components/ui/Notice";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
+import { useSelection, useSheet } from "../SheetContext";
 
 type ScopeMode = "selection" | "sheet";
 

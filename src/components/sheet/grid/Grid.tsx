@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useCellEditor } from "@/hooks/grid/useCellEditor";
+import { useGridPointer } from "@/hooks/grid/useGridPointer";
+import { useDocVersion } from "@/hooks/sheet/useDocVersion";
+import { useParticipants } from "@/hooks/sheet/useParticipants";
 import { useStore } from "@/hooks/useStore";
+import { editorNotices } from "@/lib/ai/messages";
+import { lockedCellNotices } from "@/lib/collab/messages";
 import { getFormat } from "@/lib/sheet/document";
 import {
   COL_HEADER_HEIGHT,
@@ -13,11 +19,8 @@ import {
 } from "@/lib/sheet/geometry";
 import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
 import { selectionRange } from "@/lib/sheet/selection";
+import { revealCell, visibleRowCount } from "@/lib/sheet/viewport";
 import { useEditState, useSelection, useSheet } from "../SheetContext";
-import { useDocVersion } from "@/hooks/sheet/useDocVersion";
-import { useParticipants } from "@/hooks/sheet/useParticipants";
-import { editorNotices } from "@/lib/ai/messages";
-import { lockedCellNotices } from "@/lib/collab/messages";
 import { AiPreview } from "./AiPreview";
 import { CellEditor } from "./CellEditor";
 import { CoEditNotice } from "./CoEditNotice";
@@ -27,9 +30,6 @@ import { RemoteAiActivity } from "./RemoteAiActivity";
 import { RemoteCursors } from "./RemoteCursors";
 import { RemoteDrafts } from "./RemoteDrafts";
 import { SelectionOverlay } from "./SelectionOverlay";
-import { useCellEditor } from "@/hooks/grid/useCellEditor";
-import { useGridPointer } from "@/hooks/grid/useGridPointer";
-import { revealCell, visibleRowCount } from "@/lib/sheet/viewport";
 
 const CONTENT_WIDTH = ROW_HEADER_WIDTH + COL_COUNT * COL_WIDTH;
 const CONTENT_HEIGHT = COL_HEADER_HEIGHT + ROW_COUNT * ROW_HEIGHT;

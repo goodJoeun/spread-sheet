@@ -1,12 +1,12 @@
 import { Check, Pencil } from "lucide-react";
 import { useState, type KeyboardEvent } from "react";
-import { strings } from "@/resources/strings";
-import { ICON } from "@/styles/icon";
 import { MAX_NAME_LENGTH } from "@/lib/collab/identity";
 import { participantStatus } from "@/lib/collab/messages";
 import type { Participant } from "@/lib/collab/presence-state";
 import { isImeComposing } from "@/lib/platform";
 import type { CellCoord } from "@/lib/sheet/address";
+import { strings } from "@/resources/strings";
+import { ICON } from "@/styles/icon";
 import { Avatar } from "./Avatar";
 
 /** 나. 이름을 바꿀 수 있음. */

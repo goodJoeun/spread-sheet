@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { AiProposal } from "@/lib/ai/run";
 import {
   activityRange,
   aiActivitiesAt,
@@ -9,6 +8,7 @@ import {
   overlappingAi,
   summarize,
 } from "@/lib/ai/coedit";
+import type { AiProposal } from "@/lib/ai/run";
 import type { AiActivity, Participant } from "@/lib/collab/presence-state";
 import { parseA1, parseRangeA1, rangeToA1, type CellRange } from "@/lib/sheet/address";
 

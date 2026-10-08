@@ -1,5 +1,5 @@
-import { strings } from "@/resources/strings";
 import type { Participant } from "@/lib/collab/presence-state";
+import { strings } from "@/resources/strings";
 
 /** 이름 마지막 낱말의 첫 글자를 참여자 색 원 안에 보여 줌. */
 export function Avatar({

@@ -2,17 +2,17 @@
 
 import { Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Notice } from "@/components/ui/Notice";
+import { useAiConnection } from "@/hooks/ai/useAiConnection";
+import { useStore } from "@/hooks/useStore";
 import { MOCK_SCENARIO_TAGS } from "@/lib/ai/mock-scenarios";
 import { rangeToA1, type CellRange } from "@/lib/sheet/address";
-import { useStore } from "@/hooks/useStore";
+import { strings } from "@/resources/strings";
+import { ICON } from "@/styles/icon";
 import { useSheet } from "../SheetContext";
 import { AiComposer } from "./AiComposer";
 import { ModelSelect } from "./ModelSelect";
 import { AiRunCard } from "./run-card";
-import { useAiConnection } from "@/hooks/ai/useAiConnection";
-import { Notice } from "@/components/ui/Notice";
-import { strings } from "@/resources/strings";
-import { ICON } from "@/styles/icon";
 
 const MOCK_TAGS = Object.values(MOCK_SCENARIO_TAGS).join(" ");
 

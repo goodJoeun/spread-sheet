@@ -11,10 +11,10 @@ import { isReviewing, isRunning, type AiRun } from "@/lib/ai/run";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
-import { useSheet } from "../../SheetContext";
 import { ConflictBanner } from "./ConflictBanner";
 import { ProposalList } from "./ProposalList";
 import { StatusLine } from "./StatusLine";
+import { useSheet } from "../../SheetContext";
 
 const S = strings.ai.run;
 

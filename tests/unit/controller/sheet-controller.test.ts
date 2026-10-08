@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import * as Y from "yjs";
+import type { Participant } from "@/lib/collab/presence-state";
 import { createUndoManager } from "@/lib/collab/undo";
 import { SheetController, type SheetView } from "@/lib/controller/sheet-controller";
-import type { Participant } from "@/lib/collab/presence-state";
 import { parseA1, parseRangeA1, toA1, type CellCoord } from "@/lib/sheet/address";
 import { EditOrigin, getFormat, getValue, setValue } from "@/lib/sheet/document";
 import { collapsedSelection, type Selection } from "@/lib/sheet/selection";

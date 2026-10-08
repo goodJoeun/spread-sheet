@@ -1,11 +1,11 @@
 import { Sparkles } from "lucide-react";
 import { memo } from "react";
-import { isRunning, type AiRun } from "@/lib/ai/run";
 import { summarize, type ProposalState } from "@/lib/ai/coedit";
+import { isRunning, type AiRun } from "@/lib/ai/run";
 import { COL_WIDTH, ROW_HEIGHT, cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
 import { defaultAlignment } from "@/lib/sheet/schema";
-import { ICON } from "@/styles/icon";
 import { strings } from "@/resources/strings";
+import { ICON } from "@/styles/icon";
 import { AnchoredLabel } from "./AnchoredLabel";
 import { Layer } from "./layers";
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
+import { createUndoManager } from "@/lib/collab/undo";
 import { parseA1, parseRangeA1, type CellCoord } from "@/lib/sheet/address";
 import {
   EditOrigin,
@@ -9,7 +10,6 @@ import {
   toggleFormat,
   writeValues,
 } from "@/lib/sheet/document";
-import { createUndoManager } from "@/lib/collab/undo";
 
 const at = (a1: string): CellCoord => parseA1(a1)!;
 const { User, Ai } = EditOrigin;

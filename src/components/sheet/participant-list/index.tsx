@@ -2,12 +2,12 @@
 
 import { Users } from "lucide-react";
 import { Popover } from "@/components/ui/Popover";
-import { strings } from "@/resources/strings";
-import { ICON } from "@/styles/icon";
+import { useParticipants } from "@/hooks/sheet/useParticipants";
 import type { Participant } from "@/lib/collab/presence-state";
 import type { CellCoord } from "@/lib/sheet/address";
+import { strings } from "@/resources/strings";
+import { ICON } from "@/styles/icon";
 import { useSheet } from "../SheetContext";
-import { useParticipants } from "@/hooks/sheet/useParticipants";
 import { Avatar } from "./Avatar";
 import { OtherRow, SelfRow } from "./ParticipantRows";
 
