@@ -63,7 +63,7 @@ export function AiRunCard({ run }: AiRunCardProps) {
             {aiWarningMessage(warning)}
           </Notice>
         ))}
-        {run.skipped > 0 && <p className="text-label text-fg-subtle">{S.skipped(run.skipped)}</p>}
+        {run.excluded > 0 && <p className="text-label text-fg-subtle">{S.excluded(run.excluded)}</p>}
 
         {summary && summary.conflicts > 0 && (
           <ConflictBanner

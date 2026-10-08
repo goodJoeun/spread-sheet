@@ -121,7 +121,7 @@ export const strings = {
     run: {
       mockBadge: "가짜 응답",
       scope: (range: string | null) => range ?? wholeSheet,
-      skipped: (n: number) => `범위 밖이거나 주소가 잘못된 제안 ${n}개는 제외했어요.`,
+      excluded: (n: number) => `범위 밖이거나 주소가 잘못된 제안 ${n}개는 제외했어요.`,
       proposals: "제안 목록",
       apply: (n: number) => `적용하기 (${n})`,
       nothingToApply: "적용할 셀이 없어요",

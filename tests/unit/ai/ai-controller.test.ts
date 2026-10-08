@@ -135,7 +135,7 @@ describe("AiController", () => {
       ["B2", "100", "200"],
       ["B3", "200", "400"],
     ]);
-    expect(lastRun()?.skipped).toBe(1);
+    expect(lastRun()?.excluded).toBe(1);
     expect(ai.active.get()?.proposals).toHaveLength(2);
 
     call.emit({ type: "done" });

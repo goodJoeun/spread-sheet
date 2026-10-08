@@ -15,7 +15,7 @@ describe("applyProgress", () => {
     r = applyProgress(r, { type: "edit", cell: "C3", value: "3" });
     r = applyProgress(r, { type: "edit", cell: "??", value: "4" });
     expect(r.proposals.map((p) => p.cell)).toEqual(["B2"]);
-    expect(r.skipped).toBe(2);
+    expect(r.excluded).toBe(2);
     expect(r.status).toBe("streaming");
   });
 

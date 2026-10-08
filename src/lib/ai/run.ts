@@ -36,8 +36,11 @@ export interface AiRun {
   model: string | null;
   text: string;
   proposals: AiProposal[];
-  /** 범위 밖 등으로 뺀 제안 수 */
-  skipped: number;
+  /**
+   * 범위 밖이거나 주소가 잘못돼 받지 않은 제안 수.
+   * 적용할 때 충돌로 건너뛴 셀 수(result.skipped)와는 다름.
+   */
+  excluded: number;
   warnings: AiWarning[];
   error: AiErrorInfo | null;
   /** 요청 시점의 셀 값(비어 있지 않은 셀) */
@@ -74,7 +77,7 @@ export function createRun(init: AiRunInit): AiRun {
     provider: null,
     text: "",
     proposals: [],
-    skipped: 0,
+    excluded: 0,
     warnings: [],
     error: null,
     result: null,
@@ -117,21 +120,23 @@ export function finishRun(run: AiRun): AiRun {
 /** 범위 밖이거나 주소가 잘못된 제안은 세기만 함. 요청 때 값과 같아진 셀은 제안에서 뺌. */
 function addProposal(run: AiRun, cell: string, value: string): AiRun {
   const coord = parseA1(cell);
-  const base = { ...run, connected: true, slow: false, status: "streaming" as const };
-  if (!coord || !isInSheet(coord) || (run.scope && !rangeContains(run.scope, coord))) {
-    return { ...base, skipped: run.skipped + 1 };
+  const streaming = { ...run, connected: true, slow: false, status: "streaming" as const };
+  const isEditable =
+    coord !== null && isInSheet(coord) && (!run.scope || rangeContains(run.scope, coord));
+  if (!isEditable) {
+    return { ...streaming, excluded: run.excluded + 1 };
   }
   const key = toA1(coord);
   const before = run.base.get(key) ?? "";
   const after = value.slice(0, AI_LIMITS.cellValue);
   const existing = run.proposals.findIndex((p) => p.cell === key);
   if (after === before) {
-    return { ...base, proposals: run.proposals.filter((p) => p.cell !== key) };
+    return { ...streaming, proposals: run.proposals.filter((p) => p.cell !== key) };
   }
   const proposal: AiProposal = { coord, cell: key, before, after };
   const proposals =
     existing >= 0
       ? run.proposals.map((p, i) => (i === existing ? proposal : p))
       : [...run.proposals, proposal];
-  return { ...base, proposals };
+  return { ...streaming, proposals };
 }
