@@ -1,4 +1,11 @@
-import { parseA1, rangeContains, toA1, type CellCoord, type CellRange } from "./address";
+import {
+  intersectRanges,
+  parseA1,
+  rangeContains,
+  toA1,
+  type CellCoord,
+  type CellRange,
+} from "./address";
 
 /** 선택·키 매핑·좌표 같은 순수 로직이 Yjs를 끌어오지 않도록 document.ts와 나눠 둠. */
 
@@ -11,6 +18,11 @@ export const SHEET_RANGE: CellRange = {
 
 export function isInSheet(coord: CellCoord): boolean {
   return rangeContains(SHEET_RANGE, coord);
+}
+
+/** 범위에서 시트 안에 드는 부분. 시트와 겹치지 않으면 null */
+export function clipToSheet(range: CellRange): CellRange | null {
+  return intersectRanges(range, SHEET_RANGE);
 }
 
 /** 켜고 끄는 서식 */

@@ -1,5 +1,5 @@
 import { normalizeRange, type CellCoord, type CellRange } from "./address";
-import { COL_COUNT, ROW_COUNT } from "./schema";
+import { COL_COUNT, ROW_COUNT, SHEET_RANGE, isInSheet } from "./schema";
 
 /**
  * anchor: 범위 선택을 시작한 고정 꼭짓점
@@ -86,32 +86,26 @@ export function jumpTarget(
   isFilled: (coord: CellCoord) => boolean,
 ): CellCoord {
   const step = (c: CellCoord) => ({ row: c.row + dRow, col: c.col + dCol });
-  const inSheet = (c: CellCoord) =>
-    c.row >= 0 && c.row < ROW_COUNT && c.col >= 0 && c.col < COL_COUNT;
 
   let current = step(start);
-  if (!inSheet(current)) return start;
+  if (!isInSheet(current)) return start;
 
   if (isFilled(start) && isFilled(current)) {
-    for (let next = step(current); inSheet(next) && isFilled(next); next = step(next)) {
+    for (let next = step(current); isInSheet(next) && isFilled(next); next = step(next)) {
       current = next;
     }
     return current;
   }
   while (!isFilled(current)) {
     const next = step(current);
-    if (!inSheet(next)) return current;
+    if (!isInSheet(next)) return current;
     current = next;
   }
   return current;
 }
 
 export function selectAll(selection: Selection): Selection {
-  return {
-    anchor: { row: 0, col: 0 },
-    focus: { row: ROW_COUNT - 1, col: COL_COUNT - 1 },
-    active: selection.active,
-  };
+  return { anchor: SHEET_RANGE.start, focus: SHEET_RANGE.end, active: selection.active };
 }
 
 export function selectRows(fromRow: number, toRow: number): Selection {

@@ -22,7 +22,7 @@ export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps
     />,
   ];
   for (let col = 0; col < COL_COUNT; col++) {
-    const active = col >= range.start.col && col <= range.end.col;
+    const active = range.start.col <= col && col <= range.end.col;
     items.push(
       <div
         key={`c${col}`}
@@ -35,7 +35,7 @@ export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps
     );
   }
   for (let row = 0; row < ROW_COUNT; row++) {
-    const active = row >= range.start.row && row <= range.end.row;
+    const active = range.start.row <= row && row <= range.end.row;
     items.push(
       <div
         key={`r${row}`}

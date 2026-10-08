@@ -1,6 +1,6 @@
 import {
+  boundingRange,
   intersectRanges,
-  normalizeRange,
   type CellCoord,
   type CellRange,
 } from "@/lib/sheet/address";
@@ -68,26 +68,11 @@ export function summarize(states: readonly ProposalState[]): ProposalSummary {
   return { toApply, skipped, conflicts };
 }
 
-export function boundingRange(cells: ReadonlyArray<{ coord: CellCoord }>): CellRange | null {
-  if (cells.length === 0) return null;
-  let top = Infinity;
-  let left = Infinity;
-  let bottom = -Infinity;
-  let right = -Infinity;
-  for (const { coord } of cells) {
-    top = Math.min(top, coord.row);
-    left = Math.min(left, coord.col);
-    bottom = Math.max(bottom, coord.row);
-    right = Math.max(right, coord.col);
-  }
-  return normalizeRange({ row: top, col: left }, { row: bottom, col: right });
-}
-
 export function activityRange(
   scope: CellRange | null,
   proposals: ReadonlyArray<{ coord: CellCoord }>,
 ): CellRange | null {
-  return scope ?? boundingRange(proposals);
+  return scope ?? boundingRange(proposals.map((p) => p.coord));
 }
 
 /**

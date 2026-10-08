@@ -1,9 +1,9 @@
 import * as Y from "yjs";
-import { forEachCell, intersectRanges, toA1, type CellCoord, type CellRange } from "./address";
+import { forEachCell, toA1, type CellCoord, type CellRange } from "./address";
 import {
   FORMAT_KEYS,
-  SHEET_RANGE,
   STYLE_KEYS,
+  clipToSheet,
   isInSheet,
   isValidStyle,
   type Alignment,
@@ -90,7 +90,7 @@ export function setValue(doc: Y.Doc, coord: CellCoord, value: string, origin: Ed
 
 /** 값만 지우고 서식은 둔다(엑셀·구글시트의 Delete 키와 같음). */
 export function clearValues(doc: Y.Doc, range: CellRange, origin: EditOrigin): number {
-  const clipped = intersectRanges(range, SHEET_RANGE);
+  const clipped = clipToSheet(range);
   if (!clipped) return 0;
   const writes: CellWrite[] = [];
   forEachCell(clipped, (coord) => writes.push({ coord, value: "" }));
@@ -98,7 +98,7 @@ export function clearValues(doc: Y.Doc, range: CellRange, origin: EditOrigin): n
 }
 
 export function hasFormatEverywhere(doc: Y.Doc, range: CellRange, key: FormatKey): boolean {
-  const clipped = intersectRanges(range, SHEET_RANGE);
+  const clipped = clipToSheet(range);
   if (!clipped) return false;
   const formats = formatsOf(doc);
   let everywhere = true;
@@ -115,7 +115,7 @@ export function setFormat(
   enabled: boolean,
   origin: EditOrigin,
 ): void {
-  const clipped = intersectRanges(range, SHEET_RANGE);
+  const clipped = clipToSheet(range);
   if (!clipped) return;
   const formats = formatsOf(doc);
   doc.transact(() => {
@@ -150,7 +150,7 @@ export function setStyle(
   origin: EditOrigin,
 ): void {
   if (value !== null && !isValidStyle(key, value)) return;
-  const clipped = intersectRanges(range, SHEET_RANGE);
+  const clipped = clipToSheet(range);
   if (!clipped) return;
   const formats = formatsOf(doc);
   doc.transact(() => {
@@ -166,7 +166,7 @@ export function setStyle(
 
 /** 범위 전체가 같은 값이면 그 값, 섞여 있거나 기본값이면 null */
 export function commonStyle(doc: Y.Doc, range: CellRange, key: StyleKey): string | null {
-  const clipped = intersectRanges(range, SHEET_RANGE);
+  const clipped = clipToSheet(range);
   if (!clipped) return null;
   const formats = formatsOf(doc);
   let common: string | null | undefined;
@@ -180,7 +180,7 @@ export function commonStyle(doc: Y.Doc, range: CellRange, key: StyleKey): string
 }
 
 export function clearFormats(doc: Y.Doc, range: CellRange, origin: EditOrigin): void {
-  const clipped = intersectRanges(range, SHEET_RANGE);
+  const clipped = clipToSheet(range);
   if (!clipped) return;
   const formats = formatsOf(doc);
   doc.transact(() => {

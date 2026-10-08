@@ -74,7 +74,23 @@ export function rangeToA1({ start, end }: CellRange): string {
 }
 
 export function rangeContains({ start, end }: CellRange, { row, col }: CellCoord): boolean {
-  return row >= start.row && row <= end.row && col >= start.col && col <= end.col;
+  return start.row <= row && row <= end.row && start.col <= col && col <= end.col;
+}
+
+/** 좌표를 모두 담는 가장 작은 범위. 좌표가 없으면 null */
+export function boundingRange(coords: readonly CellCoord[]): CellRange | null {
+  if (coords.length === 0) return null;
+  let top = Infinity;
+  let left = Infinity;
+  let bottom = -Infinity;
+  let right = -Infinity;
+  for (const { row, col } of coords) {
+    top = Math.min(top, row);
+    left = Math.min(left, col);
+    bottom = Math.max(bottom, row);
+    right = Math.max(right, col);
+  }
+  return { start: { row: top, col: left }, end: { row: bottom, col: right } };
 }
 
 /** 범위 안의 셀을 행 우선(좌→우, 위→아래)으로 순회한다. */

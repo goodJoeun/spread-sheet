@@ -1,5 +1,5 @@
-import { intersectRanges, type CellCoord, type CellRange } from "@/lib/sheet/address";
-import { SHEET_RANGE } from "@/lib/sheet/schema";
+import type { CellCoord, CellRange } from "@/lib/sheet/address";
+import { clipToSheet } from "@/lib/sheet/schema";
 import { clampCoord, type Selection } from "@/lib/sheet/selection";
 
 /**
@@ -107,7 +107,7 @@ export function normalizePresenceState(state: PresenceState): PresenceState {
 }
 
 function normalizeAiActivity(ai: AiActivity): AiActivity | null {
-  const range = ai.range ? intersectRanges(ai.range, SHEET_RANGE) : null;
+  const range = ai.range ? clipToSheet(ai.range) : null;
   // 시트와 겹치지 않는 범위를 null로 두면 "시트 전체"가 되므로, AI 편집이 없는 것으로 봄.
   if (ai.range && !range) return null;
   return { status: ai.status, range, locked: ai.locked === true };

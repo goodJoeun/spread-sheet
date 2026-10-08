@@ -1,12 +1,11 @@
 import "server-only";
 import {
+  boundingRange,
   forEachCell,
-  normalizeRange,
   parseA1,
   parseRangeA1,
   toA1,
   type CellCoord,
-  type CellRange,
 } from "@/lib/sheet/address";
 import { MOCK_SCENARIO_TAGS, type MockScenario } from "../mock-scenarios";
 import type { AiCell } from "../protocol";
@@ -23,10 +22,8 @@ interface MockOptions {
   delayScale?: number;
 }
 
-type Scenario = MockScenario;
-
 const SCENARIO_TAGS = Object.entries(MOCK_SCENARIO_TAGS).map(
-  ([scenario, tag]) => [tag, scenario as Scenario] as const,
+  ([scenario, tag]) => [tag, scenario as MockScenario] as const,
 );
 
 export function createMockAnthropicFetch({ delayScale = 1 }: MockOptions = {}): typeof fetch {
@@ -218,7 +215,8 @@ const NUMBER = /^-?[\d,]+(\.\d+)?$/;
 /** 지시문의 몇 가지 낱말만 알아듣는 흉내. 실제 모델로 바꾸면 이 부분은 쓰이지 않는다. */
 export function planResponse(cells: AiCell[], range: string | null, instruction: string): Plan {
   const values = new Map(cells.map((c) => [c.cell, c.value]));
-  const target = (range && parseRangeA1(range)) || boundingBox(cells) || parseRangeA1("A1:C5")!;
+  const filled = cells.map((c) => parseA1(c.cell)).filter((c): c is CellCoord => c !== null);
+  const target = (range && parseRangeA1(range)) || boundingRange(filled) || parseRangeA1("A1:C5")!;
   const coords: CellCoord[] = [];
   forEachCell(target, (coord) => coords.push(coord));
   const valueAt = (coord: CellCoord) => values.get(toA1(coord)) ?? "";
@@ -265,17 +263,4 @@ function withText(edits: AiCell[], text: string): Plan {
   return edits.length > 0
     ? { text, edits }
     : { text: "(가짜 응답) 바꿀 셀을 찾지 못했어요.", edits };
-}
-
-function boundingBox(cells: AiCell[]): CellRange | null {
-  const coords = cells.map((c) => parseA1(c.cell)).filter((c): c is CellCoord => c !== null);
-  if (coords.length === 0) return null;
-  return coords.reduce<CellRange>(
-    (box, c) =>
-      normalizeRange(
-        { row: Math.min(box.start.row, c.row), col: Math.min(box.start.col, c.col) },
-        { row: Math.max(box.end.row, c.row), col: Math.max(box.end.col, c.col) },
-      ),
-    { start: coords[0], end: coords[0] },
-  );
 }

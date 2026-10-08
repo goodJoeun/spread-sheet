@@ -1,14 +1,13 @@
 import type * as Y from "yjs";
 import type { AiActivity, Participant } from "@/lib/collab/presence-state";
-import { intersectRanges, rangeToA1, type CellCoord, type CellRange } from "@/lib/sheet/address";
+import { boundingRange, rangeToA1, type CellCoord, type CellRange } from "@/lib/sheet/address";
 import { EditOrigin, valuesOf, writeValues } from "@/lib/sheet/document";
-import { SHEET_RANGE } from "@/lib/sheet/schema";
+import { clipToSheet } from "@/lib/sheet/schema";
 import type { Selection } from "@/lib/sheet/selection";
 import { createStore } from "@/lib/store";
 import {
   aiActivityOf,
   blockingOverlaps,
-  boundingRange,
   evaluateProposals,
   overlappingAi,
   summarize,
@@ -127,7 +126,7 @@ export class AiController {
     const text = instruction.trim().slice(0, AI_LIMITS.instruction);
     if (!text || this.isBusy()) return false;
 
-    const range = scope ? intersectRanges(scope, SHEET_RANGE) : null;
+    const range = scope ? clipToSheet(scope) : null;
     const locked = this.lockCells.get();
     const overlaps = overlappingAi(this.presence.getParticipants?.() ?? [], range);
     if (blockingOverlaps(overlaps, locked).length > 0) return false;
@@ -206,7 +205,7 @@ export class AiController {
     const writes = states.filter(writable).map((s) => s.proposal);
     const skipped = summarize(states).skipped;
 
-    const box = boundingRange(writes);
+    const box = boundingRange(writes.map((p) => p.coord));
     if (box) {
       // 적용 직전에 선택을 바뀔 범위로 옮겨 둠. 그래야 실행 취소했을 때 이 범위로 돌아옴.
       this.sheet.select({ anchor: box.start, focus: box.end, active: box.start }, box.start);
