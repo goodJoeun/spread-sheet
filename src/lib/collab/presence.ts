@@ -6,6 +6,7 @@ import { TabLiveness, webLocks } from "./liveness";
 import {
   DRAFT_MAX_LENGTH,
   isPresenceState,
+  normalizePresenceState,
   type AiActivity,
   type Participant,
   type PresenceState,
@@ -183,9 +184,7 @@ export class Presence {
     this.awareness.getStates().forEach((state, clientId) => {
       if (!isPresenceState(state)) return;
       participants.push({
-        ...state,
-        draft: state.editing && typeof state.draft === "string" ? state.draft : null,
-        ai: state.ai ? { ...state.ai, locked: state.ai.locked === true } : null,
+        ...normalizePresenceState(state),
         clientId,
         isSelf: clientId === this.clientId,
       });

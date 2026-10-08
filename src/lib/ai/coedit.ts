@@ -114,13 +114,11 @@ export function overlappingAi(
   range: CellRange | null,
 ): AiOverlap[] {
   const mine = aiArea(range);
-  if (!mine) return [];
   const overlaps: AiOverlap[] = [];
   for (const participant of participants) {
     const activity = participant.ai;
     if (participant.isSelf || !activity) continue;
-    const theirs = aiArea(activity.range);
-    if (theirs && intersectRanges(mine, theirs)) overlaps.push({ participant, activity });
+    if (intersectRanges(mine, aiArea(activity.range))) overlaps.push({ participant, activity });
   }
   return overlaps;
 }

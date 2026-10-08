@@ -6,7 +6,13 @@ import { BroadcastChannelProvider } from "@/lib/collab/broadcast-provider";
 import { PARTICIPANT_COLORS } from "@/resources/colors";
 import { normalizeName, pickColor } from "@/lib/collab/identity";
 import { Presence } from "@/lib/collab/presence";
-import { DRAFT_MAX_LENGTH, type UserInfo } from "@/lib/collab/presence-state";
+import {
+  DRAFT_MAX_LENGTH,
+  normalizePresenceState,
+  type PresenceState,
+  type UserInfo,
+} from "@/lib/collab/presence-state";
+import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
 
 // 탭 하나 = Y.Doc + Awareness + BroadcastChannelProvider + Presence.
 // Node 24에는 BroadcastChannel과 Web Locks(navigator.locks)가 있어서, 브라우저와 같은 경로로 동작함.
@@ -127,6 +133,40 @@ describe("Presence", () => {
     await vi.waitFor(() => expect(a.presence.getParticipants()).toHaveLength(1));
   });
 
+  it("brings coordinates from other tabs inside the sheet", async () => {
+    const room = crypto.randomUUID();
+    const a = openTab(room);
+    const b = openTab(room);
+    await Promise.all([a.presence.join(), b.presence.join()]);
+    const far = { row: 500, col: -3 };
+    b.awareness.setLocalState({
+      user: { name: "다른 탭", color: "#1e8e3e" },
+      selection: { anchor: far, focus: far, active: far },
+      editing: far,
+      draft: "입력 중",
+      ai: {
+        status: "generating",
+        range: { start: { row: 90, col: 20 }, end: { row: 300, col: 40 } },
+        locked: true,
+      },
+    });
+
+    const other = () => a.presence.getParticipants().find((p) => !p.isSelf);
+    await vi.waitFor(() => expect(other()?.user.name).toBe("다른 탭"));
+    const lastRowFirstCol = { row: ROW_COUNT - 1, col: 0 };
+    expect(other()?.editing).toEqual(lastRowFirstCol);
+    expect(other()?.selection).toEqual({
+      anchor: lastRowFirstCol,
+      focus: lastRowFirstCol,
+      active: lastRowFirstCol,
+    });
+    expect(other()?.draft).toBe("입력 중");
+    expect(other()?.ai?.range).toEqual({
+      start: { row: 90, col: 20 },
+      end: { row: ROW_COUNT - 1, col: COL_COUNT - 1 },
+    });
+  });
+
   it("drops a participant who leaves the page", async () => {
     const room = crypto.randomUUID();
     const a = openTab(room);
@@ -241,5 +281,40 @@ describe("helpers", () => {
     expect(normalizeName("  a  b ")).toBe("a b");
     expect(normalizeName("")).toBeNull();
     expect(normalizeName("가".repeat(50))).toHaveLength(20);
+  });
+
+  const user = { name: "다른 탭", color: "#1e8e3e" };
+
+  it("drops an AI edit whose range lies entirely outside the sheet", () => {
+    const normalized = normalizePresenceState({
+      user,
+      selection: null,
+      editing: null,
+      draft: "편집 중이 아니면 버림",
+      ai: {
+        status: "reviewing",
+        range: { start: { row: ROW_COUNT, col: 0 }, end: { row: ROW_COUNT + 5, col: 3 } },
+        locked: true,
+      },
+    });
+    expect(normalized.ai).toBeNull();
+    expect(normalized.draft).toBeNull();
+  });
+
+  it("fills in fields that older tabs leave out", () => {
+    // 이전 버전 탭은 draft·locked 없이 보냄. 범위가 null(시트 전체)인 AI 편집은 그대로 둠.
+    const older = {
+      user,
+      selection: null,
+      editing: null,
+      ai: { status: "generating", range: null },
+    };
+    expect(normalizePresenceState(older as unknown as PresenceState)).toEqual({
+      user,
+      selection: null,
+      editing: null,
+      draft: null,
+      ai: { status: "generating", range: null, locked: false },
+    });
   });
 });

@@ -2,7 +2,7 @@ import { Pencil } from "lucide-react";
 import { Fragment, memo } from "react";
 import type { Participant } from "@/lib/collab/presence-state";
 import { cellRect, outsetRect, rangeRect } from "@/lib/sheet/geometry";
-import { clampCoord, isMultiCell, selectionRange } from "@/lib/sheet/selection";
+import { isMultiCell, selectionRange } from "@/lib/sheet/selection";
 import { ICON } from "@/styles/icon";
 import { strings } from "@/resources/strings";
 import { AnchoredLabel } from "./AnchoredLabel";
@@ -18,20 +18,14 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
     const { selection, editing, user, clientId, isSelf } = participant;
     if (isSelf || !selection) return null;
 
-    // 다른 탭에서 온 좌표라 시트 범위 안으로 맞춤.
-    const safe = {
-      anchor: clampCoord(selection.anchor),
-      focus: clampCoord(selection.focus),
-      active: clampCoord(selection.active),
-    };
-    const range = outsetRect(rangeRect(selectionRange(safe)));
-    const cursor = clampCoord(editing ?? safe.active);
+    const range = outsetRect(rangeRect(selectionRange(selection)));
+    const cursor = editing ?? selection.active;
     const rect = outsetRect(cellRect(cursor));
     const labelBelow = cursor.row === 0; // 첫 행이면 머리글에 가리지 않게 아래에 붙임.
 
     return (
       <Fragment key={clientId}>
-        {isMultiCell(safe) && (
+        {isMultiCell(selection) && (
           <div
             className="overlay border"
             style={{

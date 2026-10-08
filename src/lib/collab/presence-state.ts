@@ -1,7 +1,11 @@
-import type { CellCoord, CellRange } from "@/lib/sheet/address";
-import type { Selection } from "@/lib/sheet/selection";
+import { intersectRanges, type CellCoord, type CellRange } from "@/lib/sheet/address";
+import { SHEET_RANGE } from "@/lib/sheet/schema";
+import { clampCoord, type Selection } from "@/lib/sheet/selection";
 
-/** 탭마다 awareness로 알리는 상태. 다른 탭(이전 버전 포함)에서 온 값이라 isPresenceState로 검증한 뒤에 씀. */
+/**
+ * 탭마다 awareness로 알리는 상태. 다른 탭(이전 버전 포함)에서 온 값이라
+ * isPresenceState로 검증하고 normalizePresenceState로 맞춘 뒤에 씀.
+ */
 
 export interface UserInfo {
   name: string;
@@ -77,4 +81,34 @@ export function isPresenceState(value: unknown): value is PresenceState {
     (draft === undefined || draft === null || typeof draft === "string") &&
     (ai === undefined || ai === null || isAiActivity(ai))
   );
+}
+
+/**
+ * 검증한 상태를 참여자 목록에 넣기 전에 맞춤. 다른 탭에서 온 좌표를 시트 안으로 맞추는 일은 여기서만 함.
+ * 그래서 Participant를 쓰는 화면과 판단 로직은 좌표를 다시 확인하지 않아도 됨.
+ * - 좌표는 시트 안으로 맞추고, AI 편집 범위는 시트 안으로 자름.
+ * - 이전 버전 탭이 빠뜨린 값은 기본값으로 채움(locked → false, draft → null).
+ */
+export function normalizePresenceState(state: PresenceState): PresenceState {
+  const { user, selection, editing, draft, ai } = state;
+  return {
+    user,
+    selection: selection
+      ? {
+          anchor: clampCoord(selection.anchor),
+          focus: clampCoord(selection.focus),
+          active: clampCoord(selection.active),
+        }
+      : null,
+    editing: editing ? clampCoord(editing) : null,
+    draft: editing && typeof draft === "string" ? draft : null,
+    ai: ai ? normalizeAiActivity(ai) : null,
+  };
+}
+
+function normalizeAiActivity(ai: AiActivity): AiActivity | null {
+  const range = ai.range ? intersectRanges(ai.range, SHEET_RANGE) : null;
+  // 시트와 겹치지 않는 범위를 null로 두면 "시트 전체"가 되므로, AI 편집이 없는 것으로 봄.
+  if (ai.range && !range) return null;
+  return { status: ai.status, range, locked: ai.locked === true };
 }

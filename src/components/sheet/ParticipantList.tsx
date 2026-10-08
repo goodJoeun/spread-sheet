@@ -10,7 +10,6 @@ import { participantStatus } from "@/lib/collab/messages";
 import type { Presence } from "@/lib/collab/presence";
 import type { Participant } from "@/lib/collab/presence-state";
 import type { CellCoord } from "@/lib/sheet/address";
-import { clampCoord } from "@/lib/sheet/selection";
 import { useSheet } from "./SheetContext";
 import { useParticipants } from "@/hooks/sheet/useParticipants";
 
@@ -55,7 +54,7 @@ export function ParticipantList() {
           presence={presence}
           onJump={(coord) => {
             close();
-            controller.jumpTo(clampCoord(coord));
+            controller.jumpTo(coord);
           }}
           onRenamed={() => controller.focus()}
         />

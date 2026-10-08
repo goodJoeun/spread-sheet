@@ -7,9 +7,9 @@ import type { Participant } from "./presence-state";
  * 잠금은 awareness에 실려 있어서, 요청한 탭이 닫히면(Web Locks로 감지) 바로 풀림.
  */
 
-/** AI 편집이 닿는 범위. null이면 시트 전체. 다른 탭에서 온 범위일 수 있어서 시트 안으로 자름. */
-export function aiArea(range: CellRange | null): CellRange | null {
-  return range ? intersectRanges(range, SHEET_RANGE) : SHEET_RANGE;
+/** AI 편집이 닿는 범위. null이면 시트 전체. */
+export function aiArea(range: CellRange | null): CellRange {
+  return range ?? SHEET_RANGE;
 }
 
 /** range와 겹치는 범위를 잠근 다른 참여자. 없으면 null */
@@ -19,8 +19,7 @@ export function lockHolder(
 ): Participant | null {
   for (const participant of participants) {
     if (participant.isSelf || !participant.ai?.locked) continue;
-    const area = aiArea(participant.ai.range);
-    if (area && intersectRanges(area, range)) return participant;
+    if (intersectRanges(aiArea(participant.ai.range), range)) return participant;
   }
   return null;
 }

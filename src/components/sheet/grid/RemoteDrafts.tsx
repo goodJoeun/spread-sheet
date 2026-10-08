@@ -4,7 +4,6 @@ import type { Participant } from "@/lib/collab/presence-state";
 import { getFormat } from "@/lib/sheet/document";
 import { cellRect } from "@/lib/sheet/geometry";
 import { defaultAlignment } from "@/lib/sheet/schema";
-import { clampCoord } from "@/lib/sheet/selection";
 import { cellTextStyle } from "./cell-style";
 import { Layer } from "./layers";
 
@@ -23,10 +22,8 @@ interface RemoteDraftsProps {
 export const RemoteDrafts = memo(function RemoteDrafts({ participants, doc }: RemoteDraftsProps) {
   return participants.map(({ clientId, isSelf, editing, draft }) => {
     if (isSelf || !editing || draft === null) return null;
-    // 다른 탭에서 온 좌표라 시트 범위 안으로 맞춤.
-    const coord = clampCoord(editing);
-    const { left, top, width, height } = cellRect(coord);
-    const format = getFormat(doc, coord);
+    const { left, top, width, height } = cellRect(editing);
+    const format = getFormat(doc, editing);
     return (
       <div
         key={clientId}

@@ -1,9 +1,7 @@
 import { Lock, Sparkles } from "lucide-react";
 import { Fragment, memo } from "react";
 import type { Participant } from "@/lib/collab/presence-state";
-import { intersectRanges } from "@/lib/sheet/address";
 import { outsetRect, rangeRect } from "@/lib/sheet/geometry";
-import { SHEET_RANGE } from "@/lib/sheet/schema";
 import { ICON } from "@/styles/icon";
 import { strings } from "@/resources/strings";
 import { AnchoredLabel } from "./AnchoredLabel";
@@ -19,11 +17,8 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
 }: RemoteAiActivityProps) {
   return participants.map(({ clientId, isSelf, user, ai }) => {
     if (isSelf || !ai?.range) return null;
-    // 다른 탭에서 온 범위라 시트 밖으로 벗어나지 않게 자름.
-    const range = intersectRanges(ai.range, SHEET_RANGE);
-    if (!range) return null;
-    const rect = outsetRect(rangeRect(range));
-    const labelBelow = range.start.row === 0;
+    const rect = outsetRect(rangeRect(ai.range));
+    const labelBelow = ai.range.start.row === 0;
     return (
       <Fragment key={clientId}>
         <div
