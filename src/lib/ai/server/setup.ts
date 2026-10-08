@@ -9,6 +9,14 @@ import { createMockAnthropicFetch } from "./mock-anthropic";
 const DEFAULT_MODEL: AiModelId = "claude-opus-5-5";
 const EFFORTS = ["low", "medium", "high"] as const;
 
+/** 실제 API일 때 429·5xx·연결 오류를 SDK가 다시 시도하는 횟수 */
+const MAX_RETRIES = 2;
+/**
+ * 응답 헤더를 기다리는 시간. 넘기면 끊음.
+ * 화면의 "응답 지연" 안내와 시간 초과는 브라우저가 따로 정함(ai-controller.ts의 SLOW_AFTER_MS·IDLE_TIMEOUT_MS).
+ */
+const RESPONSE_TIMEOUT_MS = 60_000;
+
 let cached: ClaudeSetup | null = null;
 
 export function getClaudeSetup(): ClaudeSetup {
@@ -22,10 +30,8 @@ export function getClaudeSetup(): ClaudeSetup {
 
   const client = new Anthropic({
     apiKey: mock ? "mock-key" : apiKey,
-    // 실제 API일 때 429·5xx·연결 오류는 SDK가 두 번까지 다시 시도함.
-    maxRetries: 2,
-    // 응답 헤더가 60초 안에 오지 않으면 끊음. 화면에는 5초부터 "응답 지연"을 알림.
-    timeout: 60_000,
+    maxRetries: MAX_RETRIES,
+    timeout: RESPONSE_TIMEOUT_MS,
     ...(mock
       ? {
           fetch: createMockAnthropicFetch({

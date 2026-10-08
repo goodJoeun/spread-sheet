@@ -1,6 +1,6 @@
 import { useMemo, useRef, type FocusEvent, type KeyboardEvent, type RefObject } from "react";
 import type { SheetController } from "@/lib/controller/sheet-controller";
-import { isApplePlatform } from "@/lib/platform";
+import { isApplePlatform, isImeComposing } from "@/lib/platform";
 import { isDraftInput } from "@/lib/sheet/draft-input";
 import { resolveGridKey } from "@/lib/sheet/keymap";
 
@@ -43,8 +43,7 @@ export function useCellEditor(
 
       handlers: {
         onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => {
-          // 한글처럼 조합 중인 키는 입력기에 맡김. 여기서 Enter를 처리하면 마지막 글자가 사라지거나 두 번 들어감.
-          if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+          if (isImeComposing(e.nativeEvent)) return;
           const action = resolveGridKey(e, controller.edit.get()?.mode ?? null, isApplePlatform());
           if (!action) return;
           e.preventDefault();

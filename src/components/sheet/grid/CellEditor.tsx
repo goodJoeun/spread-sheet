@@ -3,6 +3,7 @@ import type { Rect } from "@/lib/sheet/geometry";
 import { COL_WIDTH } from "@/lib/sheet/geometry";
 import { DRAFT_INPUT_PROPS } from "@/lib/sheet/draft-input";
 import type { CellFormat } from "@/lib/sheet/schema";
+import { DEFAULT_FILL_COLOR } from "@/resources/colors";
 import { strings } from "@/resources/strings";
 import { cellTextStyle } from "./cell-style";
 import { Layer } from "./layers";
@@ -15,6 +16,9 @@ interface CellEditorProps {
   format: CellFormat;
   rect: Rect;
 }
+
+/** 긴 글자를 입력하면 편집칸이 오른쪽으로 늘어나되, 열 6개 너비까지만 늘어남. */
+const EDITOR_MAX_WIDTH = COL_WIDTH * 6;
 
 const IDLE = "absolute cursor-cell bg-transparent opacity-0 outline-none";
 // 편집칸 글자가 셀 글자(px-xs)와 같은 자리에서 시작하도록, 테두리 2px과 바깥 1px을 뺀 3px만 띄움.
@@ -39,10 +43,10 @@ export function CellEditor({ inputRef, handlers, editing, format, rect }: CellEd
         height: rect.height,
         minWidth: rect.width,
         width: editing ? undefined : rect.width,
-        maxWidth: editing ? COL_WIDTH * 6 : undefined,
+        maxWidth: editing ? EDITOR_MAX_WIDTH : undefined,
         zIndex: Layer.editor,
         ...cellTextStyle(format),
-        backgroundColor: editing ? (format.fill ?? "#ffffff") : undefined,
+        backgroundColor: editing ? (format.fill ?? DEFAULT_FILL_COLOR) : undefined,
         textAlign: format.align,
       }}
       {...handlers}

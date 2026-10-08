@@ -22,8 +22,11 @@ export function revealCell(scroller: HTMLElement | null, coord: CellCoord): void
   }
 }
 
+/** 화면 높이를 알 수 없을 때(그리드가 아직 없거나 테스트) PageUp/Down으로 움직이는 행 수 */
+export const DEFAULT_PAGE_ROWS = 10;
+
 export function visibleRowCount(scroller: HTMLElement | null): number {
-  if (!scroller) return 10;
+  if (!scroller) return DEFAULT_PAGE_ROWS;
   return Math.max(1, Math.floor((scroller.clientHeight - COL_HEADER_HEIGHT) / ROW_HEIGHT) - 1);
 }
 

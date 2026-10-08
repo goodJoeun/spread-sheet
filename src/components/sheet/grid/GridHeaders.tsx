@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { colToLabel, type CellRange } from "@/lib/sheet/address";
+import { HEADER_GRID_LINE, gridLineOf } from "@/lib/sheet/geometry";
 import { COL_COUNT, ROW_COUNT } from "@/lib/sheet/schema";
 import { Layer } from "./layers";
 
@@ -18,7 +19,7 @@ export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps
     <div
       key="corner"
       className={`${HEADER} top-0 left-0`}
-      style={{ gridRow: 1, gridColumn: 1, zIndex: Layer.corner }}
+      style={{ gridRow: HEADER_GRID_LINE, gridColumn: HEADER_GRID_LINE, zIndex: Layer.corner }}
     />,
   ];
   for (let col = 0; col < COL_COUNT; col++) {
@@ -28,7 +29,7 @@ export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps
         key={`c${col}`}
         className={`${HEADER} top-0`}
         data-active={active || undefined}
-        style={{ gridRow: 1, gridColumn: col + 2, zIndex: Layer.header }}
+        style={{ gridRow: HEADER_GRID_LINE, gridColumn: gridLineOf(col), zIndex: Layer.header }}
       >
         {colToLabel(col)}
       </div>,
@@ -41,7 +42,7 @@ export const GridHeaders = memo(function GridHeaders({ range }: GridHeadersProps
         key={`r${row}`}
         className={`${HEADER} left-0`}
         data-active={active || undefined}
-        style={{ gridRow: row + 2, gridColumn: 1, zIndex: Layer.header }}
+        style={{ gridRow: gridLineOf(row), gridColumn: HEADER_GRID_LINE, zIndex: Layer.header }}
       >
         {row + 1}
       </div>,

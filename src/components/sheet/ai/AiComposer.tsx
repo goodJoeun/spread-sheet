@@ -6,6 +6,7 @@ import { overlappingAi } from "@/lib/ai/coedit";
 import { overlapNotice } from "@/lib/ai/messages";
 import { AI_LIMITS, type AiConnectionInfo } from "@/lib/ai/protocol";
 import { isRunning } from "@/lib/ai/run";
+import { isImeComposing } from "@/lib/platform";
 import { rangeToA1 } from "@/lib/sheet/address";
 import { isMultiCell, selectionRange } from "@/lib/sheet/selection";
 import { useStore } from "@/hooks/useStore";
@@ -51,7 +52,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, connection }: AiCom
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // 한글 조합 중의 Enter는 글자를 확정하는 키라서 요청을 보내지 않음.
-    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+    if (isImeComposing(e.nativeEvent)) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (!running) send();

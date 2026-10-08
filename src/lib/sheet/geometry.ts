@@ -6,6 +6,12 @@ export const ROW_HEIGHT = 24;
 export const ROW_HEADER_WIDTH = 46;
 export const COL_HEADER_HEIGHT = 24;
 
+/** CSS grid 줄 번호는 1부터이고 첫 줄·첫 칸은 머리글이 차지함. 그래서 머리글은 1번, index번째 행·열은 index + 2번 줄. */
+export const HEADER_GRID_LINE = 1;
+export function gridLineOf(index: number): number {
+  return index + 2;
+}
+
 export interface Rect {
   left: number;
   top: number;

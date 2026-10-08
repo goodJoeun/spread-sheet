@@ -16,6 +16,8 @@ export const AI_LIMITS = {
   cells: ROW_COUNT * COL_COUNT,
   history: 10,
   historyText: 4000,
+  /** 모델 id 길이. 목록 확인 전에 터무니없이 긴 값을 거름. */
+  modelId: 100,
 } as const;
 
 export interface AiCell {
@@ -189,6 +191,11 @@ export function parseStreamEvent(value: unknown): AiStreamEvent | null {
   }
 }
 
+/**
+ * 우리 서버의 오류 응답에는 본문에 AiErrorInfo가 실려 있어서 그것을 씀.
+ * 상태 코드만 보는 경우는 본문이 없는 응답(프록시, 배포 플랫폼 등)뿐이라, AI_ERRORS를 거꾸로 찾지 않음.
+ * 예를 들어 프록시의 422·502는 모델 거절이나 연결 실패라고 단정할 수 없어 unknown으로 봄.
+ */
 export function errorFromResponse(status: number, body: unknown): AiErrorInfo {
   const embedded = (body as { error?: unknown } | null)?.error;
   if (isErrorInfo(embedded)) return embedded;

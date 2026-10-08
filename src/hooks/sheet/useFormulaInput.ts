@@ -7,7 +7,7 @@ import {
   type RefObject,
 } from "react";
 import type { SheetController } from "@/lib/controller/sheet-controller";
-import { isApplePlatform } from "@/lib/platform";
+import { isApplePlatform, isImeComposing } from "@/lib/platform";
 import { isDraftInput } from "@/lib/sheet/draft-input";
 import { resolveGridKey } from "@/lib/sheet/keymap";
 
@@ -42,7 +42,7 @@ export function useFormulaInput(
 
     return {
       onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => {
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+        if (isImeComposing(e.nativeEvent)) return;
         // 이 칸에서는 방향키가 언제나 글자 사이 커서를 움직인다(F2 편집 모드와 같음).
         const action = resolveGridKey(e, "edit", isApplePlatform());
         if (!action) return;

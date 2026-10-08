@@ -2,6 +2,10 @@
  * 데이터로 쓰는 색 목록. 화면 모양을 정하는 색 토큰은 styles/tokens.css에 있음.
  */
 
+/** 글자색·채우기를 지정하지 않은 셀의 색. 툴바 견본과 편집칸 바탕이 이 값을 씀. */
+export const DEFAULT_TEXT_COLOR = "#000000";
+export const DEFAULT_FILL_COLOR = "#ffffff";
+
 /** 툴바 글자색 견본(셀에 저장되는 값) */
 export const CELL_TEXT_COLORS = [
   "#000000",

@@ -24,7 +24,7 @@ import {
   selectionRange,
   type Selection,
 } from "@/lib/sheet/selection";
-import type { PointerTargetKind } from "@/lib/sheet/viewport";
+import { DEFAULT_PAGE_ROWS, type PointerTargetKind } from "@/lib/sheet/viewport";
 import { createStore, type Store } from "@/lib/store";
 
 /**
@@ -64,7 +64,7 @@ function detachedView(): SheetView {
   return {
     reveal() {},
     focus() {},
-    visibleRowCount: () => 20,
+    visibleRowCount: () => DEFAULT_PAGE_ROWS,
     readDraft: () => draft,
     writeDraft: (text) => {
       draft = text;

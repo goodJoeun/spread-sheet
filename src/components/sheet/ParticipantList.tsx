@@ -9,6 +9,7 @@ import { MAX_NAME_LENGTH } from "@/lib/collab/identity";
 import { participantStatus } from "@/lib/collab/messages";
 import type { Presence } from "@/lib/collab/presence";
 import type { Participant } from "@/lib/collab/presence-state";
+import { isImeComposing } from "@/lib/platform";
 import type { CellCoord } from "@/lib/sheet/address";
 import { useSheet } from "./SheetContext";
 import { useParticipants } from "@/hooks/sheet/useParticipants";
@@ -124,7 +125,7 @@ function SelfRow({
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.nativeEvent.isComposing) return;
+    if (isImeComposing(e.nativeEvent)) return;
     if (e.key === "Enter") save();
     if (e.key === "Escape") {
       // 이름 변경만 취소하고 목록은 열어 둠.

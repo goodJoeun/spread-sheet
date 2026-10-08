@@ -7,6 +7,7 @@ import { ICON } from "@/styles/icon";
 import { strings } from "@/resources/strings";
 import { AnchoredLabel } from "./AnchoredLabel";
 import { Layer } from "./layers";
+import { participantTint } from "./participant-tint";
 
 interface RemoteCursorsProps {
   participants: Participant[];
@@ -32,7 +33,7 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
               ...range,
               zIndex: Layer.remoteRange,
               borderColor: user.color,
-              backgroundColor: `${user.color}14`,
+              backgroundColor: participantTint(user.color, "selection"),
             }}
           />
         )}
@@ -42,7 +43,7 @@ export const RemoteCursors = memo(function RemoteCursors({ participants }: Remot
             ...rect,
             zIndex: Layer.remoteCursor,
             borderColor: user.color,
-            backgroundColor: editing ? `${user.color}1f` : undefined,
+            backgroundColor: editing ? participantTint(user.color, "editingCell") : undefined,
           }}
         />
         <AnchoredLabel

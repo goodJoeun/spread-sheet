@@ -6,6 +6,7 @@ import { ICON } from "@/styles/icon";
 import { strings } from "@/resources/strings";
 import { AnchoredLabel } from "./AnchoredLabel";
 import { Layer } from "./layers";
+import { participantTint } from "./participant-tint";
 
 interface RemoteAiActivityProps {
   participants: Participant[];
@@ -27,7 +28,7 @@ export const RemoteAiActivity = memo(function RemoteAiActivity({
             ...rect,
             zIndex: Layer.remoteAi,
             borderColor: user.color,
-            backgroundColor: `${user.color}0d`,
+            backgroundColor: participantTint(user.color, "aiRange"),
           }}
         />
         {/* 같은 범위에 붙는 선택 이름표와 겹치지 않게 오른쪽 끝에 붙임. */}

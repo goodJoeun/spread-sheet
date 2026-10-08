@@ -197,10 +197,14 @@ export class Presence {
   }
 }
 
+/** 겹치지 않는 무작위 이름을 찾는 횟수. 그래도 못 찾으면 두 자리 숫자를 붙임. */
+const FREE_NAME_ATTEMPTS = 20;
+
 function freeName(taken: Set<string>): string {
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < FREE_NAME_ATTEMPTS; i++) {
     const candidate = randomName();
     if (!taken.has(candidate)) return candidate;
   }
-  return `${randomName()} ${Math.floor(Math.random() * 90) + 10}`;
+  const twoDigits = 10 + Math.floor(Math.random() * 90);
+  return `${randomName()} ${twoDigits}`;
 }

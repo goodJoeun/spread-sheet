@@ -19,7 +19,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { CELL_FILL_COLORS, CELL_TEXT_COLORS } from "@/resources/colors";
+import {
+  CELL_FILL_COLORS,
+  CELL_TEXT_COLORS,
+  DEFAULT_FILL_COLOR,
+  DEFAULT_TEXT_COLOR,
+} from "@/resources/colors";
 import { strings } from "@/resources/strings";
 import { ICON } from "@/styles/icon";
 import { isApplePlatform } from "@/lib/platform";
@@ -124,7 +129,7 @@ export function Toolbar() {
         icon={Baseline}
         colors={CELL_TEXT_COLORS}
         value={commonStyle(doc, range, "color")}
-        defaultSwatch="#000000"
+        defaultSwatch={DEFAULT_TEXT_COLOR}
         resetLabel={strings.toolbar.textColorReset}
         onPick={(color) => run(() => controller.setStyle("color", color))}
       />
@@ -133,7 +138,7 @@ export function Toolbar() {
         icon={PaintBucket}
         colors={CELL_FILL_COLORS}
         value={commonStyle(doc, range, "fill")}
-        defaultSwatch="#ffffff"
+        defaultSwatch={DEFAULT_FILL_COLOR}
         resetLabel={strings.toolbar.fillColorReset}
         onPick={(color) => run(() => controller.setStyle("fill", color))}
       />
