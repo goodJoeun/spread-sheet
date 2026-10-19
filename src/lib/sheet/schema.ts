@@ -1,4 +1,4 @@
-// [흐름 12 · e998fae] 시트 크기·서식 정의가 Yjs를 쓰는 document.ts에 있어 선택·키 매핑까지 Yjs를 끌어오던 것을 떼어 냄.
+// [흐름 12] 시트 크기·서식 정의가 Yjs를 쓰는 document.ts에 있어 선택·키 매핑까지 Yjs를 끌어오던 것을 떼어 냄.
 /*
  * 시트가 지키는 규칙을 한 곳에 모아 둔다. 시트 크기, 서식의 종류와 형식, 기본 정렬, 주소 검증이 여기 있다.
  *   - 화면, AI 프롬프트, 서버 검증이 같은 숫자와 규칙을 쓰므로 다른 곳에 다시 적지 않는다.
@@ -32,7 +32,7 @@ export function clipToSheet(range: CellRange): CellRange | null {
   return intersectRanges(range, SHEET_RANGE);
 }
 
-// [흐름 9 · 90c202e] 서식 툴바를 만들며 켜고 끄는 서식과 값을 갖는 서식을 나눔. 값 서식은 다른 탭·AI에서 온 값도 isValidStyle로 검증함.
+// [흐름 9] 서식 툴바를 만들며 켜고 끄는 서식과 값을 갖는 서식을 나눔. 값 서식은 다른 탭·AI에서 온 값도 isValidStyle로 검증함.
 /** 켜고 끄는 서식 */
 export const FORMAT_KEYS = ["bold", "italic", "underline", "strike"] as const;
 export type FormatKey = (typeof FORMAT_KEYS)[number];

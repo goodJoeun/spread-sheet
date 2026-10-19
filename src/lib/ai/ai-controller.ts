@@ -34,7 +34,7 @@ import {
 } from "./run";
 import { AiRequestError, type AiTransport } from "./transport";
 
-// [흐름 21 · 0f83c0e] 첫 버전부터 요청 때 값(base)을 기록해 둠. 다음 커밋(2105f51)의 충돌 판단이 이 값 위에 얹힘.
+// [흐름 21] 첫 버전부터 요청 때 값(base)을 기록해 둠. 다음 커밋의 충돌 판단(흐름 22)이 이 값 위에 얹힘.
 // 시트는 SheetController가 아니라 AiSheetBinding으로만 받아 lib/ai가 컨트롤러를 모르게 함.
 /**
  * AI 결과는 제안으로만 들고 있다가, 적용할 때 한 트랜잭션으로 한꺼번에 씀. 그래서 실행 취소 한 번으로 모두 되돌릴 수 있음.
@@ -346,7 +346,7 @@ export class AiController {
     this.presence.setAi(activity);
   }
 
-  // [흐름 32 · 75a78f3] 전 이름 settle이 inflight까지 비워서, 패널을 닫아도 요청이 끊기지 않던 버그가 있었음.
+  // [흐름 32] 전 이름 settle이 inflight까지 비워서, 패널을 닫아도 요청이 끊기지 않던 버그가 있었음.
   // 하는 일을 endRequest·stopWatchdog으로 나눠 이름에 드러내고, abort는 부르는 쪽이 정하게 함.
   /** 진행 중인 요청을 정리함(감시 타이머를 끄고 inflight를 비움). 요청을 끊을지(abort)는 부르는 쪽이 정함. */
   private endRequest(): void {

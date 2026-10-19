@@ -16,7 +16,7 @@ import { isReviewing, isRunning, type AiProposal, type AiRun } from "./run";
 /** same: 지금 값이 이미 제안과 같음(다른 참여자가 같은 값으로 바꾼 경우 포함) */
 export type ProposalStatus = "same" | "clean" | "conflict";
 
-// [흐름 22 · 2105f51] 생성 중 수정·검토 중 수정·겹치는 동시 요청을 따로 처리하지 않고, 값 세 개를 비교하는 이 규칙 하나로 처리함.
+// [흐름 22] 생성 중 수정·검토 중 수정·겹치는 동시 요청을 따로 처리하지 않고, 값 세 개를 비교하는 이 규칙 하나로 처리함.
 /** 요청 때 값·현재 값·제안 값을 비교해 셀 하나의 상태를 정함. same(이미 같음), clean(아무도 안 건드림 → 적용), conflict(누군가 바꿈 → 기본은 건너뜀). */
 export function classifyCell(base: string, current: string, proposed: string): ProposalStatus {
   if (proposed === current) return "same";

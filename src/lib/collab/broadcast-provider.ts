@@ -4,7 +4,7 @@ import * as awarenessProtocol from "y-protocols/awareness";
 import * as syncProtocol from "y-protocols/sync";
 import * as Y from "yjs";
 
-// [흐름 4 · be76c7f] "서버 없이 브라우저 API만" 조건이라 provider를 직접 만들되, 메시지 형식은 y-websocket과 맞춰 서버로 넓힐 길을 남김.
+// [흐름 4] "서버 없이 브라우저 API만" 조건이라 provider를 직접 만들되, 메시지 형식은 y-websocket과 맞춰 서버로 넓힐 길을 남김.
 /**
  * BroadcastChannel로 같은 출처의 탭끼리 Y.Doc과 awareness를 동기화함.
  * 메시지 형식은 y-websocket과 같은 y-protocols 인코딩임. 그래서 네트워크로 옮길 때 이 클래스만 WebsocketProvider로 바꾸면 됨.

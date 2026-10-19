@@ -6,7 +6,7 @@ import { aiActivitiesAt, blockingOverlaps, type AiOverlap } from "./coedit";
 import { isAiModelId, type AiErrorInfo, type AiModelId, type AiWarning } from "./protocol";
 import type { AiRun } from "./run";
 
-// [흐름 25 · 345425f] 처음엔 서버가 오류 문구를 보냈음. 서버는 코드만 보내고 문구는 여기서 고르게 바꿈. 문구를 고칠 때 서버를 건드리지 않게.
+// [흐름 25] 처음엔 서버가 오류 문구를 보냈음. 서버는 코드만 보내고 문구는 여기서 고르게 바꿈. 문구를 고칠 때 서버를 건드리지 않게.
 /** AI 기능의 상태를 화면 문구로 바꿈. 서버가 보낸 코드도 여기서 문구가 됨. */
 
 /** 서버가 보낸 오류 코드(와 세부 이유)를 화면 문구로 바꿈. */

@@ -46,7 +46,7 @@ export interface NavigationResult extends NavigationState {
   reveal: CellCoord | null;
 }
 
-// [흐름 13 · a525359] 576줄짜리 Grid의 runAction 안에 있던 이동 규칙을 순수 함수로 뺌. 엑셀 이동 규칙을 화면 없이 테스트하려고.
+// [흐름 13] 576줄짜리 Grid의 runAction 안에 있던 이동 규칙을 순수 함수로 뺌. 엑셀 이동 규칙을 화면 없이 테스트하려고.
 /** 선택 상태와 이동 동작을 받아 다음 선택, Tab 복귀 열, 스크롤할 셀을 계산하는 순수 함수. 화면 높이와 셀이 차 있는지는 인자로 받아서 DOM과 문서를 모름. */
 export function applyNavigation(
   state: NavigationState,

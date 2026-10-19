@@ -21,8 +21,8 @@ import {
 import { DEFAULT_PAGE_ROWS, type PointerTargetKind } from "@/lib/sheet/viewport";
 import { createStore, type Store } from "@/lib/store";
 
-// [흐름 14 · 5603cf4] 입력 경로가 늘면서 "편집 중이면 먼저 확정" 같은 규칙이 경로마다 흩어져 명령을 한 곳에 모음.
-// 그리드에 연결(4b195c4)하기 전에 독립 클래스로 먼저 만들고 테스트로 동작을 고정함.
+// [흐름 14] 입력 경로가 늘면서 "편집 중이면 먼저 확정" 같은 규칙이 경로마다 흩어져 명령을 한 곳에 모음.
+// 그리드에 연결(흐름 16)하기 전에 독립 클래스로 먼저 만들고 테스트로 동작을 고정함.
 /**
  * 키보드·마우스·툴바·AI 패널이 모두 같은 명령을 부름. 그래서 "편집 중이면 먼저 확정" 같은 규칙이 한 곳에만 있음.
  * DOM이 필요한 일(스크롤, 포커스, 편집칸 글자)은 그리드가 붙여 주는 SheetView에 맡김.
@@ -177,7 +177,7 @@ export class SheetController {
     this.session.presence.setDraft?.(draft);
   }
 
-  // [흐름 29 · 53b0784] 수식 입력줄에 별도 편집 경로를 만들지 않고 셀 편집칸에 같은 글자를 씀. 확정·잠금·알림 규칙을 다시 만들지 않으려고.
+  // [흐름 29] 수식 입력줄에 별도 편집 경로를 만들지 않고 셀 편집칸에 같은 글자를 씀. 확정·잠금·알림 규칙을 다시 만들지 않으려고.
   /** 수식 입력줄에서 바꾼 글자를 셀 편집칸에도 씀. 편집 중이 아니면 이 셀의 편집을 시작함. 확정·이동·알림은 셀에서 입력할 때와 같음. 잠긴 셀이라 시작하지 못했으면 false. */
   replaceDraft(text: string): boolean {
     if (!this.isEditing()) this.startEdit("edit");

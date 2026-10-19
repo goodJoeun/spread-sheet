@@ -4,7 +4,7 @@ import { isApplePlatform, isImeComposing } from "@/lib/platform";
 import { isDraftInput } from "@/lib/sheet/draft-input";
 import { resolveGridKey } from "@/lib/sheet/keymap";
 
-// [흐름 7 · 189d4b4] 그리드에서 가장 오래 고민한 한글 입력 처리. 처음엔 Grid.tsx 안에 있다가 4b195c4에서 이 hook으로 분리함.
+// [흐름 7] 그리드에서 가장 오래 고민한 한글 입력 처리. 처음엔 Grid.tsx 안에 있다가 그리드를 역할별로 나누면서(흐름 16) 이 hook으로 분리함.
 /**
  * 편집칸은 편집 중이 아닐 때도 DOM에 남아 포커스를 쥐고 있음.
  * 그래서 셀을 선택한 채 바로 타이핑하거나 한글 조합을 시작해도 첫 글자(첫 자모)를 놓치지 않음.

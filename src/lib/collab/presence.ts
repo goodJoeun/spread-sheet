@@ -86,7 +86,7 @@ export class Presence {
     this.publish();
   }
 
-  // [흐름 28 · 2c03693] 입력 중인 글자는 문서가 아니라 참여 상태로 보냄. 문서에 쓰면 저장되고 실행 취소 기록에도 남기 때문.
+  // [흐름 28] 입력 중인 글자는 문서가 아니라 참여 상태로 보냄. 문서에 쓰면 저장되고 실행 취소 기록에도 남기 때문.
   /** 입력 중인 글자를 알림. 모든 탭에 보내므로 1,000자까지만, 바뀌었을 때만 보냄. */
   setDraft(draft: string | null): void {
     const next = draft === null ? null : draft.slice(0, DRAFT_MAX_LENGTH);
@@ -160,7 +160,7 @@ export class Presence {
     return next;
   }
 
-  // [흐름 11 · f63fb07] 탭 복제(sessionStorage 복사)만 따로 감지하려다, 우연히 겹친 경우까지 이 규칙 하나로 풀기로 함.
+  // [흐름 11] 탭 복제(sessionStorage 복사)만 따로 감지하려다, 우연히 겹친 경우까지 이 규칙 하나로 풀기로 함.
   /** 이름이나 색이 겹치면 clientID가 큰 쪽이 양보해 다시 고름. 양쪽이 같은 규칙을 따르므로 한쪽만 바뀜. */
   private resolveConflicts(): void {
     if (!this.joined) return;
