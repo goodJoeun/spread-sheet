@@ -62,6 +62,7 @@ const MODEL_FEATURES: Record<string, ModelFeatures> = {
   ...OFFERED_MODEL_FEATURES,
 };
 
+/** Claude 호출 인자를 만듦. effort와 대체 모델 옵션은 지원하는 모델에만 넣음(지원하지 않으면 400 오류). */
 export function buildParams(
   setup: { model: string; effort: ClaudeSetup["effort"] },
   request: AiEditRequest,
@@ -80,6 +81,7 @@ export function buildParams(
   };
 }
 
+/** Claude 응답 스트림을 앱 이벤트(meta·text·edit·warning·done)로 바꿔 내보냄. 시작 전 오류는 AiProviderError로, 시작 후 오류는 error 이벤트로. */
 export async function* streamClaudeEdits(
   setup: ClaudeSetup,
   request: AiEditRequest,
@@ -163,7 +165,7 @@ interface ErrorBody {
   error?: { type?: string; message?: string; details?: { error_code?: string } };
 }
 
-/** 하위 클래스가 먼저 걸리도록 구체적인 오류부터 확인한다. */
+/** SDK 오류를 앱의 오류 코드로 바꿈. 하위 클래스가 먼저 걸리도록 구체적인 오류부터 확인함. */
 export function toAiError(error: InstanceType<typeof Anthropic.APIError>): AiErrorInfo {
   if (error instanceof Anthropic.APIConnectionTimeoutError) return aiError("timeout");
   if (error instanceof Anthropic.APIConnectionError) return aiError("network");

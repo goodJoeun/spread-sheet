@@ -4,6 +4,7 @@ import * as awarenessProtocol from "y-protocols/awareness";
 import * as syncProtocol from "y-protocols/sync";
 import * as Y from "yjs";
 
+// [흐름 4 · be76c7f] "서버 없이 브라우저 API만" 조건이라 provider를 직접 만들되, 메시지 형식은 y-websocket과 맞춰 서버로 넓힐 길을 남김.
 /**
  * BroadcastChannel로 같은 출처의 탭끼리 Y.Doc과 awareness를 동기화함.
  * 메시지 형식은 y-websocket과 같은 y-protocols 인코딩임. 그래서 네트워크로 옮길 때 이 클래스만 WebsocketProvider로 바꾸면 됨.
@@ -45,17 +46,20 @@ export class BroadcastChannelProvider {
     this.announce();
   }
 
-  /** bfcache에서 복원된 탭은 멈춰 있던 동안의 메시지를 놓쳤으므로 합류 절차를 다시 밟는다. */
+  /** 합류 절차를 다시 밟아 놓친 변경과 참여 상태를 받음. bfcache에서 복원된 탭은 멈춰 있던 동안의 메시지를 놓쳤기 때문. */
   resync(): void {
     this.announce();
   }
 
+  /** 합류 알림. 문서 동기화(Step1·Step2)를 시작하고, 다른 탭의 참여 상태를 요청하고, 내 상태를 알림. */
   private announce(): void {
+    // Step1: "어느 탭의 변경을 몇 개까지 가지고 있는지"만 담음(상태 벡터, ex: { 탭A: 3개, 탭B: 0개 })
     const step1 = encoding.createEncoder();
     encoding.writeVarUint(step1, MESSAGE_SYNC);
     syncProtocol.writeSyncStep1(step1, this.doc);
     this.post(encoding.toUint8Array(step1));
 
+    // Step2: 실제 변경 내용
     const step2 = encoding.createEncoder();
     encoding.writeVarUint(step2, MESSAGE_SYNC);
     syncProtocol.writeSyncStep2(step2, this.doc);
@@ -68,6 +72,7 @@ export class BroadcastChannelProvider {
     if (this.awareness.getLocalState() !== null) this.postOwnAwareness();
   }
 
+  /** 채널에서 받은 메시지를 종류(문서 동기화·참여 상태·참여 상태 요청)에 따라 처리함. */
   private receive(data: unknown): void {
     if (this.destroyed || !(data instanceof Uint8Array)) return;
     try {
@@ -100,6 +105,7 @@ export class BroadcastChannelProvider {
     }
   }
 
+  /** 이 탭의 문서 변경을 다른 탭에 방송함. */
   private handleDocUpdate = (update: Uint8Array, origin: unknown): void => {
     if (origin === this) return; // 다른 탭에서 받은 변경은 다시 방송하지 않는다.
     const encoder = encoding.createEncoder();
@@ -108,10 +114,7 @@ export class BroadcastChannelProvider {
     this.post(encoding.toUint8Array(encoder));
   };
 
-  /**
-   * 각 탭은 자기 awareness만 방송한다. 다른 탭의 상태를 중계하면, 타임아웃으로 지운 상태가
-   * 다시 퍼지면서 살아 있는 참여자가 목록에서 깜빡일 수 있다.
-   */
+  /** 내 참여 상태가 바뀌면 방송함. 각 탭은 자기 상태만 보냄. 다른 탭의 상태를 중계하면 지운 상태가 다시 퍼져, 살아 있는 참여자가 목록에서 깜빡일 수 있음. */
   private handleAwarenessUpdate = (
     { added, updated, removed }: AwarenessChanges,
     origin: unknown,
@@ -123,6 +126,7 @@ export class BroadcastChannelProvider {
     }
   };
 
+  /** 내 참여 상태만 인코딩해 방송함. */
   private postOwnAwareness(): void {
     const encoder = encoding.createEncoder();
     encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
@@ -133,10 +137,12 @@ export class BroadcastChannelProvider {
     this.post(encoding.toUint8Array(encoder));
   }
 
+  /** 채널에 메시지를 올림. 정리된 뒤에는 보내지 않음. */
   private post(message: Uint8Array): void {
     if (!this.destroyed) this.channel.postMessage(message);
   }
 
+  /** 탭을 떠날 때. 내 참여 상태를 지워 다른 탭 목록에서 바로 빠지게 하고 채널을 닫음. */
   destroy(): void {
     if (this.destroyed) return;
     // destroyed 표시 전에 지워야 제거 메시지가 방송된다.

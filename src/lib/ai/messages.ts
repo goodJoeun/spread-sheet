@@ -6,12 +6,15 @@ import { aiActivitiesAt, blockingOverlaps, type AiOverlap } from "./coedit";
 import { isAiModelId, type AiErrorInfo, type AiModelId, type AiWarning } from "./protocol";
 import type { AiRun } from "./run";
 
+// [흐름 25 · 345425f] 처음엔 서버가 오류 문구를 보냈음. 서버는 코드만 보내고 문구는 여기서 고르게 바꿈. 문구를 고칠 때 서버를 건드리지 않게.
 /** AI 기능의 상태를 화면 문구로 바꿈. 서버가 보낸 코드도 여기서 문구가 됨. */
 
+/** 서버가 보낸 오류 코드(와 세부 이유)를 화면 문구로 바꿈. */
 export function aiErrorMessage(error: AiErrorInfo): string {
   return strings.ai.errors[error.reason ?? error.code];
 }
 
+/** 서버가 보낸 경고 코드를 화면 문구로 바꿈. */
 export function aiWarningMessage(warning: AiWarning): string {
   switch (warning.code) {
     case "truncated":
@@ -26,7 +29,7 @@ export function aiWarningMessage(warning: AiWarning): string {
 /** AI_MODELS에 모델을 추가하고 설명을 빠뜨리면 여기서 타입 오류가 남. */
 const MODEL_DESCRIPTIONS: Readonly<Record<AiModelId, string>> = strings.ai.models.descriptions;
 
-/** 목록에 없는 모델은 서버가 기본값으로 정한 모델로 봄. */
+/** 모델 선택 목록에 보일 모델 설명. 목록에 없는 모델은 서버가 기본값으로 정한 모델로 봄. */
 export function modelDescription(id: string): string {
   return isAiModelId(id) ? MODEL_DESCRIPTIONS[id] : strings.ai.models.serverDefault;
 }
@@ -37,7 +40,7 @@ export interface StatusLine {
   icon: "spinner" | "check" | "alert" | null;
 }
 
-/** 실행 카드 맨 위에 보이는 진행 상태. 답만 한 실행은 보여 줄 상태가 없어서 null */
+/** 실행 카드 맨 위에 보일 진행 상태(문구·아이콘·색조). 같은 대기 중이라도 연결·지연 여부에 따라 "요청 중", "생각 중", "응답 지연"으로 나눔. 답만 한 실행은 null. */
 export function runStatusLine(run: AiRun, undoKey: string): StatusLine | null {
   const S = strings.ai.run.status;
   const line = (
@@ -81,7 +84,7 @@ export interface OverlapNotice {
   blocking: boolean;
 }
 
-/** AI 요청창 위에 뜨는 안내. 다른 참여자의 AI 편집과 범위가 겹칠 때만 있음. lock은 내 셀 잠금이 켜져 있는지. */
+/** AI 요청창 위에 띄울 안내. 다른 사람의 AI 작업과 범위가 겹칠 때만 있음. lock은 내 셀 잠금이 켜져 있는지. */
 export function overlapNotice(overlaps: readonly AiOverlap[], lock: boolean): OverlapNotice | null {
   const C = strings.ai.composer;
   // 여러 사람이 겹치면, 모두 검토 중일 때만 "검토 중"으로 알림.
@@ -104,11 +107,7 @@ export function overlapNotice(overlaps: readonly AiOverlap[], lock: boolean): Ov
   return { text: C.overlap(names, stage), blocking: false };
 }
 
-/**
- * 편집칸 위에 뜨는 안내.
- * 같은 셀을 동시에 입력하면 나중에 확정한 값이 남음. 다른 참여자의 AI 편집 범위여도 막지 않음.
- * (입력한 셀은 그 사람의 AI 결과에서 충돌로 표시됨)
- */
+/** 편집칸 위에 띄울 안내 목록. 같은 셀을 다른 사람도 입력 중이거나 다른 사람의 AI 작업 범위일 때 알리되, 막지는 않음(입력한 셀은 그 사람의 AI 결과에서 충돌로 표시됨). */
 export function editorNotices(participants: readonly Participant[], coord: CellCoord): string[] {
   const notices: string[] = [];
   const coEditors = participants.filter(

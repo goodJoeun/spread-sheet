@@ -21,6 +21,8 @@ import {
 import { DEFAULT_PAGE_ROWS, type PointerTargetKind } from "@/lib/sheet/viewport";
 import { createStore, type Store } from "@/lib/store";
 
+// [흐름 14 · 5603cf4] 입력 경로가 늘면서 "편집 중이면 먼저 확정" 같은 규칙이 경로마다 흩어져 명령을 한 곳에 모음.
+// 그리드에 연결(4b195c4)하기 전에 독립 클래스로 먼저 만들고 테스트로 동작을 고정함.
 /**
  * 키보드·마우스·툴바·AI 패널이 모두 같은 명령을 부름. 그래서 "편집 중이면 먼저 확정" 같은 규칙이 한 곳에만 있음.
  * DOM이 필요한 일(스크롤, 포커스, 편집칸 글자)은 그리드가 붙여 주는 SheetView에 맡김.
@@ -53,6 +55,7 @@ export interface ControllerSession {
   };
 }
 
+/** 그리드가 붙기 전이나 테스트에서 쓰는 DOM 없는 화면. */
 function detachedView(): SheetView {
   let draft = "";
   return {
@@ -87,7 +90,10 @@ export class SheetController {
     this.selection = createStore(initialSelection);
   }
 
-  /** 구독은 생성자가 아니라 여기서 시작함. React 개발 모드가 객체를 두 번 만들어도 구독이 새지 않게. */
+  /**
+   * 선택·편집 상태를 참여 상태로 알리고, 실행 취소할 때 선택을 그 변경이 있던 곳으로 되돌리는 구독을 시작함.
+   * 생성자가 아니라 여기서 시작해서, React 개발 모드가 객체를 두 번 만들어도 구독이 새지 않음.
+   */
   connect(): () => void {
     const { presence, undoManager } = this.session;
     const publishSelection = () => presence.setSelection(this.selection.get());
@@ -127,6 +133,7 @@ export class SheetController {
     };
   }
 
+  /** 그리드가 스크롤·포커스·편집칸 글자를 맡을 화면을 붙임. 떼는 함수를 돌려줌. */
   attachView(view: SheetView): () => void {
     this.view = view;
     return () => {
@@ -134,22 +141,22 @@ export class SheetController {
     };
   }
 
+  /** 키보드 입력을 그리드로 돌림. */
   focus(): void {
     this.view.focus();
   }
 
+  /** 선택은 그대로 두고 그 셀이 보이도록 스크롤함. */
   reveal(coord: CellCoord): void {
     this.view.reveal(coord);
   }
 
+  /** 셀을 편집 중인지. */
   isEditing(): boolean {
     return this.edit.get() !== null;
   }
 
-  /**
-   * keepContent: F2·더블클릭처럼 기존 값을 고칠 때 true.
-   * 바로 타이핑해 바꿀 때는 생략함(편집칸에 이미 들어간 글자로 시작).
-   */
+  /** 선택한 셀의 편집을 시작함. 잠긴 셀이면 막음. keepContent는 F2·더블클릭처럼 기존 값을 고칠 때 true이고, 바로 타이핑할 때는 편집칸에 이미 들어간 글자로 시작함. */
   startEdit(mode: EditMode, { keepContent = false }: { keepContent?: boolean } = {}): void {
     const coord = this.selection.get().active;
     if (this.blockIfLocked({ start: coord, end: coord })) {
@@ -162,7 +169,7 @@ export class SheetController {
     this.draft.set(this.view.readDraft());
   }
 
-  /** 편집칸 글자가 바뀌었을 때 호출. 다른 참여자가 확정 전에도 입력 중인 글자를 볼 수 있게 알림. */
+  /** 편집칸 글자가 바뀌었을 때 부름. 다른 참여자가 확정 전에도 입력 중인 글자를 볼 수 있게 알림. */
   draftChanged(): void {
     if (!this.edit.get()) return;
     const draft = this.view.readDraft();
@@ -170,11 +177,8 @@ export class SheetController {
     this.session.presence.setDraft?.(draft);
   }
 
-  /**
-   * 셀 편집칸 밖(수식 입력줄)에서 글자를 바꿨다. 편집 중이 아니면 이 셀의 편집을 시작한다.
-   * 셀 편집칸에도 같은 글자를 써 두므로 확정·이동·다른 참여자 알림은 셀에서 입력할 때와 같다.
-   * @returns 잠긴 셀이라 편집을 시작하지 못했으면 false
-   */
+  // [흐름 29 · 53b0784] 수식 입력줄에 별도 편집 경로를 만들지 않고 셀 편집칸에 같은 글자를 씀. 확정·잠금·알림 규칙을 다시 만들지 않으려고.
+  /** 수식 입력줄에서 바꾼 글자를 셀 편집칸에도 씀. 편집 중이 아니면 이 셀의 편집을 시작함. 확정·이동·알림은 셀에서 입력할 때와 같음. 잠긴 셀이라 시작하지 못했으면 false. */
   replaceDraft(text: string): boolean {
     if (!this.isEditing()) this.startEdit("edit");
     if (!this.isEditing()) return false;
@@ -183,6 +187,7 @@ export class SheetController {
     return true;
   }
 
+  /** 편집칸 글자를 셀 값으로 확정함(origin: user-edit). 편집 중이 아니면 아무것도 하지 않음. */
   commitEdit(): void {
     const current = this.edit.get();
     if (!current) return;
@@ -195,28 +200,32 @@ export class SheetController {
     this.endEdit();
   }
 
+  /** 입력을 버리고 편집을 끝냄(Esc). */
   cancelEdit(): void {
     this.endEdit();
   }
 
-  /** 편집을 끝내고 편집칸의 글자를 비움. 확정할지는 부르는 쪽이 정함. */
+  /** 편집을 끝내고 편집칸 글자를 비움. 확정할지는 부르는 쪽이 정함. */
   private endEdit(): void {
     this.view.writeDraft("");
     this.draft.set("");
     this.edit.set(null);
   }
 
+  /** 편집 중 F2로 enter(방향키 = 셀 이동)와 edit(방향키 = 커서 이동) 모드를 바꿈. */
   toggleEditMode(): void {
     const current = this.edit.get();
     if (current) this.edit.set({ ...current, mode: current.mode === "enter" ? "edit" : "enter" });
   }
 
+  /** 선택을 바꾸고 필요하면 스크롤함. 잠금 안내는 지움. */
   select(next: Selection, reveal: CellCoord | null = next.active): void {
     this.selection.set(next);
     this.lockNotice.set(null);
     if (reveal) this.view.reveal(reveal);
   }
 
+  /** 그 셀로 바로 이동함(참여자 목록에서 다른 사람 위치로 갈 때). */
   jumpTo(coord: CellCoord): void {
     this.commitEdit();
     this.tabReturnCol = null;
@@ -224,6 +233,7 @@ export class SheetController {
     this.view.focus();
   }
 
+  /** 키보드 이동. 편집 중이면 먼저 확정하고, 다음 선택은 applyNavigation이 계산함. */
   navigate(action: NavigationAction): void {
     this.commitEdit();
     const result = applyNavigation(
@@ -238,6 +248,7 @@ export class SheetController {
     this.select(result.selection, result.reveal);
   }
 
+  /** 마우스로 누른 곳(셀·행·열·모서리)에 따라 선택함. Shift를 누르고 있으면 범위를 늘림. */
   pointerSelect(kind: PointerTargetKind, coord: CellCoord, extend: boolean): void {
     this.commitEdit();
     this.tabReturnCol = null;
@@ -258,6 +269,7 @@ export class SheetController {
     }
   }
 
+  /** 드래그하는 동안 선택 범위를 늘림. */
   pointerDrag(kind: Exclude<PointerTargetKind, "corner">, coord: CellCoord): void {
     const sel = this.selection.get();
     if (kind === "cell") {
@@ -269,13 +281,14 @@ export class SheetController {
     }
   }
 
+  /** 지금 선택 범위. */
   private get range() {
     return selectionRange(this.selection.get());
   }
 
   /**
-   * 다른 참여자가 AI 편집을 위해 잠근 셀이 range에 있으면 lockNotice로 안내를 띄우고 true를 돌려줌(부르는 쪽이 멈춤).
-   * 잠금 전에 시작한 입력은 확정할 수 있음. 입력한 글자를 버리지 않기 위함이고, 그 셀은 AI 결과에서 충돌로 표시됨.
+   * range에 다른 참여자가 AI 편집을 위해 잠근 셀이 있으면 안내(lockNotice)를 띄우고 true를 돌려줌(부르는 쪽이 멈춤).
+   * 잠기기 전에 시작한 입력은 확정할 수 있음(그 셀은 AI 결과에서 충돌로 표시됨).
    */
   private blockIfLocked(range: CellRange): boolean {
     const participants = this.session.presence.getParticipants?.() ?? [];
@@ -284,38 +297,43 @@ export class SheetController {
     return true;
   }
 
-  /** 편집 중에도 편집을 유지한 채 서식을 적용함(구글 시트와 같음). */
+  /** 선택 범위의 굵게·기울임 등을 켜거나 끔. 잠긴 셀이면 막음. 편집 중에도 편집을 유지한 채 적용함(구글 시트와 같음). */
   toggleFormat(key: FormatKey): void {
     if (this.blockIfLocked(this.range)) return;
     SheetDoc.toggleFormat(this.session.doc, this.range, key, SheetDoc.EditOrigin.User);
   }
 
+  /** 선택 범위에 글자색·채우기·정렬을 적용함. 잠긴 셀이면 막음. */
   setStyle(key: StyleKey, value: string | null): void {
     if (this.blockIfLocked(this.range)) return;
     SheetDoc.setStyle(this.session.doc, this.range, key, value, SheetDoc.EditOrigin.User);
   }
 
+  /** 선택 범위의 서식을 지움. 잠긴 셀이면 막음. */
   clearFormats(): void {
     if (this.blockIfLocked(this.range)) return;
     SheetDoc.clearFormats(this.session.doc, this.range, SheetDoc.EditOrigin.User);
   }
 
+  /** 선택 범위의 값만 지움(Delete). 잠긴 셀이면 막음. */
   clearValues(): void {
     if (this.blockIfLocked(this.range)) return;
     SheetDoc.clearValues(this.session.doc, this.range, SheetDoc.EditOrigin.User);
   }
 
-  /** 편집 중이면 먼저 확정함. 그래서 실행 취소가 "입력 취소"처럼 동작하고, 다시 실행으로 되살릴 수 있음. */
+  /** 실행 취소. 편집 중이면 먼저 확정해서, 실행 취소가 "입력 취소"처럼 동작하고 다시 실행으로 되살릴 수 있음. */
   undo(): void {
     this.commitEdit();
     this.session.undoManager.undo();
   }
 
+  /** 다시 실행. 편집 중이면 먼저 확정함. */
   redo(): void {
     this.commitEdit();
     this.session.undoManager.redo();
   }
 
+  /** 키 해석 결과(GridAction)를 알맞은 명령으로 보냄. */
   runAction(action: GridAction): void {
     if (isNavigationAction(action)) {
       this.navigate(action);

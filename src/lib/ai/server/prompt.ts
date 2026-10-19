@@ -58,12 +58,13 @@ Rules for edits:
 - Use an empty string to clear a cell. Leave out cells that do not change.
 - Keep the existing style of the data (number formats, units, capitalization) unless asked to change it.`;
 
-/** 값은 JSON 문자열로 적어 줄바꿈·따옴표가 있어도 모호하지 않게 한다. */
+/** 시트 내용을 B2 = "100" 같은 줄로 적음. 값은 JSON 문자열로 적어 줄바꿈이나 따옴표가 있어도 셀 경계가 섞이지 않게 함. */
 export function formatSheet(cells: readonly AiCell[]): string {
   if (cells.length === 0) return "(the sheet is empty)";
   return cells.map(({ cell, value }) => `${cell} = ${JSON.stringify(value)}`).join("\n");
 }
 
+/** 시트 내용, 편집 범위, 지시문을 모델에 보낼 마지막 사용자 메시지로 만듦. */
 export function buildUserMessage(request: AiEditRequest): string {
   const range = request.range
     ? `Editable range: ${request.range} (do not change cells outside it)`
@@ -81,7 +82,7 @@ export function buildUserMessage(request: AiEditRequest): string {
   ].join("\n");
 }
 
-/** 이전 대화 + 이번 요청. 시트 내용은 바뀌므로 마지막 요청에만 싣는다. */
+/** Claude에 보낼 메시지 목록(이전 대화 + 이번 요청)을 만듦. 시트 내용은 계속 바뀌므로 마지막 요청에만 실음. */
 export function buildMessages(request: AiEditRequest): Anthropic.Beta.BetaMessageParam[] {
   const history: Anthropic.Beta.BetaMessageParam[] = request.history.map((item) => ({
     role: item.role,
@@ -92,7 +93,7 @@ export function buildMessages(request: AiEditRequest): Anthropic.Beta.BetaMessag
   return [...history, { role: "user", content: buildUserMessage(request) }];
 }
 
-/** 가짜 Claude가 요청 본문만 보고 답을 만들 때 쓴다. */
+/** 사용자 메시지에서 시트·범위·지시문을 다시 꺼냄(buildUserMessage의 반대). 가짜 Claude가 요청 본문만 보고 답을 만들 때 씀. */
 export function parseUserMessage(text: string): {
   cells: AiCell[];
   range: string | null;

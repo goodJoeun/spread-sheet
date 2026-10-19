@@ -26,6 +26,7 @@ const SCENARIO_TAGS = Object.entries(MOCK_SCENARIO_TAGS).map(
   ([scenario, tag]) => [tag, scenario as MockScenario] as const,
 );
 
+/** SDK의 fetch 자리에 넣는 가짜 Claude API. 실제 API와 같은 SSE로 답하고, 지시문 태그([느림] 등)로 지연·오류를 재현함. */
 export function createMockAnthropicFetch({ delayScale = 1 }: MockOptions = {}): typeof fetch {
   return async (_input, init) => {
     const signal = init?.signal ?? undefined;
@@ -170,6 +171,7 @@ export function createMockAnthropicFetch({ delayScale = 1 }: MockOptions = {}): 
   };
 }
 
+/** 실제 API와 같은 모양의 오류 응답을 만듦. */
 function errorResponse(status: number, type: string, message: string): Response {
   return new Response(JSON.stringify({ type: "error", error: { type, message } }), {
     status,
@@ -182,6 +184,7 @@ function errorResponse(status: number, type: string, message: string): Response 
   });
 }
 
+/** 가짜 지연. 요청이 취소되면 바로 멈춤. */
 function sleep(ms: number, signal?: AbortSignal | null): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(signal.reason);
@@ -198,6 +201,7 @@ function sleep(ms: number, signal?: AbortSignal | null): Promise<void> {
   });
 }
 
+/** 글을 일정 길이로 잘라 스트리밍처럼 조금씩 보냄. 한글이 깨지지 않게 글자 단위로 자름. */
 function chunk(text: string, size: number): string[] {
   const chars = Array.from(text);
   const pieces: string[] = [];
@@ -212,7 +216,7 @@ interface Plan {
 
 const NUMBER = /^-?[\d,]+(\.\d+)?$/;
 
-/** 지시문의 몇 가지 낱말만 알아듣는 흉내. 실제 모델로 바꾸면 이 부분은 쓰이지 않는다. */
+/** 가짜 응답의 내용을 정함. 지시문의 몇 가지 낱말(대문자, 두 배, 지우기 등)만 알아듣는 흉내라서, 실제 모델을 쓰면 쓰이지 않음. */
 export function planResponse(cells: AiCell[], range: string | null, instruction: string): Plan {
   const values = new Map(cells.map((c) => [c.cell, c.value]));
   const filled = cells.map((c) => parseA1(c.cell)).filter((c): c is CellCoord => c !== null);
@@ -259,6 +263,7 @@ export function planResponse(cells: AiCell[], range: string | null, instruction:
   return withText(edits, `(가짜 응답) ${where}의 빈칸 ${edits.length}개를 예시 값으로 채울게요.`);
 }
 
+/** 답할 글과 셀 편집을 묶음. 바꿀 셀이 없으면 그렇다고 답함. */
 function withText(edits: AiCell[], text: string): Plan {
   return edits.length > 0
     ? { text, edits }

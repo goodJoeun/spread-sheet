@@ -16,6 +16,8 @@ import { isReviewing, isRunning, type AiProposal, type AiRun } from "./run";
 /** same: 지금 값이 이미 제안과 같음(다른 참여자가 같은 값으로 바꾼 경우 포함) */
 export type ProposalStatus = "same" | "clean" | "conflict";
 
+// [흐름 22 · 2105f51] 생성 중 수정·검토 중 수정·겹치는 동시 요청을 따로 처리하지 않고, 값 세 개를 비교하는 이 규칙 하나로 처리함.
+/** 요청 때 값·현재 값·제안 값을 비교해 셀 하나의 상태를 정함. same(이미 같음), clean(아무도 안 건드림 → 적용), conflict(누군가 바꿈 → 기본은 건너뜀). */
 export function classifyCell(base: string, current: string, proposed: string): ProposalStatus {
   if (proposed === current) return "same";
   if (current === base) return "clean";
@@ -29,7 +31,7 @@ export interface ProposalState {
   overwrite: boolean;
 }
 
-/** 덮어쓰기는 고를 때 본 값에만 적용됨. 그 뒤에 값이 또 바뀌면 다른 사람의 새 값이므로, 다시 고를 때까지 건너뜀. */
+/** 제안마다 현재 값과 비교한 상태와 덮어쓰기 여부를 만듦. 덮어쓰기는 고를 때 본 값에만 유효해서, 그 뒤에 값이 또 바뀌면 다시 고를 때까지 건너뜀. */
 export function evaluateProposals(
   proposals: readonly AiProposal[],
   readCurrent: (cell: string) => string,
@@ -43,6 +45,7 @@ export function evaluateProposals(
   });
 }
 
+/** 적용하면 실제로 쓰이는 제안인지. 아무도 안 건드렸거나(clean) 덮어쓰기를 고른 충돌. */
 export function writable(state: ProposalState): boolean {
   return state.status === "clean" || state.overwrite;
 }
@@ -54,6 +57,7 @@ export interface ProposalSummary {
   conflicts: number;
 }
 
+/** 적용할 셀, 건너뛸 셀, 충돌한 셀 수를 셈. 적용 버튼과 충돌 안내에 씀. */
 export function summarize(states: readonly ProposalState[]): ProposalSummary {
   let toApply = 0;
   let skipped = 0;
@@ -68,6 +72,7 @@ export function summarize(states: readonly ProposalState[]): ProposalSummary {
   return { toApply, skipped, conflicts };
 }
 
+/** 다른 사람에게 알릴 AI 작업 범위. 요청 범위가 없으면(시트 전체) 지금까지 온 제안을 감싸는 범위. */
 export function activityRange(
   scope: CellRange | null,
   proposals: ReadonlyArray<{ coord: CellCoord }>,
@@ -76,8 +81,9 @@ export function activityRange(
 }
 
 /**
- * 다른 참여자에게 알릴 내 AI 편집 상태. 제안 값은 싣지 않음.
- * 잠근 실행은 요청한 범위를 그대로 알림. 제안에 따라 범위가 바뀌면 어느 셀이 잠겼는지 예측할 수 없기 때문.
+ * 다른 사람에게 알릴 내 AI 작업 상태(생성·검토 중, 범위, 잠금)를 만듦.
+ * 제안 값은 싣지 않음.
+ * 잠근 실행은 요청한 범위를 그대로 알림(제안에 따라 범위가 바뀌면 어느 셀이 잠겼는지 예측할 수 없어서).
  */
 export function aiActivityOf(run: AiRun | null): AiActivity | null {
   const inProgress = isRunning(run) || isReviewing(run);
@@ -94,7 +100,7 @@ export interface AiOverlap {
   activity: AiActivity;
 }
 
-/** 잠그지 않은 AI 편집끼리는 범위가 겹쳐도 요청을 막지 않음. 먼저 적용된 셀은 나중 결과에서 충돌로 표시됨. */
+/** 내 요청 범위와 겹치는 다른 사람의 AI 작업을 찾음. 잠그지 않은 작업끼리는 겹쳐도 막지 않고, 먼저 적용된 셀이 나중 결과에서 충돌로 표시됨. */
 export function overlappingAi(
   participants: readonly Participant[],
   range: CellRange | null,
@@ -109,15 +115,12 @@ export function overlappingAi(
   return overlaps;
 }
 
-/**
- * 겹침 중에서 요청을 막는 것만 고름. 남이 잠근 범위에는 요청할 수 없고, 내가 잠그려면 겹치는 AI 편집이 없어야 함.
- * 그래서 잠긴 범위에서는 AI 실행이 항상 하나뿐임.
- */
+/** 겹침 중에서 요청을 실제로 막아야 하는 것만 고름. 남이 잠근 범위에는 요청할 수 없고, 내가 잠그려면 겹치는 AI 작업이 없어야 함. 그래서 잠긴 범위에는 AI 실행이 항상 하나뿐임. */
 export function blockingOverlaps(overlaps: readonly AiOverlap[], lock: boolean): AiOverlap[] {
   return lock ? [...overlaps] : overlaps.filter((o) => o.activity.locked);
 }
 
-/** 범위가 아직 정해지지 않은 시트 전체 요청은 뺌. 모든 셀에 안내가 뜨지 않도록. */
+/** 셀 하나에 걸쳐 있는 다른 사람의 AI 작업(편집칸 위 안내용). 아직 범위가 정해지지 않은 시트 전체 요청은 빼서, 모든 셀에 안내가 뜨지 않게 함. */
 export function aiActivitiesAt(
   participants: readonly Participant[],
   coord: CellCoord,

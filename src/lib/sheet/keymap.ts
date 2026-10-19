@@ -74,11 +74,12 @@ export const COMMAND_SHORTCUTS = {
 /** 다시 실행은 Ctrl+Shift+Z로도 받음(맥 관례). 화면에는 COMMAND_SHORTCUTS.redo만 보여 줌. */
 const REDO_ALT: Shortcut = { key: "z", shift: true };
 
-/** 화면에 보여 줄 표기. 예: "Ctrl+B", "⌘Shift+L" */
+/** 단축키를 화면에 보일 표기로 바꿈(예: "Ctrl+B", "⌘Shift+L"). 툴바 툴팁과 안내가 같은 함수를 씀. */
 export function shortcutLabel({ key, shift }: Shortcut, isMac: boolean): string {
   return `${isMac ? "⌘" : "Ctrl+"}${shift ? "Shift+" : ""}${key.toUpperCase()}`;
 }
 
+/** 눌린 키에 맞는 단축키를 표에서 찾음. */
 function findShortcut<K extends string>(
   table: Record<K, Shortcut>,
   isPressed: (shortcut: Shortcut) => boolean,
@@ -89,7 +90,11 @@ function findShortcut<K extends string>(
   return null;
 }
 
-/** null이면 브라우저 기본 동작(글자 입력, 커서 이동 등)에 맡김. */
+/**
+ * 키 입력을 그리드 동작(GridAction)으로 해석함.
+ * 편집 모드(enter·edit)에 따라 같은 키도 다르게 봄.
+ * null이면 브라우저 기본 동작(글자 입력, 커서 이동 등)에 맡김.
+ */
 export function resolveGridKey(
   e: KeyInput,
   editMode: EditMode | null,

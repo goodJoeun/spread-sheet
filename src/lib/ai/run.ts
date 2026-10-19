@@ -2,6 +2,8 @@ import { parseA1, rangeContains, toA1, type CellCoord, type CellRange } from "@/
 import { isInSheet } from "@/lib/sheet/schema";
 import { AI_LIMITS, type AiErrorInfo, type AiStreamEvent, type AiWarning } from "./protocol";
 
+// [흐름 24 · 42d8ef5] 처음엔 ai-controller.ts에 있던 타입. coedit ↔ ai-controller 순환을 끊으려고 어느 쪽에도 속하지 않는 파일로 뺌.
+// 734a13d에서 상태 변화(applyProgress, finishRun)도 여기로 옮겨 순수 함수로 테스트함.
 /** AI 요청 한 번(실행)의 상태. 컨트롤러, 충돌 판단, 화면이 함께 씀. */
 
 export type AiRunStatus =
@@ -53,12 +55,12 @@ export type AiMessage =
   | { id: number; role: "user"; text: string; scope: CellRange | null }
   | { id: number; role: "assistant"; run: AiRun };
 
-/** 응답을 기다리거나 받는 중 */
+/** 응답을 기다리거나 받는 중인지(waiting·streaming). */
 export function isRunning(run: Pick<AiRun, "status"> | null | undefined): boolean {
   return run?.status === "waiting" || run?.status === "streaming";
 }
 
-/** 결과를 다 받아, 적용할지 버릴지 고르는 중 */
+/** 결과를 다 받아 적용할지 버릴지 고르는 중인지(review). */
 export function isReviewing(run: AiRun | null | undefined): run is AiRun {
   return run?.status === "review";
 }
@@ -72,6 +74,7 @@ export interface AiRunInit {
   locked?: boolean;
 }
 
+/** 새 실행을 대기(waiting) 상태로 만듦. */
 export function createRun(init: AiRunInit): AiRun {
   return {
     ...init,
@@ -92,6 +95,7 @@ export function createRun(init: AiRunInit): AiRun {
 /** 실행을 끝내지 않는 스트림 이벤트. done·error는 컨트롤러가 요청을 정리하면서 따로 처리함. */
 export type AiProgressEvent = Exclude<AiStreamEvent, { type: "done" } | { type: "error" }>;
 
+/** 스트림 이벤트를 실행 상태에 반영함. 셀 제안은 주소·시트 안·편집 범위·길이를 확인하고, 어긋나면 excluded만 셈. */
 export function applyProgress(run: AiRun, event: AiProgressEvent): AiRun {
   switch (event.type) {
     case "meta":
@@ -117,12 +121,12 @@ export function applyProgress(run: AiRun, event: AiProgressEvent): AiRun {
   }
 }
 
-/** 제안이 있으면 검토 단계로, 없으면 답만 한 것으로 끝냄. */
+/** 스트림이 끝났을 때 실행을 마무리함. 제안이 있으면 검토(review)로, 없으면 답만 한 것(answered)으로. */
 export function finishRun(run: AiRun): AiRun {
   return { ...run, slow: false, status: run.proposals.length > 0 ? "review" : "answered" };
 }
 
-/** 범위 밖이거나 주소가 잘못된 제안은 세기만 함. 요청 때 값과 같아진 셀은 제안에서 뺌. */
+/** 셀 제안 하나를 실행에 더함. 범위 밖이거나 주소가 잘못된 제안은 세기만 하고(excluded), 같은 셀은 새 제안으로 바꾸고, 요청 때 값과 같아진 셀은 뺌. */
 function addProposal(run: AiRun, cell: string, value: string): AiRun {
   const coord = parseA1(cell);
   const streaming = { ...run, connected: true, slow: false, status: "streaming" as const };

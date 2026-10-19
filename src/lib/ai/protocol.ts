@@ -1,3 +1,5 @@
+// [흐름 18 · e1f758b] AI는 서버 → 상태 관리 → 화면 순서로 만듦. 서버 파일은 경계 하나씩 맡음
+// (validate: 브라우저 입력, edit-stream-parser: 모델 출력, setup: 환경 변수, route: HTTP).
 /**
  * 브라우저와 /api/ai/edit 사이에 주고받는 형식.
  * 응답은 NDJSON(한 줄에 AiStreamEvent 하나)임.
@@ -47,6 +49,7 @@ export interface AiModelOption {
   label: string;
 }
 
+// [흐름 31 · 25fae8e] 모델을 추가하려면 네 곳을 고쳐야 했고 빠뜨려도 몰랐음. 목록에서 타입(AiModelId)을 뽑아 컴파일러가 확인하게 함.
 /**
  * 화면에서 고를 수 있는 모델. 비용을 통제하려고 서버는 이 목록과 ANTHROPIC_MODEL로만 요청함.
  * 모델을 추가하고 화면 설명(strings)이나 지원 옵션(server/claude.ts)을 빠뜨리면 타입 오류가 남.
@@ -59,11 +62,12 @@ export const AI_MODELS = [
 
 export type AiModelId = (typeof AI_MODELS)[number]["id"];
 
+/** 화면에서 고를 수 있는 모델 id인지. */
 export function isAiModelId(id: string): id is AiModelId {
   return AI_MODELS.some((m) => m.id === id);
 }
 
-/** 응답의 모델 id에는 날짜가 붙을 수 있음(예: claude-haiku-4-5-20251001). */
+/** 모델 id를 화면에 보일 이름으로 바꿈. 응답의 모델 id에는 날짜가 붙을 수 있어서(예: claude-haiku-4-5-20251001) 앞부분으로 찾음. */
 export function modelLabel(id: string, options: readonly AiModelOption[] = AI_MODELS): string {
   return options.find((m) => id === m.id || id.startsWith(`${m.id}-`))?.label ?? id;
 }
@@ -130,6 +134,7 @@ export const AI_ERRORS: Record<AiErrorCode, { status: number; retryable: boolean
   unknown: { status: 500, retryable: true },
 };
 
+/** 오류 코드로 오류 정보를 만듦. 다시 시도할 수 있는지(retryable)는 코드에 따라 정해짐. */
 export function aiError(code: AiErrorCode, reason?: AiErrorReason): AiErrorInfo {
   const { retryable } = AI_ERRORS[code];
   return reason ? { code, reason, retryable } : { code, retryable };
@@ -138,6 +143,7 @@ export function aiError(code: AiErrorCode, reason?: AiErrorReason): AiErrorInfo 
 const ERROR_CODES = new Set<string>(Object.keys(AI_ERRORS));
 const ERROR_REASONS = new Set<string>(AI_ERROR_REASONS);
 
+/** 받은 값이 올바른 오류 정보 형식인지 검사함. */
 function isErrorInfo(value: unknown): value is AiErrorInfo {
   if (typeof value !== "object" || value === null) return false;
   const { code, reason, retryable } = value as AiErrorInfo;
@@ -148,6 +154,7 @@ function isErrorInfo(value: unknown): value is AiErrorInfo {
   );
 }
 
+/** 받은 경고를 검사해 아는 형식만 돌려줌. 모르는 경고는 null. */
 function parseWarning(value: unknown): AiWarning | null {
   if (typeof value !== "object" || value === null) return null;
   const warning = value as Record<string, unknown>;
@@ -164,6 +171,7 @@ function parseWarning(value: unknown): AiWarning | null {
   }
 }
 
+/** 서버에서 받은 이벤트 한 줄을 검사함. 타입은 실제 데이터를 보장하지 않아서 필드와 값 형식을 확인하고, 해석할 수 없으면 null. */
 export function parseStreamEvent(value: unknown): AiStreamEvent | null {
   if (typeof value !== "object" || value === null) return null;
   const event = value as Record<string, unknown>;
@@ -192,9 +200,9 @@ export function parseStreamEvent(value: unknown): AiStreamEvent | null {
 }
 
 /**
- * 우리 서버의 오류 응답에는 본문에 AiErrorInfo가 실려 있어서 그것을 씀.
- * 상태 코드만 보는 경우는 본문이 없는 응답(프록시, 배포 플랫폼 등)뿐이라, AI_ERRORS를 거꾸로 찾지 않음.
- * 예를 들어 프록시의 422·502는 모델 거절이나 연결 실패라고 단정할 수 없어 unknown으로 봄.
+ * HTTP 오류 응답을 오류 정보로 바꿈.
+ * 우리 서버는 본문에 오류 정보를 실어 보내서 그것을 씀.
+ * 본문이 없는 응답(프록시 등)은 확실한 상태 코드만 분류하고, 422·502처럼 단정할 수 없는 것은 unknown으로 봄.
  */
 export function errorFromResponse(status: number, body: unknown): AiErrorInfo {
   const embedded = (body as { error?: unknown } | null)?.error;

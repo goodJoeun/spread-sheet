@@ -19,6 +19,7 @@ const RESPONSE_TIMEOUT_MS = 60_000;
 
 let cached: ClaudeSetup | null = null;
 
+/** 환경 변수로 Claude 연결 설정과 SDK 클라이언트를 만들고 캐시함. 키가 없거나 AI_MOCK=1이면 fetch만 가짜로 바꿈. */
 export function getClaudeSetup(): ClaudeSetup {
   if (cached) return cached;
 
@@ -28,6 +29,7 @@ export function getClaudeSetup(): ClaudeSetup {
   const effort = EFFORTS.find((e) => e === effortEnv) ?? "low";
   const mock = !apiKey || process.env.AI_MOCK === "1";
 
+  // [흐름 20 · e1f758b] 가짜 API는 SDK의 fetch 자리에만 넣음. SDK 바깥에서 흉내 내면 응답 해석·오류 분류를 확인할 수 없어서.
   const client = new Anthropic({
     apiKey: mock ? "mock-key" : apiKey,
     maxRetries: MAX_RETRIES,
@@ -51,6 +53,7 @@ export function getClaudeSetup(): ClaudeSetup {
   return cached;
 }
 
+/** 화면에 줄 모델 목록. 기본 모델이 목록에 없으면 맨 앞에 더함. */
 function offeredModels(defaultModel: string): AiModelOption[] {
   if (AI_MODELS.some((m) => m.id === defaultModel)) return [...AI_MODELS];
   return [{ id: defaultModel, label: defaultModel }, ...AI_MODELS];

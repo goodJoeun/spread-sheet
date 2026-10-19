@@ -6,9 +6,10 @@ export interface ParsedEdit {
   value: string;
 }
 
+// [흐름 19 · e1f758b] 결과를 글이 아닌 도구 호출({ cell, value })로 받기로 하면서 생긴 파일.
 /**
- * 조각조각 도착하는 도구 입력({"edits":[...]})에서 완성된 원소를 하나씩 꺼냄.
- * SDK의 부분 JSON 해석은 잘린 문자열도 조용히 받아들일 수 있음. 그래서 원소가 닫혔을 때만 JSON.parse로 엄격하게 읽음.
+ * 조각조각 도착하는 도구 입력({"edits":[...]})에서 완성된 셀 제안을 하나씩 꺼내는 파서를 만듦.
+ * SDK의 부분 JSON 해석은 잘린 문자열도 받아들일 수 있어서, 원소가 완전히 닫혔을 때만 JSON.parse로 엄격하게 읽음.
  */
 export function createEditStreamParser() {
   let buffer = "";

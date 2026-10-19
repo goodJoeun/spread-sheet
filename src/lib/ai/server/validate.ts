@@ -3,6 +3,7 @@ import { z } from "zod";
 import { isSheetCellA1 } from "@/lib/sheet/schema";
 import { AI_LIMITS, type AiEditRequest } from "../protocol";
 
+/** "B2"나 "A1:C3"처럼 시트 안의 정규 A1 범위인지. */
 const isSheetRangeA1 = (input: string) => {
   const parts = input.split(":");
   return parts.length <= 2 && parts.every(isSheetCellA1);
@@ -30,6 +31,7 @@ const requestSchema = z.object({
   model: z.string().max(AI_LIMITS.modelId).optional(),
 });
 
+/** 브라우저가 보낸 요청을 zod로 검증함. 통과하지 못하면 null(라우트가 400으로 처리). */
 export function parseEditRequest(body: unknown): AiEditRequest | null {
   const result = requestSchema.safeParse(body);
   return result.success ? result.data : null;

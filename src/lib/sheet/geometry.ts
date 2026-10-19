@@ -8,6 +8,7 @@ export const COL_HEADER_HEIGHT = 24;
 
 /** CSS grid 줄 번호는 1부터이고 첫 줄·첫 칸은 머리글이 차지함. 그래서 머리글은 1번, index번째 행·열은 index + 2번 줄. */
 export const HEADER_GRID_LINE = 1;
+/** 행·열 번호를 CSS grid 줄 번호로 바꿈. */
 export function gridLineOf(index: number): number {
   return index + 2;
 }
@@ -19,7 +20,7 @@ export interface Rect {
   height: number;
 }
 
-/** 그리드 콘텐츠 기준(머리글 포함, 스크롤과 무관) 셀의 위치 */
+/** 셀 하나의 위치와 크기. 그리드 콘텐츠 기준(머리글 포함, 스크롤과 무관). */
 export function cellRect({ row, col }: CellCoord): Rect {
   return {
     left: ROW_HEADER_WIDTH + col * COL_WIDTH,
@@ -29,11 +30,12 @@ export function cellRect({ row, col }: CellCoord): Rect {
   };
 }
 
-/** 셀 테두리(1px 격자선)까지 덮도록 위·왼쪽으로 1px 넓힘. 셀 위에 겹쳐 그리는 것은 모두 이 위치를 씀. */
+/** 셀 테두리(1px 격자선)까지 덮도록 위·왼쪽으로 1px 넓힘. 셀 위에 겹쳐 그리는 것(선택, 커서, 편집칸)은 모두 이 위치를 씀. */
 export function outsetRect({ left, top, width, height }: Rect): Rect {
   return { left: left - 1, top: top - 1, width: width + 1, height: height + 1 };
 }
 
+/** 범위 전체를 덮는 위치와 크기. */
 export function rangeRect({ start, end }: CellRange): Rect {
   const a = cellRect(start);
   return {

@@ -1,6 +1,7 @@
 /** 마지막으로 고른 모델. 보는 사람마다 다를 수 있어서 localStorage에 둠. */
 const MODEL_KEY = "spread-sheet:ai-model";
 
+/** 마지막으로 고른 모델 id를 읽음. 저장소를 쓸 수 없으면 null. */
 export function loadModelPreference(): string | null {
   try {
     return localStorage.getItem(MODEL_KEY);
@@ -9,6 +10,7 @@ export function loadModelPreference(): string | null {
   }
 }
 
+/** 고른 모델 id를 이 브라우저에 저장함. */
 export function saveModelPreference(id: string): void {
   try {
     localStorage.setItem(MODEL_KEY, id);

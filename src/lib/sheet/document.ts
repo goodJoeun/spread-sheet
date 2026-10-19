@@ -12,12 +12,14 @@ import {
   type StyleKey,
 } from "./schema";
 
+// [흐름 2 · be76c7f] 그리드보다 데이터 모양을 먼저 정함. 저장 형식은 나중에 바꾸기 가장 어려운 결정이라서.
 /**
  * 셀마다 Y.Map을 따로 두지 않고 평평한 키로 저장함(values "B2" → "100", formats "B2.bold" → true).
  * 빈 셀에 두 탭이 동시에 처음 쓰면, 셀마다 Map을 두는 방식은 각자 새 Map을 만들어 한쪽이 통째로 사라짐.
  * 평평한 키는 서로 다른 키라서 두 변경이 모두 남음.
  */
 
+// [흐름 3 · be76c7f] AI 기능(10/4)보다 하루 먼저 Ai 출처를 둠. 실행 취소 기준은 나중에 바꾸기 어려워 AI 적용 자리를 미리 만듦.
 /**
  * 트랜잭션 origin. UndoManager는 이 origin의 변경만 추적함.
  * 그래서 다른 탭에서 온 변경(origin = provider)이나 저장소에서 불러온 변경은 실행 취소 대상이 아님.
@@ -28,20 +30,25 @@ export const EditOrigin = {
 } as const;
 export type EditOrigin = (typeof EditOrigin)[keyof typeof EditOrigin];
 
+/** 셀 값을 담은 Map("B2" → "100"). */
 export function valuesOf(doc: Y.Doc): Y.Map<string> {
   return doc.getMap<string>("values");
 }
 
+/** 셀 서식을 담은 Map("B2.bold" → true, "B2.color" → "#ff0000"). */
 export function formatsOf(doc: Y.Doc): Y.Map<true | string> {
   return doc.getMap<true | string>("formats");
 }
 
+/** 셀 주소와 서식 이름을 점으로 이음("B2", "bold" → "B2.bold"). */
 const formatKey = (cell: string, key: FormatKey | StyleKey) => `${cell}.${key}`;
 
+/** 셀 하나의 값. 없으면 빈 문자열. */
 export function getValue(doc: Y.Doc, coord: CellCoord): string {
   return valuesOf(doc).get(toA1(coord)) ?? "";
 }
 
+/** 흩어진 서식 키를 모아 셀 하나의 서식 객체로 만듦. 형식이 틀린 값은 버림. */
 export function getFormat(doc: Y.Doc, coord: CellCoord): CellFormat {
   const formats = formatsOf(doc);
   const cell = toA1(coord);
@@ -65,8 +72,8 @@ export interface CellWrite {
 }
 
 /**
- * 한 트랜잭션(= 실행 취소 한 단계)으로 쓰고 바뀐 셀 수를 돌려준다. 빈 문자열은 키를 지운다.
- * 값이 같은 셀은 건너뛰어 실행 취소 기록에 빈 단계가 남지 않게 한다.
+ * 여러 셀에 값을 한 트랜잭션(= 실행 취소 한 단계)으로 쓰고 바뀐 셀 수를 돌려줌.
+ * 빈 문자열은 키를 지우고, 시트 밖은 무시하고, 값이 같은 셀은 건너뜀(실행 취소 기록에 빈 단계가 남지 않게).
  */
 export function writeValues(doc: Y.Doc, writes: readonly CellWrite[], origin: EditOrigin): number {
   const values = valuesOf(doc);
@@ -84,11 +91,12 @@ export function writeValues(doc: Y.Doc, writes: readonly CellWrite[], origin: Ed
   return changed;
 }
 
+/** 셀 하나에 씀. 값이 바뀌었으면 true. */
 export function setValue(doc: Y.Doc, coord: CellCoord, value: string, origin: EditOrigin): boolean {
   return writeValues(doc, [{ coord, value }], origin) > 0;
 }
 
-/** 값만 지우고 서식은 둔다(엑셀·구글시트의 Delete 키와 같음). */
+/** 범위의 값만 지우고 서식은 남김(엑셀·구글 시트의 Delete 키와 같음). */
 export function clearValues(doc: Y.Doc, range: CellRange, origin: EditOrigin): number {
   const clipped = clipToSheet(range);
   if (!clipped) return 0;
@@ -97,6 +105,7 @@ export function clearValues(doc: Y.Doc, range: CellRange, origin: EditOrigin): n
   return writeValues(doc, writes, origin);
 }
 
+/** 범위의 모든 셀에 그 서식이 켜져 있는지. 툴바 버튼 표시와 켜고 끄기 판단에 씀. */
 export function hasFormatEverywhere(doc: Y.Doc, range: CellRange, key: FormatKey): boolean {
   const clipped = clipToSheet(range);
   if (!clipped) return false;
@@ -108,6 +117,7 @@ export function hasFormatEverywhere(doc: Y.Doc, range: CellRange, key: FormatKey
   return everywhere;
 }
 
+/** 범위 전체에 서식을 켜거나 끔. 이미 그 상태인 셀은 건너뜀. */
 export function setFormat(
   doc: Y.Doc,
   range: CellRange,
@@ -129,7 +139,7 @@ export function setFormat(
   }, origin);
 }
 
-/** 범위 전체에 켜져 있으면 끄고, 하나라도 꺼져 있으면 모두 켠다(구글시트와 같음). */
+/** 범위의 굵게·기울임 등을 켜거나 끔. 전체에 켜져 있으면 끄고, 하나라도 꺼져 있으면 모두 켬(구글 시트와 같음). 켰으면 true. */
 export function toggleFormat(
   doc: Y.Doc,
   range: CellRange,
@@ -141,7 +151,7 @@ export function toggleFormat(
   return enabled;
 }
 
-/** null이면 기본값으로 되돌린다. 잘못된 값은 무시한다. */
+/** 범위에 글자색·채우기·정렬을 적용함. null이면 기본값으로 되돌리고, 형식이 틀린 값은 무시함. */
 export function setStyle(
   doc: Y.Doc,
   range: CellRange,
@@ -164,7 +174,7 @@ export function setStyle(
   }, origin);
 }
 
-/** 범위 전체가 같은 값이면 그 값, 섞여 있거나 기본값이면 null */
+/** 범위 전체에 같은 값 서식이 걸려 있으면 그 값, 섞여 있거나 기본값이면 null. 툴바 표시에 씀. */
 export function commonStyle(doc: Y.Doc, range: CellRange, key: StyleKey): string | null {
   const clipped = clipToSheet(range);
   if (!clipped) return null;
@@ -179,6 +189,7 @@ export function commonStyle(doc: Y.Doc, range: CellRange, key: StyleKey): string
   return common ?? null;
 }
 
+/** 범위의 서식을 모두 지우고 값은 남김. */
 export function clearFormats(doc: Y.Doc, range: CellRange, origin: EditOrigin): void {
   const clipped = clipToSheet(range);
   if (!clipped) return;

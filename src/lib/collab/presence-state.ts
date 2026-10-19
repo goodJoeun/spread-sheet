@@ -2,6 +2,7 @@ import type { CellCoord, CellRange } from "@/lib/sheet/address";
 import { clipToSheet } from "@/lib/sheet/schema";
 import { clampCoord, type Selection } from "@/lib/sheet/selection";
 
+// [흐름 26 · 734a13d] presence.ts 한 파일에 있던 것을 책임별로 나눔: 상태 계약(이 파일), 생존 확인(liveness.ts), 이름·색(identity.ts).
 /**
  * 탭마다 awareness로 알리는 상태. 다른 탭(이전 버전 포함)에서 온 값이라
  * isPresenceState로 검증하고 normalizePresenceState로 맞춘 뒤에 씀.
@@ -38,12 +39,14 @@ export interface Participant extends PresenceState {
   isSelf: boolean;
 }
 
+/** 정수 row·col을 가진 좌표인지. */
 const isCoord = (value: unknown): value is CellCoord =>
   typeof value === "object" &&
   value !== null &&
   Number.isInteger((value as CellCoord).row) &&
   Number.isInteger((value as CellCoord).col);
 
+/** anchor·focus·active가 모두 좌표인 선택인지. */
 const isSelection = (value: unknown): value is Selection =>
   typeof value === "object" &&
   value !== null &&
@@ -51,12 +54,14 @@ const isSelection = (value: unknown): value is Selection =>
   isCoord((value as Selection).focus) &&
   isCoord((value as Selection).active);
 
+/** start·end가 좌표인 범위인지. */
 const isRange = (value: unknown): value is CellRange =>
   typeof value === "object" &&
   value !== null &&
   isCoord((value as CellRange).start) &&
   isCoord((value as CellRange).end);
 
+/** AI 작업 상태 형식인지. locked가 없는 이전 버전 상태도 받아들임. */
 const isAiActivity = (value: unknown): value is AiActivity =>
   typeof value === "object" &&
   value !== null &&
@@ -65,8 +70,8 @@ const isAiActivity = (value: unknown): value is AiActivity =>
   ((value as AiActivity).locked === undefined || typeof (value as AiActivity).locked === "boolean");
 
 /**
- * 이전 버전 탭이 보낸 상태도 받아들임.
- * ai가 없으면 AI 편집이 없는 것으로, locked가 없으면 잠그지 않은 것으로, draft가 없으면 입력 중인 글자가 없는 것으로 봄.
+ * 다른 탭에서 온 값이 참여 상태 형식인지 검사함.
+ * 이전 버전 탭의 상태도 받아들임(ai·locked·draft가 없으면 각각 AI 작업 없음, 잠금 없음, 입력 중인 글자 없음으로 봄).
  */
 export function isPresenceState(value: unknown): value is PresenceState {
   if (typeof value !== "object" || value === null) return false;
@@ -83,11 +88,11 @@ export function isPresenceState(value: unknown): value is PresenceState {
   );
 }
 
+// [흐름 30 · 456f88e] 처음엔 화면과 판단 로직 5곳이 각자 좌표를 맞췄음. 들어오는 곳 한 곳으로 모음.
 /**
- * 검증한 상태를 참여자 목록에 넣기 전에 맞춤. 다른 탭에서 온 좌표를 시트 안으로 맞추는 일은 여기서만 함.
- * 그래서 Participant를 쓰는 화면과 판단 로직은 좌표를 다시 확인하지 않아도 됨.
- * - 좌표는 시트 안으로 맞추고, AI 편집 범위는 시트 안으로 자름.
- * - 이전 버전 탭이 빠뜨린 값은 기본값으로 채움(locked → false, draft → null).
+ * 검증한 상태를 참여자 목록에 넣기 전에 맞춤.
+ * 좌표와 AI 작업 범위는 시트 안으로 맞추고, 이전 버전이 빠뜨린 값은 기본값으로 채움.
+ * 다른 탭 좌표를 맞추는 곳은 여기뿐이라, Participant를 쓰는 쪽은 다시 확인하지 않음.
  */
 export function normalizePresenceState(state: PresenceState): PresenceState {
   const { user, selection, editing, draft, ai } = state;
@@ -106,6 +111,7 @@ export function normalizePresenceState(state: PresenceState): PresenceState {
   };
 }
 
+/** AI 작업 범위를 시트 안으로 자름. 시트와 전혀 겹치지 않으면 AI 작업이 없는 것으로 봄. */
 function normalizeAiActivity(ai: AiActivity): AiActivity | null {
   const range = ai.range ? clipToSheet(ai.range) : null;
   // 시트와 겹치지 않는 범위를 null로 두면 "시트 전체"가 되므로, AI 편집이 없는 것으로 봄.

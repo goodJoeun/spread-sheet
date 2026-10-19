@@ -36,6 +36,9 @@ export interface SheetSessionOptions {
   onUserChange?: (user: UserInfo) => void;
 }
 
+// [흐름 5 · be76c7f] 문서 하나에 저장(IndexedDB)·전송(BroadcastChannel) 부품을 따로 붙이는 조립 지점.
+// 저장·전송 방식을 바꿀 때 고칠 곳이 이 함수로 모임.
+/** 시트 하나를 여는 세션을 만듦. 문서·참여 상태·저장·전송·참여자·실행 취소 부품을 만들어 잇고, 저장된 내용을 다 불러왔는지(whenLoaded) 알려 줌. */
 export function createSheetSession(
   sheetId: string,
   options: SheetSessionOptions = {},
@@ -53,6 +56,7 @@ export function createSheetSession(
   const undoManager = createUndoManager(doc);
   void presence.join();
 
+  // [흐름 17 · 17df456] 처음엔 whenSynced만 기다려서, 저장소가 막힌 브라우저에서 로딩 화면이 끝나지 않았음.
   // y-indexeddb는 성공(synced)만 알리고 실패는 알리지 않는다. 그대로 기다리면 로딩 화면에서 멈추므로
   // DB 열기 실패나 시간 초과를 "unavailable"로 처리한다.
   let storage: StorageStatus | "loading" = "loading";

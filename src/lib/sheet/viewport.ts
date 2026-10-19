@@ -7,6 +7,7 @@ import { clampCoord } from "./selection";
 /** 그리드에서 누른 곳: 셀, 행 머리글, 열 머리글, 왼쪽 위 모서리 */
 export type PointerTargetKind = "cell" | "row" | "col" | "corner";
 
+/** 셀이 고정된 머리글에 가리지 않고 보이도록 필요한 만큼만 스크롤함. */
 export function revealCell(scroller: HTMLElement | null, coord: CellCoord): void {
   if (!scroller) return;
   const rect = cellRect(coord);
@@ -25,12 +26,13 @@ export function revealCell(scroller: HTMLElement | null, coord: CellCoord): void
 /** 화면 높이를 알 수 없을 때(그리드가 아직 없거나 테스트) PageUp/Down으로 움직이는 행 수 */
 export const DEFAULT_PAGE_ROWS = 10;
 
+/** 화면에 보이는 행 수. PageUp/Down 간격으로 씀. */
 export function visibleRowCount(scroller: HTMLElement | null): number {
   if (!scroller) return DEFAULT_PAGE_ROWS;
   return Math.max(1, Math.floor((scroller.clientHeight - COL_HEADER_HEIGHT) / ROW_HEIGHT) - 1);
 }
 
-/** 머리글은 화면에 고정돼 있어서 스크롤 영역 기준으로, 셀은 콘텐츠 기준으로 계산함. */
+/** 포인터 위치가 셀·행 머리글·열 머리글·모서리 중 어디인지와 그 좌표를 계산함. 머리글은 화면에 고정돼 있어 스크롤 영역 기준으로, 셀은 콘텐츠 기준으로 계산함. */
 export function hitTest(
   scroller: HTMLElement,
   content: HTMLElement,
@@ -48,6 +50,7 @@ export function hitTest(
   return { kind: pointerTargetKind(inColHeader, inRowHeader), coord };
 }
 
+/** 누른 곳이 셀·행 머리글·열 머리글·모서리 중 무엇인지. */
 function pointerTargetKind(inColHeader: boolean, inRowHeader: boolean): PointerTargetKind {
   if (inColHeader && inRowHeader) return "corner";
   if (inColHeader) return "col";
