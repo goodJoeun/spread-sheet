@@ -17,8 +17,8 @@ interface SheetContextValue {
 
 const SheetContext = createContext<SheetContextValue | null>(null);
 
-// [흐름 16] Grid를 역할별로 나누면서, 툴바·그리드·참여자 목록이 같은 컨트롤러를 쓰도록 Context로 공급함.
-// props로 넘기던 것과 Grid가 ref로 명령을 노출하던 것을 없앰.
+// [결정] Grid를 역할별로 나누면서, 툴바·그리드·참여자 목록이 같은 컨트롤러를 쓰도록 Context로 공급함.
+// 처음엔 props로 넘기고 Grid가 ref로 명령을 노출했는데, 이 둘을 없앰.
 export function SheetProvider({
   session,
   children,

@@ -6,7 +6,7 @@ import { aiActivitiesAt, blockingOverlaps, type AiOverlap } from "./coedit";
 import { isAiModelId, type AiErrorInfo, type AiModelId, type AiWarning } from "./protocol";
 import type { AiRun } from "./run";
 
-// [흐름 25] 처음엔 서버가 오류 문구를 보냈음. 서버는 코드만 보내고 문구는 여기서 고르게 바꿈. 문구를 고칠 때 서버를 건드리지 않게.
+// [결정] 처음엔 서버가 오류 문구를 보냈음. 서버는 코드만 보내고 문구는 여기서 고르게 바꿈. 문구를 고칠 때 서버를 건드리지 않게.
 /** AI 기능의 상태를 화면 문구로 바꿈. 서버가 보낸 코드도 여기서 문구가 됨. */
 
 /** 서버가 보낸 오류 코드(와 세부 이유)를 화면 문구로 바꿈. */
@@ -107,6 +107,7 @@ export function overlapNotice(overlaps: readonly AiOverlap[], lock: boolean): Ov
   return { text: C.overlap(names, stage), blocking: false };
 }
 
+// [기능 설명: 입력 중인 값 4/4] 같은 셀을 다른 사람도 입력 중이면 편집칸 위에 안내를 띄움. 막지는 않음.
 /** 편집칸 위에 띄울 안내 목록. 같은 셀을 다른 사람도 입력 중이거나 다른 사람의 AI 작업 범위일 때 알리되, 막지는 않음(입력한 셀은 그 사람의 AI 결과에서 충돌로 표시됨). */
 export function editorNotices(participants: readonly Participant[], coord: CellCoord): string[] {
   const notices: string[] = [];

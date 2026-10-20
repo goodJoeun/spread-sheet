@@ -2,8 +2,8 @@ import { parseA1, rangeContains, toA1, type CellCoord, type CellRange } from "@/
 import { isInSheet } from "@/lib/sheet/schema";
 import { AI_LIMITS, type AiErrorInfo, type AiStreamEvent, type AiWarning } from "./protocol";
 
-// [흐름 24] 처음엔 ai-controller.ts에 있던 타입. coedit ↔ ai-controller 순환을 끊으려고 어느 쪽에도 속하지 않는 파일로 뺌.
-// 이후 책임별로 파일을 나눌 때(흐름 26) 상태 변화(applyProgress, finishRun)도 여기로 옮겨 순수 함수로 테스트함.
+// [결정] 처음엔 ai-controller.ts에 있던 타입. coedit ↔ ai-controller 순환을 끊으려고 어느 쪽에도 속하지 않는 파일로 뺌.
+// 이후 책임별로 파일을 나눌 때 상태 변화(applyProgress, finishRun)도 여기로 옮겨 순수 함수로 테스트함.
 /** AI 요청 한 번(실행)의 상태. 컨트롤러, 충돌 판단, 화면이 함께 씀. */
 
 export type AiRunStatus =

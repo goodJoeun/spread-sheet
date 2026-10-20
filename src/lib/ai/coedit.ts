@@ -16,7 +16,8 @@ import { isReviewing, isRunning, type AiProposal, type AiRun } from "./run";
 /** same: 지금 값이 이미 제안과 같음(다른 참여자가 같은 값으로 바꾼 경우 포함) */
 export type ProposalStatus = "same" | "clean" | "conflict";
 
-// [흐름 22] 생성 중 수정·검토 중 수정·겹치는 동시 요청을 따로 처리하지 않고, 값 세 개를 비교하는 이 규칙 하나로 처리함.
+// [기능 설명: AI 충돌 2/6] 요청 때 값·현재 값·제안 값을 비교해 same·clean·conflict를 정함.
+// [결정] 생성 중 수정·검토 중 수정·겹치는 동시 요청을 따로 처리하지 않고, 값 세 개를 비교하는 이 규칙 하나로 처리함.
 /** 요청 때 값·현재 값·제안 값을 비교해 셀 하나의 상태를 정함. same(이미 같음), clean(아무도 안 건드림 → 적용), conflict(누군가 바꿈 → 기본은 건너뜀). */
 export function classifyCell(base: string, current: string, proposed: string): ProposalStatus {
   if (proposed === current) return "same";
@@ -80,6 +81,7 @@ export function activityRange(
   return scope ?? boundingRange(proposals.map((p) => p.coord));
 }
 
+// [기능 설명: AI 범위·잠금 1/7] 내 실행을 다른 사람에게 알릴 작업 범위로 바꿈. 제안 값은 싣지 않음.
 /**
  * 다른 사람에게 알릴 내 AI 작업 상태(생성·검토 중, 범위, 잠금)를 만듦.
  * 제안 값은 싣지 않음.
@@ -100,6 +102,7 @@ export interface AiOverlap {
   activity: AiActivity;
 }
 
+// [기능 설명: AI 범위·잠금 4/7] 요청 범위가 다른 사람의 AI 작업과 겹치는지 찾음. AiComposer가 요청 전에 안내함.
 /** 내 요청 범위와 겹치는 다른 사람의 AI 작업을 찾음. 잠그지 않은 작업끼리는 겹쳐도 막지 않고, 먼저 적용된 셀이 나중 결과에서 충돌로 표시됨. */
 export function overlappingAi(
   participants: readonly Participant[],
@@ -115,6 +118,7 @@ export function overlappingAi(
   return overlaps;
 }
 
+// [기능 설명: AI 범위·잠금 5/7] 실제로 막을 겹침만 고름. 남이 잠근 범위에는 요청할 수 없고, 겹치는 작업이 있으면 잠글 수 없음.
 /** 겹침 중에서 요청을 실제로 막아야 하는 것만 고름. 남이 잠근 범위에는 요청할 수 없고, 내가 잠그려면 겹치는 AI 작업이 없어야 함. 그래서 잠긴 범위에는 AI 실행이 항상 하나뿐임. */
 export function blockingOverlaps(overlaps: readonly AiOverlap[], lock: boolean): AiOverlap[] {
   return lock ? [...overlaps] : overlaps.filter((o) => o.activity.locked);

@@ -21,8 +21,8 @@ import {
 import { DEFAULT_PAGE_ROWS, type PointerTargetKind } from "@/lib/sheet/viewport";
 import { createStore, type Store } from "@/lib/store";
 
-// [흐름 14] 입력 경로가 늘면서 "편집 중이면 먼저 확정" 같은 규칙이 경로마다 흩어져 명령을 한 곳에 모음.
-// 그리드에 연결(흐름 16)하기 전에 독립 클래스로 먼저 만들고 테스트로 동작을 고정함.
+// [결정] 입력 경로가 늘면서 "편집 중이면 먼저 확정" 같은 규칙이 경로마다 흩어져 명령을 한 곳에 모음.
+// 그리드에 연결하기 전에 독립 클래스로 먼저 만들고 테스트로 동작을 고정함.
 /**
  * 키보드·마우스·툴바·AI 패널이 모두 같은 명령을 부름. 그래서 "편집 중이면 먼저 확정" 같은 규칙이 한 곳에만 있음.
  * DOM이 필요한 일(스크롤, 포커스, 편집칸 글자)은 그리드가 붙여 주는 SheetView에 맡김.
@@ -90,6 +90,8 @@ export class SheetController {
     this.selection = createStore(initialSelection);
   }
 
+  // [기능 설명: 동기화·저장 5/5] 되돌릴 때 선택 위치도 그 변경이 있던 곳으로 돌아감(실행 취소 항목에 선택을 함께 저장).
+  // [기능 설명: 참여자 표시 1/6] 선택과 편집 위치가 바뀔 때마다 참여 상태(presence)로 알림.
   /**
    * 선택·편집 상태를 참여 상태로 알리고, 실행 취소할 때 선택을 그 변경이 있던 곳으로 되돌리는 구독을 시작함.
    * 생성자가 아니라 여기서 시작해서, React 개발 모드가 객체를 두 번 만들어도 구독이 새지 않음.
@@ -169,6 +171,7 @@ export class SheetController {
     this.draft.set(this.view.readDraft());
   }
 
+  // [기능 설명: 입력 중인 값 1/4] 편집칸 글자가 바뀔 때마다 부름. 확정하거나 Esc로 끝나면 connect의 publishEditing이 null을 보내 다른 화면도 원래 값으로 돌아감.
   /** 편집칸 글자가 바뀌었을 때 부름. 다른 참여자가 확정 전에도 입력 중인 글자를 볼 수 있게 알림. */
   draftChanged(): void {
     if (!this.edit.get()) return;
@@ -177,7 +180,7 @@ export class SheetController {
     this.session.presence.setDraft?.(draft);
   }
 
-  // [흐름 29] 수식 입력줄에 별도 편집 경로를 만들지 않고 셀 편집칸에 같은 글자를 씀. 확정·잠금·알림 규칙을 다시 만들지 않으려고.
+  // [결정] 수식 입력줄에 별도 편집 경로를 만들지 않고 셀 편집칸에 같은 글자를 씀. 확정·잠금·알림 규칙을 다시 만들지 않으려고.
   /** 수식 입력줄에서 바꾼 글자를 셀 편집칸에도 씀. 편집 중이 아니면 이 셀의 편집을 시작함. 확정·이동·알림은 셀에서 입력할 때와 같음. 잠긴 셀이라 시작하지 못했으면 false. */
   replaceDraft(text: string): boolean {
     if (!this.isEditing()) this.startEdit("edit");
@@ -187,6 +190,7 @@ export class SheetController {
     return true;
   }
 
+  // [기능 설명: 셀 편집 5/7] 확정하면 편집칸 글자를 user-edit 출처로 문서에 씀.
   /** 편집칸 글자를 셀 값으로 확정함(origin: user-edit). 편집 중이 아니면 아무것도 하지 않음. */
   commitEdit(): void {
     const current = this.edit.get();
@@ -286,6 +290,7 @@ export class SheetController {
     return selectionRange(this.selection.get());
   }
 
+  // [기능 설명: AI 범위·잠금 7/7] 잠긴 셀을 고치려 하면 막고, lockedCellNotices로 누가 잠갔는지 알림.
   /**
    * range에 다른 참여자가 AI 편집을 위해 잠근 셀이 있으면 안내(lockNotice)를 띄우고 true를 돌려줌(부르는 쪽이 멈춤).
    * 잠기기 전에 시작한 입력은 확정할 수 있음(그 셀은 AI 결과에서 충돌로 표시됨).
@@ -333,6 +338,7 @@ export class SheetController {
     this.session.undoManager.redo();
   }
 
+  // [기능 설명: 셀 편집 3/7] 동작을 컨트롤러 명령으로 보냄. 키보드·마우스·툴바·수식 입력줄이 모두 같은 명령을 부름.
   /** 키 해석 결과(GridAction)를 알맞은 명령으로 보냄. */
   runAction(action: GridAction): void {
     if (isNavigationAction(action)) {

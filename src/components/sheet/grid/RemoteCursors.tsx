@@ -13,6 +13,7 @@ interface RemoteCursorsProps {
   participants: Participant[];
 }
 
+// [기능 설명: 참여자 표시 4/6] useParticipants로 받은 목록을 그 사람의 색 테두리와 이름표로 그림.
 /** 다른 참여자의 커서는 내 선택보다 아래 층에 그려서 내 커서를 가리지 않게 함. 이름표만 위로 올림. */
 export const RemoteCursors = memo(function RemoteCursors({ participants }: RemoteCursorsProps) {
   return participants.map((participant) => {

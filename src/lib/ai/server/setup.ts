@@ -29,7 +29,7 @@ export function getClaudeSetup(): ClaudeSetup {
   const effort = EFFORTS.find((e) => e === effortEnv) ?? "low";
   const mock = !apiKey || process.env.AI_MOCK === "1";
 
-  // [흐름 20] 가짜 API는 SDK의 fetch 자리에만 넣음. SDK 바깥에서 흉내 내면 응답 해석·오류 분류를 확인할 수 없어서.
+  // [결정] 가짜 API는 SDK의 fetch 자리에만 넣음. SDK 바깥에서 흉내 내면 응답 해석·오류 분류를 확인할 수 없어서.
   const client = new Anthropic({
     apiKey: mock ? "mock-key" : apiKey,
     maxRetries: MAX_RETRIES,

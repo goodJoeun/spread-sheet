@@ -81,6 +81,7 @@ export function buildParams(
   };
 }
 
+// [기능 설명: AI 편집 5/9] 편집 도구(EDIT_TOOL)를 함께 보내 결과를 { cell, value } 도구 입력으로 받음.
 /** Claude 응답 스트림을 앱 이벤트(meta·text·edit·warning·done)로 바꿔 내보냄. 시작 전 오류는 AiProviderError로, 시작 후 오류는 error 이벤트로. */
 export async function* streamClaudeEdits(
   setup: ClaudeSetup,

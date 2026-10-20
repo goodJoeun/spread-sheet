@@ -2,7 +2,7 @@ import type { CellCoord, CellRange } from "@/lib/sheet/address";
 import { clipToSheet } from "@/lib/sheet/schema";
 import { clampCoord, type Selection } from "@/lib/sheet/selection";
 
-// [흐름 26] presence.ts 한 파일에 있던 것을 책임별로 나눔: 상태 계약(이 파일), 생존 확인(liveness.ts), 이름·색(identity.ts).
+// [결정] presence.ts 한 파일에 있던 것을 책임별로 나눔: 상태 계약(이 파일), 생존 확인(liveness.ts), 이름·색(identity.ts).
 /**
  * 탭마다 awareness로 알리는 상태. 다른 탭(이전 버전 포함)에서 온 값이라
  * isPresenceState로 검증하고 normalizePresenceState로 맞춘 뒤에 씀.
@@ -88,7 +88,7 @@ export function isPresenceState(value: unknown): value is PresenceState {
   );
 }
 
-// [흐름 30] 처음엔 화면과 판단 로직 5곳이 각자 좌표를 맞췄음. 들어오는 곳 한 곳으로 모음.
+// [결정] 처음엔 화면과 판단 로직 5곳이 각자 좌표를 맞췄음. 들어오는 곳 한 곳으로 모음.
 /**
  * 검증한 상태를 참여자 목록에 넣기 전에 맞춤.
  * 좌표와 AI 작업 범위는 시트 안으로 맞추고, 이전 버전이 빠뜨린 값은 기본값으로 채움.

@@ -4,6 +4,7 @@ import { strings } from "@/resources/strings";
 import { lockHolder } from "./locks";
 import type { Participant } from "./presence-state";
 
+// [기능 설명: 참여자 표시 5/6] 참여자 목록에 보일 "B2 입력 중", "A1:C3 보는 중" 같은 문구를 정함.
 /** 참여자 목록에 보일 상태 문구. AI 편집 > 입력 중 > 보는 중 순서로 하나만 보여 줌. */
 export function participantStatus(p: Participant): string {
   if (p.ai) {

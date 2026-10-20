@@ -34,7 +34,7 @@ import {
 } from "./run";
 import { AiRequestError, type AiTransport } from "./transport";
 
-// [흐름 21] 첫 버전부터 요청 때 값(base)을 기록해 둠. 다음 커밋의 충돌 판단(흐름 22)이 이 값 위에 얹힘.
+// [결정] 첫 버전부터 요청 때 값(base)을 기록해 둠. 충돌 판단(coedit.ts)이 이 값 위에 얹힘.
 // 시트는 SheetController가 아니라 AiSheetBinding으로만 받아 lib/ai가 컨트롤러를 모르게 함.
 /**
  * AI 결과는 제안으로만 들고 있다가, 적용할 때 한 트랜잭션으로 한꺼번에 씀. 그래서 실행 취소 한 번으로 모두 되돌릴 수 있음.
@@ -94,6 +94,7 @@ export class AiController {
     };
   }
 
+  // [기능 설명: AI 충돌 3/6] 결과를 저장하지 않고 그릴 때마다 다시 비교함. 바꾼 사람이 되돌리면 충돌도 풀림.
   /**
    * 제안마다 현재 문서 값과 비교한 상태(same·clean·conflict)를 계산함.
    * 결과를 저장하지 않고 매번 다시 비교해서, 바꾼 사람이 원래 값으로 되돌리면 충돌도 저절로 풀림.
@@ -108,6 +109,7 @@ export class AiController {
     );
   }
 
+  // [기능 설명: AI 충돌 5/6] 덮어쓰기는 고를 때 본 값에만 유효함(evaluateProposals). 그 뒤 값이 또 바뀌면 다시 건너뜀.
   /** 충돌한 셀 하나를 덮어쓸지 정함. 고를 때 본 현재 값을 함께 기억함. */
   setOverwrite(cell: string, overwrite: boolean): void {
     const state = this.states().find((s) => s.proposal.cell === cell);
@@ -139,6 +141,8 @@ export class AiController {
     return this.inflight !== null || isReviewing(run);
   }
 
+  // [기능 설명: AI 편집 2/9] 시트 셀을 담아 요청을 만들고 새 실행(run)을 시작함.
+  // [기능 설명: AI 충돌 1/6] 요청에 실은 셀 값을 요청 때 값(base)으로 기록함.
   /** 지시문과 범위로 AI 요청을 시작함. 요청에 실은 셀 값이 요청 때 값(base)이 됨. 보냈으면 true. */
   send(instruction: string, scope: CellRange | null): boolean {
     const text = instruction.trim().slice(0, AI_LIMITS.instruction);
@@ -174,6 +178,8 @@ export class AiController {
     this.active.set(null);
   }
 
+  // [기능 설명: AI 편집 9/9] 적용하면 쓸 수 있는 제안만 ai-apply 출처로 한 번에 씀. 실행 취소 한 번으로 모두 되돌아감.
+  // [기능 설명: AI 충돌 6/6] 적용 직전에 지금 값으로 다시 판단함. 판단과 쓰기가 같은 동기 코드라 다른 탭의 변경이 끼어들 수 없음.
   /** 검토 중인 제안 중 적용할 수 있는 것만 한 트랜잭션(ai-apply)으로 씀. 실행 취소 한 번으로 모두 되돌아감. */
   apply(): void {
     const run = this.active.get();
@@ -283,6 +289,7 @@ export class AiController {
       });
   }
 
+  // [기능 설명: AI 편집 7/9] 받은 제안을 applyProgress(run.ts)로 실행에 쌓음. 시트에는 아직 쓰지 않음.
   /** 스트림 이벤트 하나를 실행에 반영함. 첫 셀 제안이 오면 그 셀로 화면을 옮김. 실행이 끝났으면 true. */
   private handleEvent(runId: number, event: AiStreamEvent): boolean {
     if (event.type === "done") {
@@ -335,6 +342,7 @@ export class AiController {
     this.sheet.focus();
   }
 
+  // [기능 설명: AI 범위·잠금 2/7] 실행 상태가 바뀔 때마다 presence.setAi로 다른 탭에 알림.
   /** 내 AI 작업 상태를 다른 탭에 알림. 상태·범위·잠금이 바뀔 때만 보내고, 글자가 들어올 때마다 보내지 않음. */
   private publishActivity(): void {
     const activity = aiActivityOf(this.active.get());
@@ -346,7 +354,7 @@ export class AiController {
     this.presence.setAi(activity);
   }
 
-  // [흐름 32] 전 이름 settle이 inflight까지 비워서, 패널을 닫아도 요청이 끊기지 않던 버그가 있었음.
+  // [결정] 예전 이름 settle이 inflight까지 비워서, 패널을 닫아도 요청이 끊기지 않던 버그가 있었음.
   // 하는 일을 endRequest·stopWatchdog으로 나눠 이름에 드러내고, abort는 부르는 쪽이 정하게 함.
   /** 진행 중인 요청을 정리함(감시 타이머를 끄고 inflight를 비움). 요청을 끊을지(abort)는 부르는 쪽이 정함. */
   private endRequest(): void {

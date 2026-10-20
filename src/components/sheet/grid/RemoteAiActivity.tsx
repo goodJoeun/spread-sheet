@@ -12,6 +12,7 @@ interface RemoteAiActivityProps {
   participants: Participant[];
 }
 
+// [기능 설명: AI 범위·잠금 3/7] 다른 화면에서는 그 범위를 점선으로 표시함. 편집칸 위 안내는 editorNotices(aiActivitiesAt)가 띄움.
 /** AI 제안 값은 보여 주지 않음. 확정되지 않은 값이 실제 데이터처럼 보이면 헷갈리기 때문. */
 export const RemoteAiActivity = memo(function RemoteAiActivity({
   participants,

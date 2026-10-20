@@ -428,3 +428,138 @@ AI 결과 적용에도 같은 문제가 있습니다. 지금은 현재 값 확�
 
 1. 먼저 전송 방식을 바꾸고, 5.1~5.3(서버 저장, 연결 끊김 인식, 로그인)을 적용합니다. 여기까지 적용하면 다른 기기와 함께 편집할 수 있습니다.
 2. 그다음 5.4~5.5(서버 잠금, 서버의 AI 적용 확인)을 적용합니다. 이를 통해 "4. 아직 남은 한계"에 적은 짧은 틈들을 없앨 수 있습니다.
+
+<br>
+
+## 6. 코드 읽는 순서
+
+코드는 가장 아래층 라이브러리부터 읽으면 이해하기 쉽습니다. 6.1에서는 `lib`의 세 부분이 각각 무엇을 맡는지 설명합니다. 6.2에서는 사용자가 시트를 쓰는 순서를 따라가며, 화면 코드가 `lib`의 무엇을 꺼내 쓰는지 정리합니다.
+
+코드 안의 `[결정]` 주석에는 그 자리에서 왜 이렇게 만들었는지, 처음에는 어떻게 했다가 왜 바꿨는지를 적었습니다. `grep -rn "\[결정\]" src`로 모아 볼 수 있습니다.
+
+`[기능 설명: 기능 n/N]` 주석은 핵심 기능 하나를 설명할 때 따라갈 순서입니다. 순서표는 6.3에 있고, `grep -rn "기능 설명: AI 충돌" src`처럼 기능 이름으로 찾을 수 있습니다.
+
+<br>
+
+### 6.1 기반 라이브러리
+
+`lib`은 `sheet ← collab ← ai` 방향으로만 import합니다. 시트는 공동 편집과 AI를 모르고, 공동 편집은 AI를 모릅니다.
+
+**`lib/sheet`: 시트 한 장의 데이터와 규칙**
+
+| 파일                                           | 맡은 일                                                                                                                               |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `address.ts`                                   | `"B2"` 표기와 `{ row, col }` 좌표를 서로 바꿉니다. 아무것도 import하지 않는 맨 아래 모듈입니다.                                       |
+| `schema.ts`                                    | 시트 크기, 서식 종류, 주소·서식 검증(`isSheetCellA1`, `isValidStyle`)을 둡니다. Yjs를 쓰지 않습니다.                                  |
+| `document.ts`                                  | Y.Doc에 셀 값과 서식을 읽고 씁니다(`getValue`, `setValue`, `writeValues`, `toggleFormat`). 모든 쓰기에 출처(`EditOrigin`)를 붙입니다. |
+| `selection.ts`, `navigation.ts`, `keymap.ts`   | 선택 범위를 다루고, 키를 동작으로 바꾸고(`resolveGridKey`), 다음 선택 위치를 계산합니다(`applyNavigation`). 모두 순수 함수입니다.     |
+| `viewport.ts`, `geometry.ts`, `draft-input.ts` | 화면 높이와 클릭 위치를 계산하고, 셀 위치(px)를 구하고, 편집칸을 표시합니다.                                                          |
+
+관련 `[결정]`: `address.ts`, `schema.ts`, `document.ts`
+
+**`lib/collab`: 탭끼리 같은 시트를 쓰기**
+
+| 파일                         | 맡은 일                                                                                                          |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `session.ts`                 | `createSheetSession`이 문서, IndexedDB 저장, 탭 간 전송, 참여 상태, 실행 취소를 만들어 잇습니다.                 |
+| `broadcast-provider.ts`      | BroadcastChannel로 문서와 참여 상태를 주고받습니다. 메시지 형식은 y-websocket과 같습니다.                        |
+| `presence.ts`                | 내 선택, 편집 위치, 입력 중인 글자, AI 작업 범위를 다른 탭에 알리고 참여자 목록을 모읍니다.                      |
+| `presence-state.ts`          | 참여 상태의 형식을 정합니다. 다른 탭에서 온 값을 검증하고 맞춥니다(`isPresenceState`, `normalizePresenceState`). |
+| `liveness.ts`, `identity.ts` | Web Locks로 탭이 닫힌 것을 알아채고, 탭마다 이름과 색을 정합니다.                                                |
+| `locks.ts`                   | 참여 상태를 보고 어떤 셀을 누가 잠갔는지 판단합니다(`lockHolder`).                                               |
+| `undo.ts`                    | 이 탭에서 한 변경(`user-edit`, `ai-apply`)만 되돌리는 실행 취소 관리자를 만듭니다.                               |
+
+**`lib/ai`: AI 편집 제안**
+
+| 파일                          | 맡은 일                                                                                                                                             |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `protocol.ts`                 | 브라우저와 서버가 주고받는 형식, 모델 목록, 크기 제한(`AI_LIMITS`)을 정합니다.                                                                      |
+| `ai-controller.ts`            | 요청, 스트리밍, 검토, 적용, 취소를 관리합니다(`send`, `apply`, `discard`, `cancel`).                                                                |
+| `run.ts`                      | 요청 한 번의 상태와 상태 변화(`applyProgress`, `finishRun`)를 순수 함수로 둡니다.                                                                   |
+| `coedit.ts`                   | 요청 때 값, 현재 값, 제안 값을 비교해 셀마다 적용할지 정하고(`classifyCell`), 다른 AI 작업과 겹치는지 판단합니다.                                   |
+| `transport.ts`, `messages.ts` | fetch 응답을 한 줄씩 읽고(NDJSON), 상태와 오류 코드를 화면 문구로 바꿉니다.                                                                         |
+| `server/*`                    | 서버 쪽입니다. `validate`(요청 검증), `setup`(환경 변수·가짜 API), `claude`·`prompt`(Claude 호출), `edit-stream-parser`(도구 입력 읽기)로 나뉩니다. |
+
+**세 부분을 화면과 잇는 곳**
+
+- `lib/controller/sheet-controller.ts`: 키보드, 마우스, 툴바, 수식 입력줄이 부르는 명령(`startEdit`, `commitEdit`, `navigate`, `toggleFormat`, `undo`)을 모아 둡니다. 시트 규칙과 잠금 확인은 모두 여기를 지납니다.
+- `lib/store.ts`, `hooks/useStore.ts`: 컨트롤러가 들고 있는 상태를 화면이 구독하는 통로입니다.
+- `components/sheet/SheetContext.tsx`: 세션 하나로 `SheetController`와 `AiController`를 만들어 툴바, 그리드, 참여자 목록, AI 패널에 함께 공급합니다.
+
+관련 `[결정]`: `sheet-controller.ts`, `store.ts`, `useStore.ts`, `SheetContext.tsx`
+
+<br>
+
+### 6.2 사용 흐름별로 따라가기
+
+**① 탭을 엽니다**
+
+- `SheetApp` → `useSheetSession` → `createSheetSession`(`collab/session.ts`) 순서로 문서와 부품을 조립합니다. 이름과 색은 `identity.ts`의 sessionStorage에서 불러옵니다.
+- 저장된 내용을 다 불러오면(`whenLoaded`) 시트를 보여 줍니다. 저장소가 막힌 경우를 함께 처리합니다(3.3).
+- `Presence.join`은 Web Locks를 먼저 쥔 뒤에 내 상태를 알립니다(`liveness.ts`). 이름이나 색이 겹치면 한쪽만 양보합니다(`presence.ts`의 `resolveConflicts`, 3.4).
+- 관련 `[결정]`: `session.ts`, `broadcast-provider.ts`, `liveness.ts`, `presence.ts`
+
+**② 셀을 고르고 움직입니다**
+
+- 마우스: `useGridPointer` → `hitTest`(`viewport.ts`) → `controller.pointerSelect` / `pointerDrag`
+- 키보드: `useCellEditor` → `resolveGridKey`(`keymap.ts`) → `controller.navigate` → `applyNavigation`(`navigation.ts`)
+- 선택이 바뀌면 컨트롤러가 `presence.setSelection`으로 다른 탭에 알립니다.
+- 관련 `[결정]`: `navigation.ts`, `sheet-controller.ts`, `store.ts`
+
+**③ 값을 입력합니다**
+
+- 보이지 않는 편집칸이 늘 선택한 셀 위에 있어서, 바로 타이핑해도 한글 조합이 끊기지 않습니다(`useCellEditor`, 3.5).
+- 글자가 바뀔 때마다 `controller.draftChanged` → `presence.setDraft`로 다른 탭에 보입니다. 문서에는 아직 쓰지 않습니다(1.2).
+- 수식 입력줄(`useFormulaInput`)은 `controller.replaceDraft`로 같은 편집칸에 씁니다.
+- 잠긴 셀이면 `startEdit`이 `lockHolder`(`locks.ts`)를 보고 막습니다.
+- 관련 `[결정]`: `useCellEditor.ts`, `presence.ts`(`setDraft`), `sheet-controller.ts`(`replaceDraft`)
+
+**④ 확정하고, 화면이 바뀝니다**
+
+- `controller.commitEdit` → `setValue(..., EditOrigin.User)`(`document.ts`)로 문서에 씁니다. 셀 값은 `"B2"` 같은 평평한 키로 저장합니다(1.3).
+- 변경은 `broadcast-provider`로 다른 탭에, `y-indexeddb`로 저장소에 갑니다.
+- 화면은 값을 복사하지 않습니다. `useDocVersion`으로 "바뀌었다"는 신호만 받고, 그릴 때 문서에서 직접 읽습니다(3.2).
+- 관련 `[결정]`: `document.ts`, `useDocVersion.ts`
+
+**⑤ 서식을 바꾸고 되돌립니다**
+
+- 툴바 → `controller.toggleFormat` / `setStyle` → `document.ts`. 서식의 종류와 검증은 `schema.ts`에 있습니다.
+- 실행 취소는 `undo.ts`가 이 탭에서 한 변경만 되돌립니다. 되돌릴 때 선택 위치도 그 변경이 있던 곳으로 돌아갑니다(`controller.connect`, 3.3).
+- 관련 `[결정]`: `schema.ts`, `document.ts`(`EditOrigin`)
+
+**⑥ 다른 사용자가 보입니다**
+
+- 다른 탭에서 온 상태는 `presence-state.ts`에서 한 번 검증하고 맞춘 뒤 참여자 목록에 들어갑니다(3.4).
+- `useParticipants`가 이 목록을 구독합니다. 이를 `RemoteCursors`(선택), `RemoteDrafts`(입력 중인 글자), `RemoteAiActivity`(AI 작업 범위), 참여자 목록이 그립니다. 겹치는 순서는 `layers.ts`에 있습니다.
+- 탭이 닫히면 `liveness.ts`가 Web Locks로 알아채고 그 사람의 표시를 바로 지웁니다(1.4).
+- 관련 `[결정]`: `presence-state.ts`, `liveness.ts`, `layers.ts`, `SheetContext.tsx`
+
+**⑦ AI에게 편집을 요청합니다**
+
+- `AiComposer` → `ai.send`(`ai-controller.ts`). 다른 사람의 AI 작업과 겹치면 알리거나 막고(`overlappingAi`), 요청에 실은 셀 값을 요청 때 값(base)으로 기록합니다.
+- `transport.ts`가 `/api/ai/edit`로 보냅니다. 서버(`route.ts`)는 `parseEditRequest` → `getClaudeSetup` → `streamClaudeEdits` 순서로 처리합니다. 결과는 도구 호출로 받고, `edit-stream-parser`가 셀 하나가 완전히 도착할 때마다 내보냅니다(3.7).
+- 도착한 제안은 `applyProgress`(`run.ts`)로 쌓이고, `AiPreview`가 셀 위에 미리 보여 줍니다. 시트에는 아직 쓰지 않습니다.
+- 생성 중이거나 검토 중인 동안에는 `presence.setAi`로 작업 범위를 다른 탭에 알립니다. 셀 잠금을 켰으면 잠금 표시가 함께 가고, 다른 탭의 컨트롤러가 그 범위의 편집을 막습니다.
+- 관련 `[결정]`: `protocol.ts`, `ai-controller.ts`, `edit-stream-parser.ts`, `setup.ts`, `messages.ts`, `locks.ts`
+
+**⑧ 결과를 검토하고 적용합니다**
+
+- 검토 카드(`run-card`)는 `ai.states()`로 셀마다 상태를 받습니다. 상태는 `classifyCell`(`coedit.ts`)이 요청 때 값, 현재 값, 제안 값을 비교해 정합니다. 누군가 바꾼 셀은 충돌로 표시하고 기본으로 건너뜁니다(2.1~2.3).
+- `ai.apply`는 지금 값으로 한 번 더 판단한 뒤, 적용할 셀만 `writeValues(..., EditOrigin.Ai)`로 한 번에 씁니다. 그래서 실행 취소 한 번으로 모두 되돌아갑니다.
+- 관련 `[결정]`: `coedit.ts`, `run.ts`, `ai-controller.ts`(`endRequest`), `document.ts`(`EditOrigin`)
+
+<br>
+
+### 6.3 기능별 설명 순서
+
+핵심 기능을 하나씩 설명할 때는 아래 순서로 코드를 따라가면 됩니다. 각 단계에는 `[기능 설명: 기능 n/N]` 주석이 붙어 있습니다.
+
+| 기능         | 관련 절       | 설명 순서                                                                                                                                                                                        |
+| ------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 셀 편집      | 3.2, 3.5      | `useCellEditor` → `resolveGridKey` → `SheetController.runAction` → `applyNavigation` → `SheetController.commitEdit` → `writeValues` → `useDocVersion`                                            |
+| 동기화·저장  | 3.3           | `createSheetSession` → `BroadcastChannelProvider.handleDocUpdate` → `session.ts`의 불러오기 처리 → `createUndoManager` → `SheetController.connect`                                               |
+| 참여자 표시  | 1.1, 1.4, 3.4 | `SheetController.connect` → `BroadcastChannelProvider.handleAwarenessUpdate` → `Presence.recompute` → `RemoteCursors` → `participantStatus` → `Presence.handleGone`                              |
+| 입력 중인 값 | 1.2, 1.3      | `SheetController.draftChanged` → `Presence.setDraft` → `RemoteDrafts` → `editorNotices`                                                                                                          |
+| AI 편집      | 3.7           | `AiComposer` → `AiController.send` → `fetchAiTransport` → `POST /api/ai/edit` → `streamClaudeEdits` → `createEditStreamParser` → `AiController.handleEvent` → `AiPreview` → `AiController.apply` |
+| AI 충돌      | 2.1, 2.2      | `AiController.send`(요청 때 값 기록) → `classifyCell` → `AiController.states` → `ConflictBanner` → `AiController.setOverwrite` → `AiController.apply`                                            |
+| AI 범위·잠금 | 2.2, 2.3      | `aiActivityOf` → `AiController.publishActivity` → `RemoteAiActivity` → `overlappingAi` → `blockingOverlaps` → `lockHolder` → `SheetController.blockIfLocked`                                     |

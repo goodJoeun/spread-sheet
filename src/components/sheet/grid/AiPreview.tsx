@@ -22,6 +22,7 @@ interface AiPreviewProps {
   showOriginal: boolean;
 }
 
+// [기능 설명: AI 편집 8/9] 제안 값을 셀 위에 겹쳐 그림.
 /** 제안 값을 셀 위에 겹쳐 그리기만 함. 문서에는 쓰지 않음. */
 export const AiPreview = memo(function AiPreview({ run, states, showOriginal }: AiPreviewProps) {
   if (!run) return null;

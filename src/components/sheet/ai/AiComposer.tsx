@@ -43,6 +43,7 @@ export function AiComposer({ inputRef, draft, onDraftChange, modelSelect }: AiCo
   const notice = active ? null : overlapNotice(overlappingAi(participants, scope), lockCells);
   const blocked = notice?.blocking ?? false;
 
+  // [기능 설명: AI 편집 1/9] 지시문과 범위(선택 영역 또는 시트 전체)를 ai.send로 넘김.
   const send = () => {
     if (ai.send(draft, scope)) {
       onDraftChange("");

@@ -1,4 +1,4 @@
-// [흐름 15] 흩어진 z-index를 한 곳에 모음. 다음 날 AI 미리보기(aiPreview) 층도 여기서 자리를 정해 넣음.
+// [결정] 흩어져 있던 z-index를 한 곳에 모음. 나중에 생긴 AI 미리보기(aiPreview) 층도 여기서 자리를 정해 넣음.
 /** 그리드 안 겹침 순서(z-index). 숫자가 클수록 앞에 보임. */
 export const Layer = {
   remoteRange: 6,

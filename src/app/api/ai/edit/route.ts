@@ -24,6 +24,7 @@ export async function GET(): Promise<Response> {
   return Response.json(info, { headers: { "cache-control": "no-store" } });
 }
 
+// [기능 설명: AI 편집 4/9] 요청 검증 → 모델 확인 → 스트림 시작. 시작 전 실패는 HTTP 상태로, 시작 후 실패는 스트림 안에서 알림.
 export async function POST(request: Request): Promise<Response> {
   let body: unknown;
   try {

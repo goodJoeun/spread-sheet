@@ -86,7 +86,8 @@ export class Presence {
     this.publish();
   }
 
-  // [흐름 28] 입력 중인 글자는 문서가 아니라 참여 상태로 보냄. 문서에 쓰면 저장되고 실행 취소 기록에도 남기 때문.
+  // [기능 설명: 입력 중인 값 2/4] 입력 중인 글자를 문서가 아니라 참여 상태로 보냄.
+  // [결정] 입력 중인 글자는 문서가 아니라 참여 상태로 보냄. 문서에 쓰면 저장되고 실행 취소 기록에도 남기 때문.
   /** 입력 중인 글자를 알림. 모든 탭에 보내므로 1,000자까지만, 바뀌었을 때만 보냄. */
   setDraft(draft: string | null): void {
     const next = draft === null ? null : draft.slice(0, DRAFT_MAX_LENGTH);
@@ -160,7 +161,7 @@ export class Presence {
     return next;
   }
 
-  // [흐름 11] 탭 복제(sessionStorage 복사)만 따로 감지하려다, 우연히 겹친 경우까지 이 규칙 하나로 풀기로 함.
+  // [결정] 탭 복제(sessionStorage 복사)만 따로 감지하려다, 우연히 겹친 경우까지 이 규칙 하나로 풀기로 함.
   /** 이름이나 색이 겹치면 clientID가 큰 쪽이 양보해 다시 고름. 양쪽이 같은 규칙을 따르므로 한쪽만 바뀜. */
   private resolveConflicts(): void {
     if (!this.joined) return;
@@ -185,6 +186,7 @@ export class Presence {
     this.recompute();
   };
 
+  // [기능 설명: 참여자 표시 6/6] 탭이 닫히면 Web Locks 잠금이 풀리고(liveness.ts), 그 사람의 상태를 바로 지움.
   /** 다른 탭이 닫혔을 때(그 탭의 잠금이 풀림) 그 탭의 참여 상태를 지움. */
   private handleGone = (clientId: number): void => {
     if (!this.destroyed && this.awareness.getStates().has(clientId)) {
@@ -192,6 +194,7 @@ export class Presence {
     }
   };
 
+  // [기능 설명: 참여자 표시 3/6] 받은 상태를 검증·보정(presence-state.ts)한 뒤 참여자 목록을 다시 만듦.
   /** 참여 상태를 검증·보정해 참여자 목록을 다시 만들고 구독자에게 알림. */
   private recompute(): void {
     const participants: Participant[] = [];

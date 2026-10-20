@@ -4,7 +4,7 @@ import * as awarenessProtocol from "y-protocols/awareness";
 import * as syncProtocol from "y-protocols/sync";
 import * as Y from "yjs";
 
-// [흐름 4] "서버 없이 브라우저 API만" 조건이라 provider를 직접 만들되, 메시지 형식은 y-websocket과 맞춰 서버로 넓힐 길을 남김.
+// [결정] "서버 없이 브라우저 API만" 조건이라 provider를 직접 만들되, 메시지 형식은 y-websocket과 맞춰 서버로 넓힐 길을 남김.
 /**
  * BroadcastChannel로 같은 출처의 탭끼리 Y.Doc과 awareness를 동기화함.
  * 메시지 형식은 y-websocket과 같은 y-protocols 인코딩임. 그래서 네트워크로 옮길 때 이 클래스만 WebsocketProvider로 바꾸면 됨.
@@ -105,6 +105,7 @@ export class BroadcastChannelProvider {
     }
   }
 
+  // [기능 설명: 동기화·저장 2/5] 내 탭의 변경만 다른 탭에 보냄. 받은 변경은 다시 보내지 않음.
   /** 이 탭의 문서 변경을 다른 탭에 방송함. */
   private handleDocUpdate = (update: Uint8Array, origin: unknown): void => {
     if (origin === this) return; // 다른 탭에서 받은 변경은 다시 방송하지 않는다.
@@ -114,6 +115,7 @@ export class BroadcastChannelProvider {
     this.post(encoding.toUint8Array(encoder));
   };
 
+  // [기능 설명: 참여자 표시 2/6] 참여 상태도 자기 것만 보냄. 다른 탭의 상태를 대신 보내면 떠난 사람이 되살아남.
   /** 내 참여 상태가 바뀌면 방송함. 각 탭은 자기 상태만 보냄. 다른 탭의 상태를 중계하면 지운 상태가 다시 퍼져, 살아 있는 참여자가 목록에서 깜빡일 수 있음. */
   private handleAwarenessUpdate = (
     { added, updated, removed }: AwarenessChanges,

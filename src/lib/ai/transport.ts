@@ -40,6 +40,7 @@ export function createLineSplitter() {
   };
 }
 
+// [기능 설명: AI 편집 3/9] /api/ai/edit에 POST하고, NDJSON 응답을 한 줄씩 이벤트로 넘김.
 /** 실제 전송. /api/ai/edit에 POST하고 NDJSON 응답을 이벤트로 넘김. 네트워크·HTTP·도중 끊김 오류는 AiRequestError로 바꿈. */
 export const fetchAiTransport: AiTransport = async (request, { signal, onEvent }) => {
   let response: Response;

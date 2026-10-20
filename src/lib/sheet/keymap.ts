@@ -90,6 +90,7 @@ function findShortcut<K extends string>(
   return null;
 }
 
+// [기능 설명: 셀 편집 2/7] 눌린 키를 동작(GridAction)으로 바꿈. 편집 중인지에 따라 같은 키도 다르게 봄.
 /**
  * 키 입력을 그리드 동작(GridAction)으로 해석함.
  * 편집 모드(enter·edit)에 따라 같은 키도 다르게 봄.
