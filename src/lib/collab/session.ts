@@ -44,6 +44,7 @@ export function createSheetSession(
   sheetId: string,
   options: SheetSessionOptions = {},
 ): SheetSession {
+  // 시트 데이터 본체 (셀 값·서식)
   const doc = new Y.Doc();
   // 커서·선택 영역처럼 저장하지 않는 임시 상태. 탭마다 자기 상태를 하나씩 가짐.
   const awareness = new Awareness(doc);

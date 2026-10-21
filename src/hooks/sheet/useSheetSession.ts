@@ -11,6 +11,14 @@ interface LoadedSession {
 export function useSheetSession(sheetId: string): LoadedSession | null {
   const [loaded, setLoaded] = useState<LoadedSession | null>(null);
 
+  /*
+   * [useEffect 안에서 createSheetSession하는 이유]
+   * 서버에서도 실행되기 때문.
+   * Next.js는 컴포넌트를 서버에서 먼저 렌더링함.
+   * 서버에는 BroadcastChannel도 IndexedDB도 없어서 에러가 나거나 쓸모없는 객체가 생김.
+   * useEffect는 브라우저에서만 실행됨.
+   */
+
   useEffect(() => {
     const session = createSheetSession(sheetId, {
       user: loadTabUser(),
