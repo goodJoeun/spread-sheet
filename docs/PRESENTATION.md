@@ -25,7 +25,7 @@
 | [5](#5--sheetprovider-7301030)                      | ② SheetProvider   | 3분   | `SheetContext`, `sheet-controller`, `store`, `useStore`                                                                        |
 | [6](#6-shell-아래-부품들-10301230)                  | Shell 아래 부품들 | 2분   | `ParticipantList`, `Toolbar`, `FormulaBar`, `collab/messages`, `draft-input`, 구독 hook                                        |
 | [7](#7-grid-키-하나가-다른-탭에-닿기까지-12301530)  | Grid              | 3분   | `Grid`, 층 부품, `useCellEditor`, `useGridPointer`, `keymap`, `navigation`, `selection`, `geometry`, `viewport`                |
-| [8](#8-aipanel-ai-편집과-공동-편집--15301900)       | AiPanel ⭐        | 3.5분 | `ai-controller`, `request`, `transport`, `protocol`, `run`, `coedit`, `ai/messages`, `locks`, `server/*`                       |
+| [8](#8-aipanel-ai-편집과-공동-편집--15301900)       | AiPanel ⭐        | 3.5분 | `AiPanel`, `AiComposer`, `ai-controller`, `request`, `transport`, `server/*`, `run`, `coedit`, `AiRunCard`, `AiPreview`, `locks` |
 | [9](#9-정리-테스트-한계-확장-19002000)              | 정리              | 1분   | 테스트                                                                                                                         |
 
 <br>
@@ -750,28 +750,137 @@ GridHeaders · GridCells → RemoteDrafts · RemoteCursors → AiPreview
 
 > 시간이 모자라도 이 부분은 줄이지 않습니다. 이 과제만의 고민이 가장 많이 드러나는 곳입니다.
 
+🗣 사용자가 셀을 고르고 지시문을 보내는 순간부터, AI가 제안을 만들고, 화면에 보여 주고, 사용자가 적용할지 정하기까지를 파일 순서대로 따라가겠습니다. 코드의 `[기능 설명: AI 편집 n/9]` 주석이 아래 번호와 같은 순서입니다.
+
 ```
- send()            제안 받는 중             검토               apply() / discard()
- ─────────▶  ───────────────────▶  ──────────────▶  ─────────────────────▶
- 셀 값 찍어 둠      제안은 메모리에만       지금 값과 비교       한 트랜잭션으로 쓰기
- (base)            (문서엔 안 씀)         (same/clean/conflict) (또는 그냥 버림)
+ 사용자                 브라우저                                         서버
+ ──────                 ────────                                         ────
+ ① 범위 선택·지시문 ──▶ AiComposer.send                                          §8-1
+                        ② AiController.send                                       §8-2
+                           셀 스냅샷 → base 기록 → 실행(run) 시작
+                        ③ fetchAiTransport ── POST /api/ai/edit ──▶ ④ route: 검증 → 모델 확인   §8-3
+                                                                    ⑤ claude: Claude 호출
+                                                                    ⑥ parser: 셀이 완성될 때마다
+                           ◀──── NDJSON 한 줄씩 (meta · text · edit · … · done) ────
+                        ⑦ handleEvent → applyProgress  (메모리에만, 문서엔 안 씀)  §8-4
+                        ⑧ 패널: AiRunCard   그리드: AiPreview  (지금 값과 비교)     §8-5
+ ⑨ 적용 / 버리기 ─────▶ AiController.apply → writeValues(ai-apply)                §8-6
+                           → 다른 탭에는 7-2와 같은 길로 전달
 ```
 
-### 8-1. 요청: 브라우저에서 서버까지
+| 단계          | 파일                                                  | 선언 모양        | 문서(Y.Doc)          |
+| ------------- | ----------------------------------------------------- | ---------------- | -------------------- |
+| ① 입력        | `AiPanel`, `AiComposer`                               | 화면 부품        | 읽지 않음            |
+| ② 요청 만들기 | `AiController.send`, `request.ts`                     | 클래스, 순수 함수 | 읽기 (스냅샷)        |
+| ③–⑥ 전송·생성 | `transport.ts` → `route.ts` → `claude.ts` → parser    | 계약 타입        | 모름                 |
+| ⑦ 받기        | `AiController.handleEvent`, `run.ts`                  | 순수 함수        | 쓰지 않음            |
+| ⑧ 보여 주기   | `AiRunCard`, `AiPreview`, `coedit.ts`                 | 순수 함수        | 읽기 (지금 값과 비교) |
+| ⑨ 결정        | `AiController.apply` / `discard`                      | 클래스           | **여기서만 씀**      |
 
-📂 [AiPanel](../src/components/sheet/ai/AiPanel.tsx#L19) → [AiComposer](../src/components/sheet/ai/AiComposer.tsx#L29) → [send](../src/lib/ai/ai-controller.ts#L147) → [snapshotCells](../src/lib/ai/request.ts#L10) → [fetchAiTransport](../src/lib/ai/transport.ts#L45) → [route POST](../src/app/api/ai/edit/route.ts#L28) → [streamClaudeEdits](../src/lib/ai/server/claude.ts#L86) → [createEditStreamParser](../src/lib/ai/server/edit-stream-parser.ts#L15)
+### 8-1. 입력: 셀 선택과 지시문 (① AiPanel → AiComposer)
 
-🗣 `AiPanel`도 다른 부품처럼 `useSheet()`로 `AiController`를 꺼내 씁니다. 요청할 때 그 순간의 셀 값을 함께 보내고, 이 값을 요청 때 값(`base`)으로 기록해 둡니다.
+📂 [툴바 AI 버튼](../src/components/sheet/toolbar/index.tsx#L188) → [Workspace](../src/components/sheet/SheetApp.tsx#L51) → [AiPanel](../src/components/sheet/ai/AiPanel.tsx#L19) → [AiComposer](../src/components/sheet/ai/AiComposer.tsx#L29) → [useSelection](../src/components/sheet/ai/AiComposer.tsx#L31) → [범위 정하기](../src/components/sheet/ai/AiComposer.tsx#L40) → [send](../src/components/sheet/ai/AiComposer.tsx#L47)
 
-🧱 **계약 타입이 경계를 나눕니다.** 브라우저와 서버는 [`protocol.ts`](../src/lib/ai/protocol.ts#L1)의 타입으로만 대화합니다. 서버는 오류 코드만 보내고, 화면 문구는 브라우저가 고릅니다.
+🗣 툴바의 AI 버튼은 `aiPanel` Store를 켜고 끄기만 합니다. `Workspace`가 그 값을 구독하다가 `AiPanel`을 그리드 옆에 붙입니다.
 
-🗣 결과는 도구 호출 `{ cell, value }`로 스트리밍해서 받습니다. SDK는 덜 만들어진 문자열도 받아들여서 `"1250"` 대신 `"12"`가 보일 수 있었습니다. 그래서 셀 값 하나가 완전히 도착했을 때만 읽는 파서를 직접 만들었습니다.
+🗣 `AiPanel`은 두 부분입니다. 위는 대화 목록으로, `ai.messages` Store를 구독해 내 요청은 `UserMessage`, AI 응답은 `AiRunCard`로 그립니다. 아래는 요청창 `AiComposer`입니다. 패널이 열릴 때 [useAiConnection](../src/hooks/ai/useAiConnection.ts#L9)이 같은 주소에 GET을 보내 고를 수 있는 모델 목록을 받아 옵니다.
 
-### 8-2. 받기: 실행 상태는 순수 함수로 쌓고, 충돌은 매번 다시 계산합니다
+🗣 요청창은 그리드에서 고른 선택을 따로 넘겨받지 않습니다. `useSelection()`으로 컨트롤러의 `selection` Store를 직접 구독합니다. 그래서 패널을 열어 둔 채 그리드에서 범위를 바꾸면 "선택 범위 B2:D5" 칩이 바로 바뀝니다.
 
-📂 [handleEvent](../src/lib/ai/ai-controller.ts#L294) → [applyProgress](../src/lib/ai/run.ts#L99) → [states](../src/lib/ai/ai-controller.ts#L102) → [classifyCell](../src/lib/ai/coedit.ts#L22) → [ConflictBanner](../src/components/sheet/ai/run-card/ConflictBanner.tsx#L18)
+```
+선택이 여러 칸  → 기본 "선택 범위"  → scope = B2:D5
+선택이 한 칸    → 기본 "시트 전체"  → scope = null
+사용자가 칩을 누르면 그 선택을 따름
+```
 
-🧱 **순수 함수.** 받은 제안은 `applyProgress(run, event)`가 새 실행 객체를 만들어 쌓습니다. 시트에는 아직 쓰지 않습니다. 충돌 판정은 값 세 개만 보는 함수 하나입니다.
+🗣 보내기 전에 [overlapNotice](../src/components/sheet/ai/AiComposer.tsx#L43)로 다른 사람의 AI 작업과 겹치는지 미리 알려 줍니다(8-7). Enter를 누르면 `ai.send(지시문, scope)`를 부르고, 보냈으면 입력칸을 비웁니다. [한글 조합 중의 Enter](../src/components/sheet/ai/AiComposer.tsx#L56)는 글자를 확정하는 키라서 보내지 않습니다.
+
+### 8-2. 요청 만들기: 셀 값을 찍어 두고 실행을 시작합니다 (② AiController.send)
+
+📂 [send](../src/lib/ai/ai-controller.ts#L147) → [isBusy · 겹침 확인](../src/lib/ai/ai-controller.ts#L149) → [snapshotCells](../src/lib/ai/request.ts#L10) → [요청 객체](../src/lib/ai/ai-controller.ts#L156) → [base 기록](../src/lib/ai/ai-controller.ts#L165) → [beginRun](../src/lib/ai/ai-controller.ts#L251) → [stream](../src/lib/ai/ai-controller.ts#L266)
+
+🗣 `send`는 위에서부터 이렇게 읽힙니다.
+
+```
+send(instruction, scope)
+├─ 막을 일이 있으면 false   빈 지시문 · 생성/검토 중인 실행이 있음 · 남이 잠근 범위
+├─ snapshotCells(doc)        비어 있지 않은 셀만 행 순서로. 서식은 안 보냄
+├─ request                   { instruction, range: "B2:D5", cells, history, model }
+├─ base = cells를 Map으로    ★ 요청에 실은 값 = 요청 때 값. 충돌 판정의 기준
+├─ beginRun()                대화 목록에 [내 요청, 빈 AI 실행] 추가, active = 그 실행
+└─ stream()                  AbortController와 응답 감시 타이머를 켜고 transport 호출
+```
+
+🗣 `base`를 따로 읽지 않고 **요청에 실은 셀 값 그대로** 씁니다. AI가 본 시트와 나중에 비교할 기준이 정확히 같아야 하기 때문입니다.
+
+🗣 `beginRun`이 `active` Store를 바꾸는 순간 두 곳이 반응합니다. 패널에는 "AI에 요청하는 중…" 카드가 생기고, 그리드에는 요청 범위에 점선 테두리가 그려집니다. 아직 서버에서 아무것도 오지 않았는데도 바로 보이는 이유입니다.
+
+### 8-3. 전송과 생성: 브라우저에서 서버, Claude까지 (③–⑥)
+
+📂 [fetchAiTransport](../src/lib/ai/transport.ts#L45) → [route POST](../src/app/api/ai/edit/route.ts#L28) → [parseEditRequest](../src/lib/ai/server/validate.ts#L35) → [모델 확인](../src/app/api/ai/edit/route.ts#L40) → [첫 이벤트 기다리기](../src/app/api/ai/edit/route.ts#L50) → [streamClaudeEdits](../src/lib/ai/server/claude.ts#L86) → [buildUserMessage](../src/lib/ai/server/prompt.ts#L68) → [EDIT_TOOL](../src/lib/ai/server/prompt.ts#L17) → [createEditStreamParser](../src/lib/ai/server/edit-stream-parser.ts#L15)
+
+🧱 **계약 타입이 경계를 나눕니다.** 브라우저와 서버는 [`protocol.ts`](../src/lib/ai/protocol.ts#L117)의 `AiEditRequest`와 `AiStreamEvent`로만 대화합니다. 서버는 오류 코드만 보내고, 화면 문구는 브라우저가 고릅니다.
+
+| 단계 | 파일                                                                      | 하는 일                                                                                                                         |
+| ---- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| ③    | [`transport.ts`](../src/lib/ai/transport.ts#L48)                          | 요청을 JSON으로 POST. `AbortSignal`을 같이 넘겨 중단하면 서버 호출도 끊김                                                       |
+| ④    | [`route.ts`](../src/app/api/ai/edit/route.ts#L35)                         | zod로 검증 → 허용한 모델인지 확인 → 첫 이벤트까지 기다림. 그 전 실패는 HTTP 상태로, [스트림을 연 뒤](../src/app/api/ai/edit/route.ts#L57) 실패는 `error` 이벤트로 |
+| ⑤    | [`claude.ts`](../src/lib/ai/server/claude.ts#L92)                         | 시스템 지침 + `propose_edits` 도구 + 시트 내용(`B2 = "1,000"`)으로 Claude 스트림을 염                                           |
+| ⑥    | [`edit-stream-parser.ts`](../src/lib/ai/server/edit-stream-parser.ts#L62) | 조각난 도구 입력에서 `{ cell, value }` 하나가 완전히 닫혔을 때만 `JSON.parse`                                                   |
+
+🗣 AI의 답은 두 갈래로 옵니다. 지침에 따라 먼저 "무엇을 바꾸겠다"는 짧은 글을 쓰고, 시트를 바꿔야 하면 `propose_edits` 도구를 한 번 부릅니다. `claude.ts`가 Claude 스트림을 앱 이벤트로 바꿉니다.
+
+```
+Claude 스트림                     →  앱 이벤트 (NDJSON 한 줄)
+message_start                     →  { type: "meta", model }
+text_delta  "B열 합계를…"         →  { type: "text", delta }
+input_json_delta  '{"edits":[{"c' →  (parser가 모음, 아직 안 보냄)
+input_json_delta  'ell":"B5","value":"1250"}' →  { type: "edit", cell: "B5", value: "1250" }
+끝 (refusal / max_tokens)         →  { type: "error" } / { type: "warning", truncated }
+끝                                →  { type: "done" }
+```
+
+🗣 질문만 했다면 도구를 부르지 않으므로 `text`만 오고 끝납니다. 결과를 글이 아니라 도구 호출로 받은 이유는 셀 하나씩 생성되는 대로 보여 주기 위해서입니다. 그런데 SDK는 덜 만들어진 문자열도 받아들여서 `"1250"` 대신 `"12"`가 보일 수 있었습니다. 그래서 셀 하나가 완전히 닫혔을 때만 읽는 파서를 직접 만들었습니다.
+
+### 8-4. 받기: 이벤트를 실행에 쌓기만 합니다 (⑦ handleEvent → applyProgress)
+
+📂 [createLineSplitter](../src/lib/ai/transport.ts#L74) → [parseStreamEvent](../src/lib/ai/transport.ts#L67) → [onEvent](../src/lib/ai/ai-controller.ts#L274) → [handleEvent](../src/lib/ai/ai-controller.ts#L294) → [applyProgress](../src/lib/ai/run.ts#L99) → [addProposal](../src/lib/ai/run.ts#L130) → [updateRun](../src/lib/ai/ai-controller.ts#L386) → [finish](../src/lib/ai/ai-controller.ts#L312) → [finishRun](../src/lib/ai/run.ts#L125)
+
+🗣 응답은 조각으로 도착하므로 `transport`가 줄바꿈 단위로 자르고, 한 줄을 `parseStreamEvent`로 다시 검사한 뒤 `onEvent`로 넘깁니다. 타입은 런타임 데이터를 보장하지 않기 때문에 경계에서 한 번 더 확인합니다.
+
+🧱 **순수 함수.** 컨트롤러는 받은 이벤트를 직접 해석하지 않고 `applyProgress(run, event)`에 넘겨 **새 실행 객체**를 받습니다. 시트에는 아직 아무것도 쓰지 않습니다.
+
+| 이벤트             | 실행(`AiRun`)에 생기는 일                                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `meta`             | `connected = true`, 모델 이름 기록 → 상태 문구 "AI에 요청하는 중…"이 "생각하는 중…"으로                                               |
+| `text`             | `status = "streaming"`, `text`에 이어 붙임                                                                             |
+| `edit`             | [`addProposal`](../src/lib/ai/run.ts#L130): 범위 밖이면 `excluded`만 셈 · `before = base[셀]` · 요청 때 값과 같으면 뺌 · 같은 셀이면 교체 |
+| `warning`          | `warnings`에 추가                                                                                                      |
+| `done`             | [`finishRun`](../src/lib/ai/run.ts#L125): 제안이 있으면 `review`, 없으면 `answered`                                     |
+| `error` · 끊김 · 60초 | [`fail`](../src/lib/ai/ai-controller.ts#L320): `status = "error"`, 서버 호출도 끊음                                  |
+
+🗣 `updateRun`은 대화 목록의 그 실행과 `active`를 함께 바꿉니다. 첫 제안이 오면 [그 셀로 스크롤](../src/lib/ai/ai-controller.ts#L307)해서, 다른 곳을 보고 있어도 생성 과정을 볼 수 있게 했습니다. 이벤트가 올 때마다 [감시 타이머](../src/lib/ai/ai-controller.ts#L373)를 다시 재서, 5초 동안 없으면 "응답 지연", 60초면 시간 초과로 끝냅니다.
+
+🗣 실행 상태 변화를 순수 함수로 뺐기 때문에 "범위 밖 제안은 버린다", "같은 셀은 마지막 제안으로" 같은 규칙을 네트워크 없이 테스트합니다.
+
+### 8-5. 보여 주기: 패널과 그리드가 같은 실행을 그립니다 (⑧)
+
+📂 [AiRunCard](../src/components/sheet/ai/run-card/index.tsx#L26) → [useDocVersion](../src/components/sheet/ai/run-card/index.tsx#L34) → [ai.states](../src/components/sheet/ai/run-card/index.tsx#L36) → [states](../src/lib/ai/ai-controller.ts#L102) → [evaluateProposals](../src/lib/ai/coedit.ts#L36) → [classifyCell](../src/lib/ai/coedit.ts#L22) → [Grid의 aiStates](../src/components/sheet/grid/Grid.tsx#L78) → [AiPreview](../src/components/sheet/grid/AiPreview.tsx#L27)
+
+🗣 `active` Store 하나를 두 부품이 구독합니다. 패널의 `AiRunCard`는 글과 목록으로, 그리드의 `AiPreview`는 셀 위에 겹쳐서 보여 줍니다.
+
+```
+                       ai.active (Store)
+                ┌─────────────┴─────────────┐
+     AiPanel → AiRunCard                 Grid → AiPreview
+     ├─ StatusLine     "제안을 만드는 중… 3개"  ├─ 요청 범위 점선 + "AI가 제안을 만드는 중… 3개"
+     ├─ run.text       AI의 글 답변         ├─ clean   → 제안 값을 셀 위에 겹쳐 그림
+     ├─ ConflictBanner 충돌 n개 안내        ├─ conflict → 주황 테두리만 (지금 값은 그대로)
+     ├─ ProposalList   B5: 1000 → 1250     └─ same    → 그리지 않음
+     └─ 적용 · 버리기 · 원래 값 보기
+```
+
+🧱 **순수 함수.** 화면에 보이는 판정은 저장하지 않습니다. 그릴 때마다 `ai.states()`가 셀마다 요청 때 값·지금 값·제안 값 세 개를 비교합니다.
 
 ```ts
 if (proposed === current) return "same"; // 이미 같음 → 쓸 필요 없음
@@ -779,28 +888,45 @@ if (current === base) return "clean"; // 아무도 안 건드림 → 씀
 return "conflict"; // 누군가 바꿈 → 기본은 건너뜀
 ```
 
-🗣 생성 중 수정, 검토 중 수정, 겹치는 동시 요청을 따로 처리하지 않고 이 함수 하나로 다룹니다. 판정을 저장하지 않고 그릴 때마다 현재 값과 다시 비교해서, 바꾼 사람이 원래 값으로 되돌리면 충돌도 저절로 풀립니다.
+🗣 두 부품 모두 `useDocVersion(doc)`을 구독합니다. 그래서 다른 탭이 B5를 고치면 문서 버전이 바뀌어 다시 그려지고, 그때 다시 비교해서 B5가 바로 충돌로 바뀝니다. 바꾼 사람이 원래 값으로 되돌리면 충돌도 저절로 풀립니다. 생성 중 수정, 검토 중 수정, 겹치는 동시 요청을 따로 처리하지 않고 이 함수 하나로 다룹니다.
 
 🗣 왜 충돌한 셀을 기본으로 건너뛸까요? AI 결과는 다시 요청하면 또 만들 수 있지만, 사람이 입력한 값은 사라지면 되살리기 어렵기 때문입니다.
 
-### 8-3. 적용: 같은 문서 함수, 다른 출처
+### 8-6. 결정: 사용자가 고르면 그때 처음 문서에 씁니다 (⑨)
 
-📂 [apply](../src/lib/ai/ai-controller.ts#L184)
+📂 [적용 버튼](../src/components/sheet/ai/run-card/index.tsx#L100) → [apply](../src/lib/ai/ai-controller.ts#L184) → [commitEdit](../src/lib/ai/ai-controller.ts#L189) → [다시 판정](../src/lib/ai/ai-controller.ts#L192) → [select](../src/lib/ai/ai-controller.ts#L199) → [writeValues](../src/lib/ai/ai-controller.ts#L200) → [closeReview](../src/lib/ai/ai-controller.ts#L338)
+
+🗣 `review` 상태가 되면 카드에 버튼이 생깁니다. 버튼은 모두 `AiController`의 메서드 하나씩을 부르고, 문서를 건드리는 것은 **적용** 하나뿐입니다.
+
+| 사용자가 누르는 것      | 화면                                                                                | 컨트롤러                                                     | 문서            |
+| ----------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------- |
+| 적용 (n개)              | [AiRunCard](../src/components/sheet/ai/run-card/index.tsx#L100)                     | [`apply`](../src/lib/ai/ai-controller.ts#L184)               | `ai-apply`로 씀 |
+| 버리기                  | [AiRunCard](../src/components/sheet/ai/run-card/index.tsx#L108)                     | [`discard`](../src/lib/ai/ai-controller.ts#L224)             | 안 건드림       |
+| 원래 값 보기            | [AiRunCard](../src/components/sheet/ai/run-card/index.tsx#L115)                     | `showOriginal` Store → [미리보기 숨김](../src/components/sheet/grid/AiPreview.tsx#L58) | 안 건드림       |
+| 충돌 셀의 "덮어쓰기"    | [ProposalList](../src/components/sheet/ai/run-card/ProposalList.tsx#L88)            | [`setOverwrite`](../src/lib/ai/ai-controller.ts#L114)        | 안 건드림       |
+| 모두 덮어쓰기 / 건너뛰기 | [ConflictBanner](../src/components/sheet/ai/run-card/ConflictBanner.tsx#L36)       | [`setOverwriteAll`](../src/lib/ai/ai-controller.ts#L126)     | 안 건드림       |
+| 지금 값으로 다시 요청   | [ConflictBanner](../src/components/sheet/ai/run-card/ConflictBanner.tsx#L41)        | [`regenerate`](../src/lib/ai/ai-controller.ts#L216) = 버리기 + `send` | 안 건드림       |
+| 제안 행 클릭            | [ProposalList](../src/components/sheet/ai/run-card/ProposalList.tsx#L71)            | `controller.jumpTo` (그 셀로 이동)                           | 안 건드림       |
+| 중단 (생성 중) · Esc    | [AiComposer](../src/components/sheet/ai/AiComposer.tsx#L102)                        | [`cancel`](../src/lib/ai/ai-controller.ts#L172) (서버 호출도 끊김) | 안 건드림       |
+| 다시 시도 (실패 후)     | [AiRunCard](../src/components/sheet/ai/run-card/index.tsx#L128)                     | [`retry`](../src/lib/ai/ai-controller.ts#L232)               | 안 건드림       |
+
+🗣 덮어쓰기를 고르면 그때 본 값도 함께 기억합니다. 고른 뒤에 값이 또 바뀌면 다시 건너뜁니다. 사용자가 보지 못한 값을 덮어쓰지 않기 위해서입니다.
 
 🗣 적용할 때는 7-2에서 본 `writeValues`를 그대로 쓰고, 출처만 `ai-apply`로 붙입니다.
 
 1. 내가 입력 중이던 값을 먼저 확정합니다. 그 셀이 제안 대상이면 충돌이 됩니다.
-2. 화면에 보이던 판정이 아니라 지금 값으로 다시 판정합니다.
+2. 화면에 보이던 판정이 아니라 지금 값으로 다시 판정하고, `clean`이거나 덮어쓰기를 고른 셀만 남깁니다.
 3. 바뀔 범위로 선택을 옮깁니다. 그래야 실행 취소했을 때 이 범위로 돌아옵니다.
 4. 쓸 셀을 한 트랜잭션으로 씁니다. 실행 취소 한 번에 AI 결과 전체가 되돌아갑니다.
+5. 실행을 `applied`로 바꾸고 `active`를 비웁니다. 그리드의 미리보기가 사라지고, 카드에는 "적용했어요 · Ctrl+Z로 한 번에 되돌릴 수 있어요"가 남습니다.
 
-🗣 판정과 쓰기를 같은 동기 코드에서 해서, 그 사이에 다른 탭의 변경이 끼어들 수 없습니다.
+🗣 판정과 쓰기를 같은 동기 코드에서 해서, 그 사이에 다른 탭의 변경이 끼어들 수 없습니다. 쓴 뒤로는 사람이 입력한 값과 똑같이 `update` 이벤트 → 채널 방송 → 다른 탭 화면 갱신으로 이어집니다(7-2). 다른 탭은 AI가 쓴 값인지 구분하지 않습니다.
 
-### 8-4. 다른 사람에게 보이는 것: 참여 상태에 얹고, 컨트롤러가 막습니다
+### 8-7. 다른 사람에게 보이는 것: 참여 상태에 얹고, 컨트롤러가 막습니다
 
 📂 [publishActivity](../src/lib/ai/ai-controller.ts#L347) → [RemoteAiActivity](../src/components/sheet/grid/RemoteAiActivity.tsx#L17) → [locks.ts 결정](../src/lib/collab/locks.ts#L5) → [lockHolder](../src/lib/collab/locks.ts#L19) → [blockIfLocked](../src/lib/controller/sheet-controller.ts#L298)
 
-🗣 AI 작업 상태와 잠금은 새 저장소를 만들지 않고, 커서처럼 참여 상태에 얹어 보냅니다. 그래서 잠근 탭이 닫히면 잠금도 함께 사라집니다. AI 제안 값 자체는 보내지 않습니다. 범위 전체에 깔려서 실제 데이터처럼 보이기 쉽기 때문입니다.
+🗣 지금까지는 요청한 탭의 이야기였습니다. 다른 탭에는 제안 값이 아니라 "누가 어느 범위에서 AI로 작업 중인지"만 보입니다. AI 작업 상태와 잠금은 새 저장소를 만들지 않고, 커서처럼 참여 상태에 얹어 보냅니다. 그래서 잠근 탭이 닫히면 잠금도 함께 사라집니다. AI 제안 값 자체는 보내지 않습니다. 범위 전체에 깔려서 실제 데이터처럼 보이기 쉽기 때문입니다.
 
 🧱 **모듈 방향을 지키는 위치 선정.** 잠그는 쪽은 AI이고 막는 쪽은 `SheetController`입니다. 그런데 `lib/collab`은 `lib/ai`를 몰라야 합니다. 그래서 잠금 판정 `lockHolder`를 "참여 상태로 편집 허용을 정하는 규칙"으로 보고 `collab`에 두었습니다.
 
